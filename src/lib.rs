@@ -133,10 +133,10 @@ impl ShoppingList {
 }
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let mut no_need_to_add_to_master_groceries = false;
+    let mut done = false;
 
     // ADD GROCERIES TO MASTER LIST
-    while !no_need_to_add_to_master_groceries {
+    while !done {
         let add_groceries_prompt =
             "Do we want to add any more items to our big list?\n(y for yes, any other key for no)";
 
@@ -144,11 +144,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
         match input().trim() {
             "y" => {
-                let groceries: Vec<GroceriesSection> =
+                let mut updated_groceries: Vec<GroceriesSection> = Vec::new();
+		let groceries: Vec<GroceriesSection> =
                     Groceries::get_sections().expect("Problem getting groceries sections");
-
-                let mut updated: Vec<GroceriesSection> = Vec::new();
-
                 for section in groceries {
                     eprintln!(
 			"Add to our {} section?\n(y for yes, any other key for no, s to skip remaining sections)",
@@ -173,24 +171,24 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                                 }
                             });
 
-                            updated.push(GroceriesSection {
+                            updated_groceries.push(GroceriesSection {
                                 section: section.section,
                                 items,
                             });
                         }
                         &_ => {
-                            updated.push(GroceriesSection {
+                            updated_groceries.push(GroceriesSection {
                                 section: section.section,
                                 items: section.items,
                             });
                         }
                     }
                 }
-                if !updated.len() == 0 {
-                    Groceries::update(updated).expect("Problem updating groceries");
+                if !updated_groceries.len() == 0 {
+                    Groceries::update(updated_groceries).expect("Problem updating groceries");
                 }
             }
-            &_ => no_need_to_add_to_master_groceries = true,
+            &_ => done = true,
         }
     }
 
@@ -261,18 +259,18 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 eprintln!
 		    ("Which recipes shall we add?\n(y to add recipe, s to skip to end of recipes, any other key for next recipe)"
 		    );
-                for recipe in recipes.recipes {
-                    eprintln!("{}?", recipe.recipe);
+                for r in recipes.recipes {
+                    eprintln!("{}?", r.recipe);
                     match input().trim() {
                         "s" => {
                             break;
                         }
                         "y" => {
-                            shopping_list.recipes.push(recipe.recipe.to_owned());
+                            shopping_list.recipes.push(r.recipe.to_owned());
                             eprintln!(
 				"Do we need ... ?\n(y to add ingredient, c to remind to check, a to add this and all remaining ingredients, any other key for next ingredient)"
 			    );
-                            for ingredient in &recipe.ingredients {
+                            for ingredient in &r.ingredients {
                                 eprintln!("{}?", ingredient.to_lowercase());
                                 match input().trim() {
                                     "y" => {
@@ -291,12 +289,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                                             .push(ingredient.to_owned().to_lowercase());
                                     }
                                     "a" => {
-                                        for ingredient in recipe.ingredients {
+                                        for ingredient in r.ingredients {
                                             if !shopping_list
                                                 .list
                                                 .contains(&ingredient.to_owned().to_lowercase())
                                             {
-                                                shopping_list.list.push(ingredient);
+                                                shopping_list
+						    .list
+						    .push(ingredient);
                                             }
                                         }
                                         break;
@@ -359,6 +359,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             &_ => done_adding_groceries_to_list = true,
         }
     }
+    
     // SAVE MOST RECENT LIST
     ShoppingList::write_to_file(&shopping_list, "most_recent_grocery_list.json")
         .expect("Problem saving grocery list");
@@ -375,7 +376,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         shopping_list.checklist.iter().for_each(|item| {
             println!("\t{}", item.to_lowercase());
         });
-    } else {
     }
     if !shopping_list.recipes.is_empty() {
         println!("{}", shopping_list.recipes_msg);
@@ -391,7 +391,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS,OR SHOPPINGLIST
+    // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS, OR SHOPPINGLIST
     eprintln!("\nForgotten anything?\n(y for yes, any other key to continue)");
     match input().trim() {
         "y" => {
@@ -405,6 +405,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// Function for getting user input
 fn input() -> String {
     let _ = Write::flush(&mut stdout());
     let mut input = String::new();
