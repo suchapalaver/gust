@@ -364,32 +364,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         .expect("Problem saving grocery list");
 
     // OUTPUT
-    output(shopping_list);
-
-    // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS,OR SHOPPINGLIST
-    eprintln!("\nForgotten anything?\n(y for yes, any other key to continue)");
-    match input().trim() {
-        "y" => {
-            eprintln!("Oh we have?\n...");
-            run().expect("Problem re-running program to add additional items");
-        }
-        &_ => {}
-    }
-
-    eprintln!("Bye! Happy shopping! Bon appetit!");
-    Ok(())
-}
-
-fn input() -> String {
-    let _ = Write::flush(&mut stdout());
-    let mut input = String::new();
-    stdin()
-        .read_line(&mut input)
-        .expect("Problem with getting user input");
-    input
-}
-
-fn output(shopping_list: ShoppingList) {
     if !shopping_list.checklist.is_empty()
         && !shopping_list.recipes.is_empty()
         && !shopping_list.list.is_empty()
@@ -416,4 +390,26 @@ fn output(shopping_list: ShoppingList) {
             println!("\t{}", item);
         });
     }
+
+    // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS,OR SHOPPINGLIST
+    eprintln!("\nForgotten anything?\n(y for yes, any other key to continue)");
+    match input().trim() {
+        "y" => {
+            eprintln!("Oh we have?\n...");
+            run().expect("Problem re-running program to add additional items");
+        }
+        &_ => {}
+    }
+
+    eprintln!("Bye! Happy shopping! Bon appetit!");
+    Ok(())
+}
+
+fn input() -> String {
+    let _ = Write::flush(&mut stdout());
+    let mut input = String::new();
+    stdin()
+        .read_line(&mut input)
+        .expect("Problem with getting user input");
+    input
 }
