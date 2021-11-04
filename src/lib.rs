@@ -6,21 +6,10 @@ use std::{
     path::Path,
 };
 
-// Groceries struct used to serialize and deserialize a database of groceries we buy
-// organized by section of our kitchen storage, dairy, freezer, etc ....
-#[derive(Serialize, Deserialize, Debug)]
-struct Groceries {
-    sections: Vec<GroceriesSection>,
-}
+mod json {
+    use super::*;
 
-impl Groceries {
-    fn write_to_file<P: AsRef<Path>>(groceries: Groceries, path: P) -> Result<(), Box<dyn Error>> {
-        let json = serde_json::to_string(&groceries)?; //.expect_err("Unable to serialize groceries as JSON string");
-        write(path, &json).expect_err("Unable to write groceries to file");
-        Ok(())
-    }
-
-    fn read_file<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
+    pub fn read_groceries_from_file<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
         // Open the file in read-only mode with buffer.
         let file = File::open(path)?;
         let reader = BufReader::new(&file);
@@ -28,49 +17,70 @@ impl Groceries {
         Ok(groceries)
     }
 
-    fn update(updated_items: Vec<GroceriesSection>) -> Result<(), Box<dyn Error>> {
-        let groceries = Groceries {
-            sections: updated_items,
-        };
-        Groceries::write_to_file(groceries, "groceries_dict.json")
-            .expect_err("Unable to write updated groceries to file");
-        Ok(())
-    }
-
-    fn get_sections() -> Result<Vec<GroceriesSection>, Box<dyn Error>> {
-        let groceries = Groceries::read_file("groceries_dict.json")?;
-        let sections: Vec<GroceriesSection> = groceries.sections;
-        Ok(sections)
-    }
-}
-
-// GroceriesSection struct works with structure of Groceries struct
-#[derive(Serialize, Deserialize, Debug)]
-struct GroceriesSection {
-    section: String,
-    items: Vec<String>,
-}
-
-// Recipes is used to serialize and deserialize a database of recipes
-#[derive(Serialize, Deserialize, Debug)]
-struct Recipes {
-    recipes: Vec<Recipe>,
-}
-
-impl Recipes {
-    fn write_to_file<P: AsRef<Path>>(recipes: Recipes, path: P) -> Result<(), Box<dyn Error>> {
-        let json: String = serde_json::to_string(&recipes)?;
-        fs::write(path, &json).expect_err("Unable to write recipes to file");
-        Ok(())
-    }
-
-    fn from_file<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
+    pub fn get_recipes_from_file<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
         // Open the file in read-only mode with buffer.
         let file = File::open(path)?;
         let reader = BufReader::new(file); //.expect_err("Issue opening recipes file with buffer"));
         let recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Issue deserializing recipes JSON");
         Ok(recipes)
     }
+
+    pub fn get_shopping_list_from_file<P: AsRef<Path>>(
+        path: P,
+    ) -> Result<ShoppingList, Box<dyn Error>> {
+        // Open the file in read-only mode with buffer.
+        let file = File::open(path)?;
+        let reader = BufReader::new(&file); // .expect_err("Issue opening most recent shopping list file with buffer")
+        let shopping: ShoppingList = serde_json::from_reader(reader)?; //.expect_err("Issue deserializing most recent shopping list JSON");
+        Ok(shopping)
+    }
+
+    pub fn write_groceries<P: AsRef<Path>>(
+        groceries: Groceries,
+        path: P,
+    ) -> Result<(), Box<dyn Error>> {
+        let json = serde_json::to_string(&groceries)?; //.expect_err("Unable to serialize groceries as JSON string");
+        write(path, &json)?; //.expect_err("Unable to write groceries to file");
+        Ok(())
+    }
+
+    pub fn write_recipes_to_file<P: AsRef<Path>>(
+        recipes: Recipes,
+        path: P,
+    ) -> Result<(), Box<dyn Error>> {
+        let json: String = serde_json::to_string(&recipes)?;
+        fs::write(path, &json)?; //.expect_err("Unable to write recipes to file");
+        Ok(())
+    }
+
+    pub fn write_shopping_list_to_file<P: AsRef<Path>>(
+        shopping: &ShoppingList,
+        path: P,
+    ) -> Result<(), Box<dyn Error>> {
+        let json: String = serde_json::to_string(&shopping)?;
+        fs::write(path, &json)?; //.expect_err("Unable to write shopping list to file");
+        Ok(())
+    }
+}
+
+// Groceries struct used to serialize and deserialize a database of groceries we buy
+// organized by section of our kitchen storage, dairy, freezer, etc ....
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Groceries {
+    sections: Vec<GroceriesSection>,
+}
+
+// GroceriesSection struct works with structure of Groceries struct
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GroceriesSection {
+    section: String,
+    items: Vec<String>,
+}
+
+// Recipes is used to serialize and deserialize a database of recipes
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Recipes {
+    recipes: Vec<Recipe>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -82,7 +92,7 @@ struct Recipe {
 // ShoppingList is used to serialize and deserialize the grocery list on record
 // or to create a new grocery list that can be saved as a JSON structure
 #[derive(Serialize, Deserialize, Debug)]
-struct ShoppingList {
+pub struct ShoppingList {
     recipes_msg: String,
     recipes: Vec<String>,
     checklist_msg: String,
@@ -102,26 +112,6 @@ impl ShoppingList {
             list: Vec::new(),
         })
     }
-
-    fn from_file<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
-        // Open the file in read-only mode with buffer.
-        let file = File::open(path)?;
-        let reader = BufReader::new(&file);
-        //            .expect_err("Issue opening most recent shopping list file with buffer")
-        //      );
-        let shopping: ShoppingList = serde_json::from_reader(reader)?;
-        //  .expect_err("Issue deserializing most recent shopping list JSON");
-        Ok(shopping)
-    }
-
-    fn write_to_file<P: AsRef<Path>>(
-        shopping: &ShoppingList,
-        path: P,
-    ) -> Result<(), Box<dyn Error>> {
-        let json: String = serde_json::to_string(&shopping)?;
-        fs::write(path, &json)?; //.expect_err("Unable to write shopping list to file");
-        Ok(())
-    }
 }
 
 pub fn run() -> Result<(), Box<dyn Error>> {
@@ -129,15 +119,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     while !done {
         let add_groceries_prompt =
             "Do we want to add any more items to our big list?\n(y for yes, any other key for no)";
-
         eprintln!("{}", add_groceries_prompt);
-
-        match input()?.trim() {
-            "y" => {
-                let groceries: Vec<GroceriesSection> = Groceries::get_sections()?;
-                add_groceries_to_library(groceries)?; // ADD GROCERIES TO MASTER LIST
-            }
-            &_ => done = true,
+        if let "y" = input()?.trim() {
+            let groceries = json::read_groceries_from_file("groceries_dict.json")?;
+            let sections: Vec<GroceriesSection> = groceries.sections;
+            add_groceries_to_library(sections)?; // ADD GROCERIES TO MASTER LIST
+        } else {
+            done = true;
         }
     }
 
@@ -148,18 +136,19 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         eprintln!("{}", add_recipes_prompt);
 
         if let "y" = input()?.trim() {
-            // break up here
-            let recipes = Recipes::from_file("recipes.json")?; //.expect_err("Problem opening recipes file");
-            add_to_recipes_lib(recipes)?; // ADD RECIPES TO RECIPES LIBRARY
+            let mut recipes = json::get_recipes_from_file("recipes.json")?; //.expect_err("Problem opening recipes file");
+            recipes = add_to_recipes_lib(recipes)?; // ADD RECIPES TO RECIPES LIBRARY
+            json::write_recipes_to_file(recipes, "recipes.json")
+                .expect_err("Problem writing updated recipes to file");
         } else {
             no_need_to_add_to_recipes = true;
         }
     }
 
-    let mut shopping_list = ShoppingList::new()?; //.expect_err("Problem creating a new shopping list")),
+    let mut shopping_list = ShoppingList::new()?; //.expect_err("Problem creating a new shopping list"))
     eprintln!("Use most recent list?\n(y for yes, any other key for new list)");
     if let "y" = input()?.trim() {
-        shopping_list = ShoppingList::from_file("most_recent_grocery_list.json")?;
+        shopping_list = json::get_shopping_list_from_file("most_recent_grocery_list.json")?;
     // .expect_err("Problem opening most recent shopping list from file")),
     } else {
     }
@@ -168,7 +157,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     while !done_adding_recipe_ingredients_to_shopping_list {
         eprintln!("Add recipe ingredients to our list?\n(y for yes, any other key for no)");
         if let "y" = input()?.trim() {
-            let recipes = Recipes::from_file("recipes.json")?; //.expect_err("Problem reading recipes from file");
+            let recipes = json::get_recipes_from_file("recipes.json")?; //.expect_err("Problem reading recipes from file");
             shopping_list = add_recipes_to_list(shopping_list, recipes)?; // ADD RECIPE INGREDIENTS TO LIST
         } else {
             done_adding_recipe_ingredients_to_shopping_list = true;
@@ -179,20 +168,18 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     while !done_adding_groceries_to_list {
         eprintln!("Add groceries to shopping list?\n(y for yes, any other key to skip)");
         if let "y" = input()?.trim() {
-            let groceries: Groceries = Groceries::read_file("groceries_dict.json")?;
-            //                    .expect_err("Problem reading groceries from file");
+            let groceries: Groceries = json::read_groceries_from_file("groceries_dict.json")?; // .expect_err("Problem reading groceries from file");
             shopping_list = add_groceries_to_list(shopping_list, groceries)?; // ADD TO SHOPPING LIST AND CHECKLIST
         } else {
             done_adding_groceries_to_list = true;
         }
     }
 
-    ShoppingList::write_to_file(&shopping_list, "most_recent_grocery_list.json")?; //.expect_err("Problem saving grocery list"); // SAVE MOST RECENT LIST
+    json::write_shopping_list_to_file(&shopping_list, "most_recent_grocery_list.json")?; //.expect_err("Problem saving grocery list"); // SAVE MOST RECENT LIST
 
     output(shopping_list)?; // OUTPUT
 
-    // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS, OR SHOPPINGLIST
-    eprintln!("\nForgotten anything?\n(y for yes, any other key to continue)");
+    eprintln!("\nForgotten anything?\n(y for yes, any other key to continue)"); // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS, OR SHOPPINGLIST
 
     if let "y" = input()?.trim() {
         eprintln!("Oh we have?\n...");
@@ -209,8 +196,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 fn input() -> Result<String, Box<dyn Error>> {
     let _ = Write::flush(&mut stdout())?;
     let mut input = String::new();
-    stdin().read_line(&mut input)?;
-    //        .expect_err("Problem with getting user input");
+    stdin().read_line(&mut input)?; // .expect_err("Problem with getting user input");
     Ok(input)
 }
 
@@ -255,12 +241,15 @@ fn add_groceries_to_library(groceries: Vec<GroceriesSection>) -> Result<(), Box<
         }
     }
     if !updated_groceries.len() == 0 {
-        Groceries::update(updated_groceries).expect_err("Problem updating groceries");
+        let groceries = Groceries {
+            sections: updated_groceries,
+        };
+        crate::json::write_groceries(groceries, "groceries_dict.json")?; // .expect_err("Unable to write updated groceries to file"); //.expect_err("Problem updating groceries")
     }
     Ok(())
 }
 
-fn add_to_recipes_lib(recipes: Recipes) -> Result<(), Box<dyn Error>> {
+fn add_to_recipes_lib(recipes: Recipes) -> Result<Recipes, Box<dyn Error>> {
     let mut updated: Vec<Recipe> = recipes.recipes;
 
     let new_recipe: Recipe = {
@@ -294,10 +283,7 @@ fn add_to_recipes_lib(recipes: Recipes) -> Result<(), Box<dyn Error>> {
 
     let recipes = Recipes { recipes: updated };
 
-    Recipes::write_to_file(recipes, "recipes.json")
-        .expect_err("Problem writing updated recipes to file");
-
-    Ok(())
+    Ok(recipes)
 }
 
 fn add_recipes_to_list(
