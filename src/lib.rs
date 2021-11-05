@@ -74,39 +74,52 @@ impl ShoppingList {
     }
 }
 
+use crate::helpers::*;
+mod helpers {
+    use super::*;
+    // Function for getting user input
+    pub fn input() -> Result<String, Box<dyn Error>> {
+        let _ = Write::flush(&mut stdout())?;
+        let mut input = String::new();
+        stdin().read_line(&mut input)?; // .expect_err("Problem with getting user input");
+        Ok(input)
+    }
+
+    pub fn prompt_for_y_or_any() -> Result<bool, Box<dyn Error>> {
+        let add_recipes_prompt =
+            "Do we want to add more recipes to our recipes library?\n(y for yes, any other key for no)";
+        eprintln!("{}", add_recipes_prompt);
+        Ok("y" == input()?.trim())
+    }
+}
+
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let mut done = false;
-    while !done {
+    while prompt_for_y_or_any()? {
         eprintln!(
             "Add groceries to our library?\n(\
 	     y for yes, \
 	     any other key for no)"
         );
-        if let "y" = input()?.trim() {
+        if prompt_for_y_or_any()? {
             let reader = read_json("groceries_dict.json")?;
             let groceries: Groceries = serde_json::from_reader(reader)?;
             let sections: Vec<GroceriesSection> = groceries.sections;
             add_groceries_to_library(sections)?; // ADD GROCERIES TO MASTER LIST
-        } else {
-            done = true;
         }
     }
 
-    let mut no_need_to_add_to_recipes = false;
-    while !no_need_to_add_to_recipes {
+    while prompt_for_y_or_any()? {
         eprintln!(
             "Add recipes to our library?\n(\
 	     y for yes, \
 	     any other key for no)"
         );
-        if let "y" = input()?.trim() {
+        if prompt_for_y_or_any()? {
             let reader = read_json("recipes.json")?;
             let mut recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem opening recipes file")
             recipes = add_to_recipes_lib(recipes)?; // ADD RECIPES TO RECIPES LIBRARY
             let json = serde_json::to_string(&recipes)?;
             write_json("recipes.json", json)?; // .expect_err("Problem writing updated recipes to file");
-        } else {
-            no_need_to_add_to_recipes = true;
         }
     }
 
@@ -121,31 +134,25 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         shopping_list = serde_json::from_reader(reader)?; // .expect_err("Problem opening most recent shopping list from file")),
     }
 
-    let mut done_adding_recipe_ingredients_to_shopping_list = false;
-    while !done_adding_recipe_ingredients_to_shopping_list {
+    while prompt_for_y_or_any()? {
         eprintln!(
             "Add recipe ingredients to our list?\n(\
 	     y for yes, \
 	     any other key for no)"
         );
-        if let "y" = input()?.trim() {
+        if prompt_for_y_or_any()? {
             let reader = read_json("recipes.json")?;
             let recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem reading recipes from file");
             shopping_list = add_recipes_to_list(shopping_list, recipes)?; // ADD RECIPE INGREDIENTS TO LIST
-        } else {
-            done_adding_recipe_ingredients_to_shopping_list = true;
         }
     }
 
-    let mut done_adding_groceries_to_list = false;
-    while !done_adding_groceries_to_list {
+    while prompt_for_y_or_any()? {
         eprintln!("Add groceries to shopping list?\n(y for yes, any other key to skip)");
-        if let "y" = input()?.trim() {
+        if prompt_for_y_or_any()? {
             let reader = read_json("groceries.json")?;
             let groceries: Groceries = serde_json::from_reader(reader)?; // .expect_err("Problem reading groceries from file");
             shopping_list = add_groceries_to_list(shopping_list, groceries)?; // ADD TO SHOPPING LIST AND CHECKLIST
-        } else {
-            done_adding_groceries_to_list = true;
         }
     }
 
@@ -159,23 +166,17 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	 y for yes, \
 	 any other key to continue)"
     ); // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS, OR SHOPPINGLIST
-    if let "y" = input()?.trim() {
+    if prompt_for_y_or_any()? {
         eprintln!("Oh we have?\n...");
         run()?; //.expect_err("Problem re-running program to add additional items");
-    } else {
     }
 
-    eprintln!("Bye! Happy shopping! Bon appetit!");
-
+    eprintln!(
+        "Bye! \
+	 Happy shopping! \
+	 Bon appetit!"
+    );
     Ok(())
-}
-
-// Function for getting user input
-fn input() -> Result<String, Box<dyn Error>> {
-    let _ = Write::flush(&mut stdout())?;
-    let mut input = String::new();
-    stdin().read_line(&mut input)?; // .expect_err("Problem with getting user input");
-    Ok(input)
 }
 
 fn add_groceries_to_library(groceries: Vec<GroceriesSection>) -> Result<(), Box<dyn Error>> {
@@ -233,9 +234,8 @@ fn add_groceries_to_library(groceries: Vec<GroceriesSection>) -> Result<(), Box<
 fn add_to_recipes_lib(recipes: Recipes) -> Result<Recipes, Box<dyn Error>> {
     let mut updated: Vec<Recipe> = recipes.recipes;
     let new_recipe: Recipe = {
-        eprintln!("What's the name of the recipe?");
+        eprintln!("What's the recipe?");
         let mut recipe = input()?;
-
         recipe.pop();
 
         eprintln!(
@@ -347,7 +347,6 @@ fn add_groceries_to_list(
 		      s to skip to next section, \
 		      any other key to continue)"
                 );
-
                 for item in &section.items {
                     if !shopping_list.list.contains(&item.to_lowercase()) {
                         eprintln!("{}?", item.to_lowercase());
