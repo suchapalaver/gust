@@ -127,31 +127,6 @@ mod groceries {
         Ok(shopping_list)
     }
 
-    // takes groceries_section_items and adds user input groceries to section and returns  the section items
-    pub fn add_groceries_to_section(mut items: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
-        eprintln!(
-            "What shall we add? \
-	     Enter the items, \
-	     separated by commas"
-        );
-        let mut input: String = input()?;
-        input.pop();
-        let add_items_to_section: Vec<&str> = input.split(',').collect();
-
-        add_items_to_section.iter().for_each(|i| {
-            if !items.contains(&i.to_string()) {
-                items.push(i.to_string());
-            }
-        });
-        Ok(items)
-    }
-
-    pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path)?;
-        let groceries = serde_json::from_reader(reader)?;
-        Ok(groceries)
-    }
-
     pub fn update_groceries() -> Result<(), Box<dyn Error>> {
 	eprintln!(
             "Add groceries to our library?\n(\
@@ -199,6 +174,31 @@ mod groceries {
             }
 	}
         Ok(())
+    }
+
+    fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let groceries = serde_json::from_reader(reader)?;
+        Ok(groceries)
+    }
+
+    // takes groceries_section_items and adds user input groceries to section and returns  the section items
+    fn add_groceries_to_section(mut items: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
+        eprintln!(
+            "What shall we add? \
+	     Enter the items, \
+	     separated by commas"
+        );
+        let mut input: String = input()?;
+        input.pop();
+        let add_items_to_section: Vec<&str> = input.split(',').collect();
+
+        add_items_to_section.iter().for_each(|i| {
+            if !items.contains(&i.to_string()) {
+                items.push(i.to_string());
+            }
+        });
+        Ok(items)
     }
 }
 
