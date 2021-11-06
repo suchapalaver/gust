@@ -385,7 +385,7 @@ mod list {
         Ok(())
     }
 
-    pub fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
+    fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
         let reader = read_json(path)?;
         let shopping_list = serde_json::from_reader(reader)?;
         Ok(shopping_list)
