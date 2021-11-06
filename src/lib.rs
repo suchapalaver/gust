@@ -11,9 +11,9 @@ mod json_rw {
     use super::*;
 
     pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
-	let reader = read_json(path)?;
-        let groceries: Groceries = serde_json::from_reader(reader)?;
-	Ok(groceries)
+        let reader = read_json(path)?;
+        let groceries = serde_json::from_reader(reader)?;
+        Ok(groceries)
     }
 
     pub fn read_json<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
@@ -23,78 +23,95 @@ mod json_rw {
         Ok(reader)
     }
 
+    pub fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let shopping_list = serde_json::from_reader(reader)?;
+        Ok(shopping_list)
+    }
+
     pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
-	let reader = read_json(path)?;
-        let recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem opening recipes file")
-	Ok(recipes)
+        let reader = read_json(path)?;
+        let recipes = serde_json::from_reader(reader)?;
+        Ok(recipes)
+    }
+
+    pub fn save_list<P: AsRef<Path>>(
+        path: P,
+        shopping_list: &ShoppingList,
+    ) -> Result<(), Box<dyn Error>> {
+        let json = serde_json::to_string(&shopping_list)?;
+        write_json(path, json)?;
+        Ok(())
     }
 
     pub fn update_groceries(groceries: Groceries) -> Result<(), Box<dyn Error>> {
-	let sections: Vec<GroceriesSection> = groceries.sections;
-	let mut updated_groceries_sections: Vec<GroceriesSection> = Vec::new();
-	for groceries_section in sections {
+        let sections: Vec<GroceriesSection> = groceries.sections;
+        let mut updated_groceries_sections: Vec<GroceriesSection> = Vec::new();
+	
+        for groceries_section in sections {
             eprintln!(
-		"Add to our {} section?\n(\
+                "Add to our {} section?\n(\
 		 y for yes, \
 		 any other key for no, \
 		 s to skip remaining sections)",
-		groceries_section.section
+                groceries_section.section
             );
             match input()?.trim() {
-		"y" => {
-		    let items = add_groceries_to_section(groceries_section.items)?; // add groceries to section
-		    
-		    updated_groceries_sections.push(GroceriesSection {
-			section: groceries_section.section,
-			items,
-		    });
-		},
-		"s" => break,
-		&_ => { 
+                "y" => {
+                    let items = add_groceries_to_section(groceries_section.items)?;
+
                     updated_groceries_sections.push(GroceriesSection {
-                    section: groceries_section.section,
-                    items: groceries_section.items,
-                });
-		}
-	    }
-	}
-	if !updated_groceries_sections.len() == 0 {
+                        section: groceries_section.section,
+                        items,
+                    });
+                }
+                "s" => break,
+                &_ => {
+                    updated_groceries_sections.push(GroceriesSection {
+                        section: groceries_section.section,
+                        items: groceries_section.items,
+                    });
+                }
+            }
+        }
+	
+        if !updated_groceries_sections.len() == 0 {
             let groceries = Groceries {
-		sections: updated_groceries_sections,
+                sections: updated_groceries_sections,
             };
             let json = serde_json::to_string(&groceries)?;
-            write_json("groceries.json", json)?; // .expect_err("Unable to write updated groceries to file"); // .expect_err("Problem updating groceries")
-	}
-	Ok(())
+            write_json("groceries.json", json)?; 
+        }
+        Ok(())
     }
 
     pub fn write_json<P: AsRef<Path>>(path: P, json: String) -> Result<(), Box<dyn Error>> {
-        fs::write(path, &json)?; //.expect_err("Unable to write groceries to file");
+        fs::write(path, &json)?;
         Ok(())
     }
 
     pub fn write_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
-	let json = serde_json::to_string(&recipes)?;
-        write_json("recipes.json", json)?; // .expect_err("Problem writing updated recipes to file");
-	Ok(())
+        let json = serde_json::to_string(&recipes)?;
+        write_json("recipes.json", json)?; 
+        Ok(())
     }
 }
 
-// Groceries struct used to serialize and deserialize a database of groceries we buy
-// organized by section of our kitchen storage, dairy, freezer, etc ....
+// used to serialize and deserialize a database of groceries we buy
+// organized by section of our kitchen storage
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Groceries {
     sections: Vec<GroceriesSection>,
 }
 
-// GroceriesSection struct works with structure of Groceries struct
+// works with structure of Groceries struct
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GroceriesSection {
     section: String,
     items: Vec<String>,
 }
 
-// Recipes is used to serialize and deserialize a database of recipes
+// to serialize and deserialize a database of recipes
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Recipes {
     recipes: Vec<Recipe>,
@@ -106,8 +123,8 @@ pub struct Recipe {
     ingredients: Vec<String>,
 }
 
-// ShoppingList is used to serialize and deserialize the grocery list on record
-// or to create a new grocery list that can be saved as a JSON structure
+// used to serialize and deserialize the grocery list on record
+// or to create a new grocery list that can be saved as JSON
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ShoppingList {
     recipes_msg: String,
@@ -134,14 +151,16 @@ impl ShoppingList {
 use crate::helpers::*;
 mod helpers {
     use super::*;
+    
     // Function for getting user input
     pub fn input() -> Result<String, Box<dyn Error>> {
         let _ = Write::flush(&mut stdout())?;
         let mut input = String::new();
-        stdin().read_line(&mut input)?; // .expect_err("Problem with getting user input");
+        stdin().read_line(&mut input)?;
         Ok(input)
     }
 
+    // get user input when it's 'y' or anything else
     pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
         Ok("y" == input()?.trim())
     }
@@ -150,67 +169,65 @@ mod helpers {
 pub fn run() -> Result<(), Box<dyn Error>> {
     eprintln!(
         "Add groceries to our library?\n(\
-	 y for yes, \
+	 'y' for yes, \
 	 any other key for no)"
     );
-    while prompt_for_y()? { // add_groceries_to_library(sections)?; // ADD GROCERIES TO MASTER LIST
-	let groceries = read_groceries("groceries_dict.json")?;
-	update_groceries(groceries)?;   
+    while prompt_for_y()? {
+        let groceries = read_groceries("groceries.json")?;
+        update_groceries(groceries)?;
     }
 
     eprintln!(
         "Add recipes to our library?\n(\
-	 y for yes, \
+	 'y' for yes, \
 	 any other key for no)"
     );
-    while prompt_for_y()? {        
-	let mut recipes = read_recipes("recipes.json")?;
-        recipes = add_recipe_to_lib(recipes)?; // ADD RECIPES TO RECIPES LIBRARY
-	write_recipes(recipes)?;
+    while prompt_for_y()? {
+        let mut recipes = read_recipes("recipes.json")?;
+        recipes = add_recipe_to_lib(recipes)?;
+        write_recipes(recipes)?;
     }
 
-    let mut shopping_list = ShoppingList::new()?; //.expect_err("Problem creating a new shopping list"))
+    let mut shopping_list = ShoppingList::new()?; 
     eprintln!(
         "Use most recent list?\n(\
-	 y for yes, \
+	 'y' for yes, \
 	 any other key for new list)"
     );
     if prompt_for_y()? {
-        let reader = read_json("list.json")?;
-        shopping_list = serde_json::from_reader(reader)?; // .expect_err("Problem opening most recent shopping list from file")),
+        shopping_list = read_list("list.json")?; 
     }
 
     eprintln!(
         "Add recipe ingredients to our list?\n(\
-	 y for yes, \
+	'y' for yes, \
 	 any other key for no)"
     );
     while prompt_for_y()? {
-        let reader = read_json("recipes.json")?;
-        let recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem reading recipes from file");
-        shopping_list = add_recipes_to_list(shopping_list, recipes)?; // ADD RECIPE INGREDIENTS TO LIST
+        let recipes = read_recipes("recipes.json")?;
+        shopping_list = add_recipes_to_list(shopping_list, recipes)?; 
     }
 
-    eprintln!("Add groceries to shopping list?\n(y for yes, any other key to skip)");
+    eprintln!(
+	"Add groceries to shopping list?\n(\
+	 'y' for yes, \
+	 any other key to skip)"
+    );
     while prompt_for_y()? {
-        let reader = read_json("groceries.json")?;
-        let groceries: Groceries = serde_json::from_reader(reader)?; // .expect_err("Problem reading groceries from file");
-        shopping_list = add_groceries_to_list(shopping_list, groceries)?; // ADD TO SHOPPING LIST AND CHECKLIST
+        let groceries = read_groceries("groceries.json")?;
+        shopping_list = add_groceries_to_list(shopping_list, groceries)?;
     }
 
-    let json = serde_json::to_string(&shopping_list)?;
-    write_json("list.json", json)?; //.expect_err("Problem saving grocery list"); // SAVE MOST RECENT LIST
-
-    output(shopping_list)?; // OUTPUT
+    save_list("list.json", &shopping_list)?;
+    output_list(shopping_list)?; 
 
     eprintln!(
         "\nForgotten anything?\n(\
 	 y for yes, \
 	 any other key to continue)"
-    ); // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS, OR SHOPPINGLIST
+    );
     if prompt_for_y()? {
-        eprintln!("Oh we have?\n...");
-        run()?; //.expect_err("Problem re-running program to add additional items");
+        run()?; // again
     }
 
     eprintln!(
@@ -231,7 +248,7 @@ fn add_groceries_to_section(mut items: Vec<String>) -> Result<Vec<String>, Box<d
     let mut input: String = input()?;
     input.pop();
     let add_items_to_section: Vec<&str> = input.split(',').collect();
-    
+
     add_items_to_section.iter().for_each(|i| {
         if !items.contains(&i.to_string()) {
             items.push(i.to_string());
@@ -274,6 +291,8 @@ fn new_recipe() -> Result<Recipe, Box<dyn Error>> {
     })
 }
 
+// takes shopping list and recipes library
+// and updates shopping list with recipe ingredients
 fn add_recipes_to_list(
     mut shopping_list: ShoppingList,
     recipes: Recipes,
@@ -381,7 +400,7 @@ fn add_groceries_to_list(
     Ok(shopping_list)
 }
 
-fn output(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
+fn output_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
     if !shopping_list.checklist.is_empty()
         && !shopping_list.recipes.is_empty()
         && !shopping_list.list.is_empty()
