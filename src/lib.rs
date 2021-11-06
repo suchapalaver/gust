@@ -16,7 +16,7 @@ mod json_rw {
 	Ok(groceries)
     }
 
-    fn read_json<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
+    pub fn read_json<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
         // Open the file in read-only mode with buffer.
         let file = File::open(path)?;
         let reader = BufReader::new(file);
@@ -24,7 +24,7 @@ mod json_rw {
     }
 
     pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
-	let reader = read_json("recipes.json")?;
+	let reader = read_json(path)?;
         let recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem opening recipes file")
 	Ok(recipes)
     }
