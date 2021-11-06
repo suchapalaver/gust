@@ -16,11 +16,17 @@ mod json_rw {
 	Ok(groceries)
     }
 
-    pub fn read_json<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
+    fn read_json<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
         // Open the file in read-only mode with buffer.
         let file = File::open(path)?;
         let reader = BufReader::new(file);
         Ok(reader)
+    }
+
+    pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
+	let reader = read_json("recipes.json")?;
+        let recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem opening recipes file")
+	Ok(recipes)
     }
 
     pub fn update_groceries(groceries: Groceries) -> Result<(), Box<dyn Error>> {
@@ -44,7 +50,6 @@ mod json_rw {
 		    });
 		},
 		"s" => break,
-		// you loop through each sectioon of groceries, putting the original section back in the new Vec<Groceriessection> that we put back in a brand new updated Groceries that we then write
 		&_ => { 
                     updated_groceries_sections.push(GroceriesSection {
                     section: groceries_section.section,
@@ -66,6 +71,12 @@ mod json_rw {
     pub fn write_json<P: AsRef<Path>>(path: P, json: String) -> Result<(), Box<dyn Error>> {
         fs::write(path, &json)?; //.expect_err("Unable to write groceries to file");
         Ok(())
+    }
+
+    pub fn write_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
+	let json = serde_json::to_string(&recipes)?;
+        write_json("recipes.json", json)?; // .expect_err("Problem writing updated recipes to file");
+	Ok(())
     }
 }
 
@@ -131,7 +142,7 @@ mod helpers {
         Ok(input)
     }
 
-    pub fn prompt_for_y_or_any() -> Result<bool, Box<dyn Error>> {
+    pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
         Ok("y" == input()?.trim())
     }
 }
@@ -142,10 +153,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	 y for yes, \
 	 any other key for no)"
     );
-    while prompt_for_y_or_any()? { // add_groceries_to_library(sections)?; // ADD GROCERIES TO MASTER LIST
+    while prompt_for_y()? { // add_groceries_to_library(sections)?; // ADD GROCERIES TO MASTER LIST
 	let groceries = read_groceries("groceries_dict.json")?;
-	update_groceries(groceries)?;
-        
+	update_groceries(groceries)?;   
     }
 
     eprintln!(
@@ -153,13 +163,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	 y for yes, \
 	 any other key for no)"
     );
-    while prompt_for_y_or_any()? {
-        let reader = read_json("recipes.json")?;
-        let mut recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem opening recipes file")
-	// write_recipes()?;
+    while prompt_for_y()? {        
+	let mut recipes = read_recipes("recipes.json")?;
         recipes = add_recipe_to_lib(recipes)?; // ADD RECIPES TO RECIPES LIBRARY
-        let json = serde_json::to_string(&recipes)?;
-        write_json("recipes.json", json)?; // .expect_err("Problem writing updated recipes to file");
+	write_recipes(recipes)?;
     }
 
     let mut shopping_list = ShoppingList::new()?; //.expect_err("Problem creating a new shopping list"))
@@ -168,7 +175,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	 y for yes, \
 	 any other key for new list)"
     );
-    if let "y" = input()?.trim() {
+    if prompt_for_y()? {
         let reader = read_json("list.json")?;
         shopping_list = serde_json::from_reader(reader)?; // .expect_err("Problem opening most recent shopping list from file")),
     }
@@ -178,14 +185,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	 y for yes, \
 	 any other key for no)"
     );
-    while prompt_for_y_or_any()? {
+    while prompt_for_y()? {
         let reader = read_json("recipes.json")?;
         let recipes: Recipes = serde_json::from_reader(reader)?; //.expect_err("Problem reading recipes from file");
         shopping_list = add_recipes_to_list(shopping_list, recipes)?; // ADD RECIPE INGREDIENTS TO LIST
     }
 
     eprintln!("Add groceries to shopping list?\n(y for yes, any other key to skip)");
-    while prompt_for_y_or_any()? {
+    while prompt_for_y()? {
         let reader = read_json("groceries.json")?;
         let groceries: Groceries = serde_json::from_reader(reader)?; // .expect_err("Problem reading groceries from file");
         shopping_list = add_groceries_to_list(shopping_list, groceries)?; // ADD TO SHOPPING LIST AND CHECKLIST
@@ -201,7 +208,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	 y for yes, \
 	 any other key to continue)"
     ); // ADD ANYTHING ELSE TO MASTER GROCERY LISTS, RECIPE LISTS, OR SHOPPINGLIST
-    if prompt_for_y_or_any()? {
+    if prompt_for_y()? {
         eprintln!("Oh we have?\n...");
         run()?; //.expect_err("Problem re-running program to add additional items");
     }
@@ -242,7 +249,7 @@ fn add_recipe_to_lib(recipes: Recipes) -> Result<Recipes, Box<dyn Error>> {
     Ok(recipes)
 }
 
-// Gets new recipes from user and returns it as a Recipe
+// Gets a new recipe from user and returns it as a Recipe
 fn new_recipe() -> Result<Recipe, Box<dyn Error>> {
     eprintln!("What's the recipe?");
     let mut recipe = input()?;
