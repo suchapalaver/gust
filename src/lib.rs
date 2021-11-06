@@ -176,12 +176,6 @@ mod groceries {
         Ok(())
     }
 
-    fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path)?;
-        let groceries = serde_json::from_reader(reader)?;
-        Ok(groceries)
-    }
-
     // takes groceries_section_items and adds user input groceries to section and returns  the section items
     fn add_groceries_to_section(mut items: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
         eprintln!(
@@ -199,6 +193,12 @@ mod groceries {
             }
         });
         Ok(items)
+    }
+
+    fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let groceries = serde_json::from_reader(reader)?;
+        Ok(groceries)
     }
 }
 
