@@ -78,6 +78,87 @@ use crate::groceries::*;
 mod groceries {
     use super::*;
 
+    pub fn add_groceries_to_library_prompt() -> Result<(), Box<dyn Error>> {
+        eprintln!(
+            "Add groceries to our library?\n(\
+	     'y' for yes, \
+	     any other key for no)"
+        );
+        while prompt_for_y()? {
+            let groceries = read_groceries("groceries.json")?;
+            update_groceries(groceries)?;
+        }
+        Ok(())
+    }
+
+    pub fn add_groceries_to_list(
+        mut shopping_list: ShoppingList) -> Result<ShoppingList, Box<dyn Error>> {
+	eprintln!(
+            "Add groceries to shopping list?\n(\
+	     'y' for yes, \
+	     any other key to skip)"
+        );
+        while prompt_for_y()? {
+            let groceries = read_groceries("groceries.json")?;
+            for section in &groceries.sections {
+		eprintln!(
+                    "Do we need {}?\n(\
+		     y for yes, \
+		     s to skip remaining sections, \
+		     any other key to continue)\n",
+                    section.section.to_lowercase()
+		);
+		match input()?.trim() {
+                    "y" => {
+			eprintln!(
+                            "Do we need ...?\n(\
+			     y for yes, \
+			     c for check, \
+			     s to skip to next section, \
+			     any other key to continue)"
+			);
+			for item in &section.items {
+                            if !shopping_list.list.contains(&item.to_lowercase()) {
+				eprintln!("{}?", item.to_lowercase());
+
+				match input()?.trim() {
+                                    "y" => shopping_list.list.push(item.to_lowercase().to_string()),
+                                    "c" => shopping_list
+					.checklist
+					.push(item.to_lowercase().to_string()),
+                                    "s" => break,
+                                    &_ => {}
+				}
+                            }
+			}
+                    }
+                    "s" => break,
+                    &_ => {}
+		}
+            }
+	}
+        Ok(shopping_list)
+    }
+
+    // takes groceries_section_items and adds user input groceries to section and returns  the section items
+    pub fn add_groceries_to_section(mut items: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
+        eprintln!(
+            "What shall we add? \
+	     Enter the items, \
+	     separated by commas"
+        );
+        let mut input: String = input()?;
+        input.pop();
+        let add_items_to_section: Vec<&str> = input.split(',').collect();
+
+        add_items_to_section.iter().for_each(|i| {
+            if !items.contains(&i.to_string()) {
+                items.push(i.to_string());
+            }
+        });
+        Ok(items)
+    }
+
     pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader = read_json(path)?;
         let groceries = serde_json::from_reader(reader)?;
@@ -123,96 +204,6 @@ mod groceries {
             write_json("groceries.json", json)?;
         }
         Ok(())
-    }
-
-    pub fn add_groceries_to_library_prompt() -> Result<(), Box<dyn Error>> {
-        eprintln!(
-            "Add groceries to our library?\n(\
-	     'y' for yes, \
-	     any other key for no)"
-        );
-        while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")?;
-            update_groceries(groceries)?;
-        }
-        Ok(())
-    }
-
-    pub fn add_groceries_list(
-        mut shopping_list: ShoppingList,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
-        eprintln!(
-            "Add groceries to shopping list?\n(\
-	     'y' for yes, \
-	     any other key to skip)"
-        );
-        while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")?;
-            shopping_list = add_groceries_to_list(shopping_list, groceries)?;
-        }
-        Ok(shopping_list)
-    }
-
-    fn add_groceries_to_list(
-        mut shopping_list: ShoppingList,
-        groceries: Groceries,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
-        for section in &groceries.sections {
-            eprintln!(
-                "Do we need {}?\n(\
-		 y for yes, \
-		 s to skip remaining sections, \
-		 any other key to continue)\n",
-                section.section.to_lowercase()
-            );
-            match input()?.trim() {
-                "y" => {
-                    eprintln!(
-                        "Do we need ...?\n(\
-			 y for yes, \
-			 c for check, \
-			 s to skip to next section, \
-			 any other key to continue)"
-                    );
-                    for item in &section.items {
-                        if !shopping_list.list.contains(&item.to_lowercase()) {
-                            eprintln!("{}?", item.to_lowercase());
-
-                            match input()?.trim() {
-                                "y" => shopping_list.list.push(item.to_lowercase().to_string()),
-                                "c" => shopping_list
-                                    .checklist
-                                    .push(item.to_lowercase().to_string()),
-                                "s" => break,
-                                &_ => {}
-                            }
-                        }
-                    }
-                }
-                "s" => break,
-                &_ => {}
-            }
-        }
-        Ok(shopping_list)
-    }
-
-    // takes groceries_section_items and adds user input groceries to section and returns  the section items
-    pub fn add_groceries_to_section(mut items: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
-        eprintln!(
-            "What shall we add? \
-	     Enter the items, \
-	     separated by commas"
-        );
-        let mut input: String = input()?;
-        input.pop();
-        let add_items_to_section: Vec<&str> = input.split(',').collect();
-
-        add_items_to_section.iter().for_each(|i| {
-            if !items.contains(&i.to_string()) {
-                items.push(i.to_string());
-            }
-        });
-        Ok(items)
     }
 }
 
@@ -478,7 +469,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     shopping_list = add_recipes(shopping_list)?;
 
-    shopping_list = add_groceries_list(shopping_list)?;
+    shopping_list = add_groceries_to_list(shopping_list)?;
 
     save_list(shopping_list)?;
 
