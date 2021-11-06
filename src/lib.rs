@@ -335,7 +335,7 @@ use crate::list::*;
 mod list {
     use super::*;
 
-    pub fn get_list() -> Result<ShoppingList, Box<dyn Error>> {
+    pub fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
         let mut shopping_list = ShoppingList::new()?;
         eprintln!(
             "Use most recent list?\n(\
@@ -348,6 +348,12 @@ mod list {
         Ok(shopping_list)
     }
 
+    fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let shopping_list = serde_json::from_reader(reader)?;
+        Ok(shopping_list)
+    }
+
     pub fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Print shopping list?\n\
@@ -355,12 +361,12 @@ mod list {
 	     any other key to continue)"
         );
         if prompt_for_y()? {
-	    let shopping_list = get_list()?;
+	    let shopping_list = read_list("list.json")?;
             if !shopping_list.checklist.is_empty()
 		&& !shopping_list.recipes.is_empty()
 		&& !shopping_list.list.is_empty()
             {
-		eprintln!("Here's what we have:\n");
+		println!("Here's what we have:\n");
             }
             if !shopping_list.checklist.is_empty() {
 		println!("{}", shopping_list.checklist_msg);
@@ -383,12 +389,6 @@ mod list {
             }
         }
         Ok(())
-    }
-
-    fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
-        let reader = read_json(path)?;
-        let shopping_list = serde_json::from_reader(reader)?;
-        Ok(shopping_list)
     }
 
     pub fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
@@ -445,7 +445,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     new_recipes()?;
 
-    let mut shopping_list = get_list()?;
+    let mut shopping_list = get_saved_or_new_list()?;
 
     shopping_list = add_recipes_to_list(shopping_list)?;
 
