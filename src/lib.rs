@@ -78,19 +78,6 @@ use crate::groceries::*;
 mod groceries {
     use super::*;
 
-    pub fn add_groceries_to_library_prompt() -> Result<(), Box<dyn Error>> {
-        eprintln!(
-            "Add groceries to our library?\n(\
-	     'y' for yes, \
-	     any other key for no)"
-        );
-        while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")?;
-            update_groceries(groceries)?;
-        }
-        Ok(())
-    }
-
     pub fn add_groceries_to_list(
         mut shopping_list: ShoppingList) -> Result<ShoppingList, Box<dyn Error>> {
 	eprintln!(
@@ -165,44 +152,52 @@ mod groceries {
         Ok(groceries)
     }
 
-    pub fn update_groceries(groceries: Groceries) -> Result<(), Box<dyn Error>> {
-        let sections: Vec<GroceriesSection> = groceries.sections;
-        let mut updated_groceries_sections: Vec<GroceriesSection> = Vec::new();
+    pub fn update_groceries() -> Result<(), Box<dyn Error>> {
+	eprintln!(
+            "Add groceries to our library?\n(\
+	     'y' for yes, \
+	     any other key for no)"
+        );
+        while prompt_for_y()? {
+            let groceries = read_groceries("groceries.json")?;
+            let sections: Vec<GroceriesSection> = groceries.sections;
+            let mut updated_groceries_sections: Vec<GroceriesSection> = Vec::new();
 
-        for groceries_section in sections {
-            eprintln!(
-                "Add to our {} section?\n(\
-		 y for yes, \
-		 any other key for no, \
-		 s to skip remaining sections)",
-                groceries_section.section
-            );
-            match input()?.trim() {
-                "y" => {
-                    let items = add_groceries_to_section(groceries_section.items)?;
+            for groceries_section in sections {
+		eprintln!(
+                    "Add to our {} section?\n(\
+		     y for yes, \
+		     any other key for no, \
+		     s to skip remaining sections)",
+                    groceries_section.section
+		);
+		match input()?.trim() {
+                    "y" => {
+			let items = add_groceries_to_section(groceries_section.items)?;
 
-                    updated_groceries_sections.push(GroceriesSection {
-                        section: groceries_section.section,
-                        items,
-                    });
-                }
-                "s" => break,
-                &_ => {
-                    updated_groceries_sections.push(GroceriesSection {
-                        section: groceries_section.section,
-                        items: groceries_section.items,
-                    });
-                }
+			updated_groceries_sections.push(GroceriesSection {
+                            section: groceries_section.section,
+                            items,
+			});
+                    }
+                    "s" => break,
+                    &_ => {
+			updated_groceries_sections.push(GroceriesSection {
+                            section: groceries_section.section,
+                            items: groceries_section.items,
+			});
+                    }
+		}
             }
-        }
 
-        if !updated_groceries_sections.len() == 0 {
-            let groceries = Groceries {
-                sections: updated_groceries_sections,
-            };
-            let json = serde_json::to_string(&groceries)?;
-            write_json("groceries.json", json)?;
-        }
+            if !updated_groceries_sections.len() == 0 {
+		let groceries = Groceries {
+                    sections: updated_groceries_sections,
+		};
+		let json = serde_json::to_string(&groceries)?;
+		write_json("groceries.json", json)?;
+            }
+	}
         Ok(())
     }
 }
@@ -461,7 +456,7 @@ mod helpers {
 // - recipes.json
 // list.json will be created if not found
 pub fn run() -> Result<(), Box<dyn Error>> {
-    add_groceries_to_library_prompt()?;
+    update_groceries()?;
 
     new_recipes()?;
 
