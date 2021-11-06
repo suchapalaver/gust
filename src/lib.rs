@@ -37,7 +37,7 @@ mod json_rw {
 
     pub fn save_list<P: AsRef<Path>>(
         path: P,
-        shopping_list: &ShoppingList,
+        shopping_list: ShoppingList,
     ) -> Result<(), Box<dyn Error>> {
         let json = serde_json::to_string(&shopping_list)?;
         write_json(path, json)?;
@@ -125,7 +125,7 @@ pub struct Recipe {
 
 // used to serialize and deserialize the grocery list on record
 // or to create a new grocery list that can be saved as JSON
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
     recipes_msg: String,
     recipes: Vec<String>,
@@ -218,12 +218,27 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         shopping_list = add_groceries_to_list(shopping_list, groceries)?;
     }
 
-    save_list("list.json", &shopping_list)?;
-    output_list(shopping_list)?; 
+    eprintln!(
+	"Save current list?\n\
+	 ('y' for yes,\n\
+	 any other key to continue)"
+    );
+    if prompt_for_y()? {
+	save_list("list.json", shopping_list.clone())?;
+    }
+
+    eprintln!(
+	"Print shopping list?\n\
+	 ('y' for yes,\n\
+	 any other key to continue)"
+    );
+    if prompt_for_y()? {
+	output_list(shopping_list)?;
+    }
 
     eprintln!(
         "\nForgotten anything?\n(\
-	 y for yes, \
+	 'y' for yes, \
 	 any other key to continue)"
     );
     if prompt_for_y()? {
