@@ -205,7 +205,7 @@ mod groceries {
 use crate::recipes::*;
 mod recipes {
     use super::*;
-
+    
     pub fn new_recipes() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add recipes to our library?\n(\
@@ -213,16 +213,20 @@ mod recipes {
 	     any other key for no)"
         );
         while prompt_for_y()? {
-            let mut recipes = read_recipes("recipes.json")?;
-            recipes = add_recipe_to_lib(recipes)?;
+            let recipes = read_recipes("recipes.json")?;
+            let mut updated: Vec<Recipe> = recipes.recipes;
+            let new_recipe = get_new_recipe()?;
+            updated.push(new_recipe);
+            let recipes = Recipes { recipes: updated };
             write_recipes(recipes)?;
         }
         Ok(())
     }
 
     // Gets a new recipe from user and returns it as a Recipe
-    fn new_recipe() -> Result<Recipe, Box<dyn Error>> {
+    fn get_new_recipe() -> Result<Recipe, Box<dyn Error>> {
         eprintln!("What's the recipe?");
+	
         let mut recipe = input()?;
         recipe.pop();
 
@@ -245,33 +249,7 @@ mod recipes {
         })
     }
 
-    // get user input when it's 'y' or anything else
-    pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
-        Ok("y" == input()?.trim())
-    }
-
-    pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
-        let reader = read_json(path)?;
-        let recipes = serde_json::from_reader(reader)?;
-        Ok(recipes)
-    }
-    
-    pub fn write_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
-        let json = serde_json::to_string(&recipes)?;
-        write_json("recipes.json", json)?;
-        Ok(())
-    }
-
-     // adds a new recipes to library of recipes and returns Recipes
-    pub fn add_recipe_to_lib(recipes: Recipes) -> Result<Recipes, Box<dyn Error>> {
-        let mut updated: Vec<Recipe> = recipes.recipes;
-        let new_recipe = new_recipe()?;
-        updated.push(new_recipe);
-        let recipes = Recipes { recipes: updated };
-        Ok(recipes)
-    }
-
-    pub fn add_recipes(mut shopping_list: ShoppingList) -> Result<ShoppingList, Box<dyn Error>> {
+    pub fn add_recipes_to_list(mut shopping_list: ShoppingList) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
             "Add recipe ingredients to our list?\n(\
 	     'y' for yes, \
@@ -279,75 +257,77 @@ mod recipes {
         );
         while prompt_for_y()? {
             let recipes = read_recipes("recipes.json")?;
-            shopping_list = add_recipes_to_list(shopping_list, recipes)?;
-        }
+            eprintln!(
+		"Which recipes shall we add?\n(\
+		 y to add recipe, \
+		 s to skip to end of recipes, \
+		 any other key for next recipe)"
+            );
+            for r in recipes.recipes {
+		eprintln!("{}?", r.recipe);
+		match input()?.trim() {
+                    "s" => {
+			break;
+                    }
+                    "y" => {
+			shopping_list.recipes.push(r.recipe.to_owned());
+			eprintln!(
+                            "Do we need ... ?\n(\
+			     y to add ingredient, \
+			     c to remind to check, \
+			     a to add this and all remaining ingredients, \
+			     any other key for next ingredient)"
+			);
+			for ingredient in &r.ingredients {
+                            eprintln!("{}?", ingredient.to_lowercase());
+                            match input()?.trim() {
+				"y" => {
+                                    if !shopping_list
+					.list
+					.contains(&ingredient.to_owned().to_lowercase())
+                                    {
+					shopping_list
+                                            .list
+                                            .push(ingredient.to_owned().to_lowercase());
+                                    }
+				}
+				"c" => {
+                                    shopping_list
+					.checklist
+					.push(ingredient.to_owned().to_lowercase());
+				}
+				"a" => {
+                                    for ingredient in r.ingredients {
+					if !shopping_list
+                                            .list
+                                            .contains(&ingredient.to_owned().to_lowercase())
+					{
+                                            shopping_list.list.push(ingredient);
+					}
+                                    }
+                                    break;
+				}
+				&_ => {}
+                            }
+			}
+                    }
+                    &_ => {}
+		}
+            }
+	}
         Ok(shopping_list)
     }
 
-    // takes shopping list and recipes library
-    // and updates shopping list with recipe ingredients
-    pub fn add_recipes_to_list(
-        mut shopping_list: ShoppingList,
-        recipes: Recipes,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
-        eprintln!(
-            "Which recipes shall we add?\n(\
-	     y to add recipe, \
-	     s to skip to end of recipes, \
-	     any other key for next recipe)"
-        );
-        for r in recipes.recipes {
-            eprintln!("{}?", r.recipe);
-            match input()?.trim() {
-                "s" => {
-                    break;
-                }
-                "y" => {
-                    shopping_list.recipes.push(r.recipe.to_owned());
-                    eprintln!(
-                        "Do we need ... ?\n(\
-			 y to add ingredient, \
-			 c to remind to check, \
-			 a to add this and all remaining ingredients, \
-			 any other key for next ingredient)"
-                    );
-                    for ingredient in &r.ingredients {
-                        eprintln!("{}?", ingredient.to_lowercase());
-                        match input()?.trim() {
-                            "y" => {
-                                if !shopping_list
-                                    .list
-                                    .contains(&ingredient.to_owned().to_lowercase())
-                                {
-                                    shopping_list
-                                        .list
-                                        .push(ingredient.to_owned().to_lowercase());
-                                }
-                            }
-                            "c" => {
-                                shopping_list
-                                    .checklist
-                                    .push(ingredient.to_owned().to_lowercase());
-                            }
-                            "a" => {
-                                for ingredient in r.ingredients {
-                                    if !shopping_list
-                                        .list
-                                        .contains(&ingredient.to_owned().to_lowercase())
-                                    {
-                                        shopping_list.list.push(ingredient);
-                                    }
-                                }
-                                break;
-                            }
-                            &_ => {}
-                        }
-                    }
-                }
-                &_ => {}
-            }
-        }
-        Ok(shopping_list)
+    fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let recipes = serde_json::from_reader(reader)?;
+        Ok(recipes)
+    }
+    
+    fn write_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
+        let json = serde_json::to_string(&recipes)?;
+        write_json("recipes.json", json)?;
+        Ok(())
     }
 }
 
@@ -429,6 +409,11 @@ use crate::helpers::*;
 mod helpers {
     use super::*;
 
+    // get user input when it's 'y' or anything else
+    pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
+        Ok("y" == input()?.trim())
+    }
+
     // Function for getting user input
     pub fn input() -> Result<String, Box<dyn Error>> {
         let _ = Write::flush(&mut stdout())?;
@@ -462,7 +447,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     let mut shopping_list = get_list()?;
 
-    shopping_list = add_recipes(shopping_list)?;
+    shopping_list = add_recipes_to_list(shopping_list)?;
 
     shopping_list = add_groceries_to_list(shopping_list)?;
 
