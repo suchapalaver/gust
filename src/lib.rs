@@ -98,13 +98,13 @@ mod groceries {
         );
         while prompt_for_y()? {
             let groceries = read_groceries("groceries.json")?;
-            for section in &groceries.sections {
+            for groceries_section in &groceries.sections {
                 eprintln!(
                     "Do we need {}?\n(\
 		     y for yes, \
 		     s to skip remaining sections, \
 		     any other key to continue)\n",
-                    section.name.to_lowercase()
+                    groceries_section.name.to_lowercase()
                 );
                 match input()?.trim() {
                     "y" => {
@@ -115,7 +115,7 @@ mod groceries {
 			     s to skip to next section, \
 			     any other key to continue)"
                         );
-                        for item in &section.items {
+                        for item in &groceries_section.items {
                             if !shopping_list.items.contains(&item.to_lowercase()) {
                                 eprintln!("{}?", item.to_lowercase());
 
@@ -147,10 +147,10 @@ mod groceries {
 	     any other key for no)"
         );
         while prompt_for_y()? {
-            let sections = read_groceries("groceries.json")?.sections;
             let mut updated_groceries_sections = Vec::new();
 
-            for groceries_section in sections {
+            let groceries = read_groceries("groceries.json")?;
+            for groceries_section in groceries.sections {
                 eprintln!(
                     "Add to our {} section?\n(\
 		     y for yes, \
@@ -241,7 +241,7 @@ mod recipes {
         while prompt_for_y()? {
             let recipes = read_recipes("recipes.json")?;
             eprintln!(
-                "Which recipes shall we add?\n(\
+                "Shall we add ...\n(\
 		 y to add recipe, \
 		 s to skip to end of recipes, \
 		 any other key for next recipe)"
