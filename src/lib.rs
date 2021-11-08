@@ -28,11 +28,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     forgotten_anything()?;
 
-    eprintln!(
-        "Bye! \
-	 Happy shopping! \
-	 Bon appetit!"
-    );
     Ok(())
 }
 
@@ -60,7 +55,7 @@ pub struct Recipes {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Recipe {
     name: String,
-    ingredients: Vec<String>,
+    items: Vec<String>,
 }
 
 // used to serialize and deserialize the
@@ -152,9 +147,8 @@ mod groceries {
 	     any other key for no)"
         );
         while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")?;
-            let sections: Vec<GroceriesSection> = groceries.sections;
-            let mut updated_groceries_sections: Vec<GroceriesSection> = Vec::new();
+            let sections = read_groceries("groceries.json")?.sections;
+            let mut updated_groceries_sections = Vec::new();
 
             for groceries_section in sections {
                 eprintln!(
@@ -166,7 +160,7 @@ mod groceries {
                 );
                 match input()?.trim() {
                     "y" => {
-                        let items = add_groceries_to_section(groceries_section.items)?;
+                        let items = list_input(groceries_section.items)?;
 
                         updated_groceries_sections.push(GroceriesSection {
                             name: groceries_section.name,
@@ -194,27 +188,6 @@ mod groceries {
         Ok(())
     }
 
-    // takes groceries_section_items and
-    // adds user input groceries to section
-    // and returns  the section items
-    fn add_groceries_to_section(mut items: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
-        eprintln!(
-            "What shall we add? \
-	     Enter the items, \
-	     separated by commas"
-        );
-        let mut input: String = input()?;
-        input.pop();
-        let add_items_to_section: Vec<&str> = input.split(',').collect();
-
-        add_items_to_section.iter().for_each(|i| {
-            if !items.contains(&i.to_string()) {
-                items.push(i.to_string());
-            }
-        });
-        Ok(items)
-    }
-
     fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader = read_json(path)?;
         let groceries = serde_json::from_reader(reader)?;
@@ -234,7 +207,7 @@ mod recipes {
         );
         while prompt_for_y()? {
             let recipes = read_recipes("recipes.json")?;
-            let mut updated: Vec<Recipe> = recipes.library;
+            let mut updated = recipes.library;
             let new_recipe = get_new_recipe()?;
             updated.push(new_recipe);
             let recipes = Recipes { library: updated };
@@ -251,20 +224,10 @@ mod recipes {
         let mut name = input()?;
         name.pop();
 
-        eprintln!(
-            "Enter the ingredients, \
-	     separated by commas"
-        );
-        let mut ingredients = input()?;
-        ingredients.pop();
-        let add_ingredients: Vec<&str> = ingredients.split(',').collect();
-        let mut ingredients: Vec<String> = Vec::new();
-        for i in &add_ingredients {
-            if !ingredients.contains(&i.to_string()) {
-                ingredients.push(i.to_string());
-            }
-        }
-        Ok(Recipe { name, ingredients })
+        let items_list = Vec::new();
+        let items = list_input(items_list)?;
+
+        Ok(Recipe { name, items })
     }
 
     pub fn add_recipes_to_list(
@@ -298,7 +261,7 @@ mod recipes {
 			     a to add this and all remaining ingredients, \
 			     any other key for next ingredient)"
                         );
-                        for ingredient in &recipe.ingredients {
+                        for ingredient in &recipe.items {
                             eprintln!("{}?", ingredient.to_lowercase());
                             match input()?.trim() {
                                 "y" => {
@@ -317,7 +280,7 @@ mod recipes {
                                         .push(ingredient.to_owned().to_lowercase());
                                 }
                                 "a" => {
-                                    for ingredient in recipe.ingredients {
+                                    for ingredient in recipe.items {
                                         if !shopping_list
                                             .items
                                             .contains(&ingredient.to_owned().to_lowercase())
@@ -457,6 +420,24 @@ mod helpers {
         let mut input = String::new();
         stdin().read_line(&mut input)?;
         Ok(input)
+    }
+
+    pub fn list_input(mut items_list: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
+        eprintln!(
+            "Enter the items, \
+	     separated by commas"
+        );
+        let mut input_string = input()?;
+        input_string.pop();
+        let input_list: Vec<&str> = input_string.split(',').collect();
+
+        input_list.iter().for_each(|i| {
+            if !items_list.contains(&i.to_string()) {
+                items_list.push(i.to_string());
+            }
+        });
+
+        Ok(items_list)
     }
 
     pub fn forgotten_anything() -> Result<(), Box<dyn Error>> {
