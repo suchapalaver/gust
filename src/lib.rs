@@ -115,58 +115,6 @@ use crate::groceries::*;
 mod groceries {
     use super::*;
 
-    pub fn add_groceries_to_list(
-        mut shopping_list: ShoppingList,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
-        eprintln!(
-            "Add groceries to shopping list?\n(\
-	     'y' for yes, \
-	     any other key to skip)"
-        );
-        while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")?;
-            for groceries_section in &groceries.sections {
-                eprintln!(
-                    "Do we need {}?\n(\
-		     y for yes, \
-		     s to skip remaining sections, \
-		     any other key to continue)\n",
-                    groceries_section.name.to_lowercase()
-                );
-                match input()?.trim() {
-                    "y" => {
-                        eprintln!(
-                            "Do we need ...?\n(\
-			     y for yes, \
-			     c for check, \
-			     s to skip to next section, \
-			     any other key to continue)"
-                        );
-                        for item in &groceries_section.items {
-                            if !shopping_list.items.contains(&item.to_lowercase()) {
-                                eprintln!("{}?", item.to_lowercase());
-
-                                match input()?.trim() {
-                                    "y" => {
-                                        shopping_list.items.push(item.to_lowercase().to_string())
-                                    }
-                                    "c" => shopping_list
-                                        .checklist
-                                        .push(item.to_lowercase().to_string()),
-                                    "s" => break,
-                                    &_ => {}
-                                }
-                            }
-                        }
-                    }
-                    "s" => break,
-                    &_ => {}
-                }
-            }
-        }
-        Ok(shopping_list)
-    }
-
     pub fn update_groceries() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add groceries to our library?\n(\
@@ -215,7 +163,7 @@ mod groceries {
         Ok(())
     }
 
-    fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
+    pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader = read_json(path)?;
         let groceries = serde_json::from_reader(reader)?;
         Ok(groceries)
@@ -243,6 +191,12 @@ mod recipes {
         Ok(())
     }
 
+    pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let recipes = serde_json::from_reader(reader)?;
+        Ok(recipes)
+    }
+
     // Gets a new recipe from user
     // and returns it as a Recipe
     fn get_new_recipe() -> Result<Recipe, Box<dyn Error>> {
@@ -255,6 +209,36 @@ mod recipes {
         let items = list_input(items_list)?;
 
         Ok(Recipe { name, items })
+    }
+
+    fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
+        let json = serde_json::to_string(&recipes)?;
+        write_json("recipes.json", json)?;
+        Ok(())
+    }
+}
+
+use crate::list::*;
+mod list {
+    use super::*;
+
+    pub fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
+        let mut shopping_list = ShoppingList::new()?;
+        eprintln!(
+            "Use most recent list?\n(\
+	     'y' for yes, \
+	     any other key for new list)"
+        );
+        if prompt_for_y()? {
+            shopping_list = read_list("list.json")?;
+        }
+        Ok(shopping_list)
+    }
+
+    fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let shopping_list = serde_json::from_reader(reader)?;
+        Ok(shopping_list)
     }
 
     pub fn add_recipes_to_list(
@@ -328,42 +312,58 @@ mod recipes {
         Ok(shopping_list)
     }
 
-    fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
-        let reader = read_json(path)?;
-        let recipes = serde_json::from_reader(reader)?;
-        Ok(recipes)
-    }
-
-    fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
-        let json = serde_json::to_string(&recipes)?;
-        write_json("recipes.json", json)?;
-        Ok(())
-    }
-}
-
-use crate::list::*;
-mod list {
-    use super::*;
-
-    pub fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
-        let mut shopping_list = ShoppingList::new()?;
+    pub fn add_groceries_to_list(
+        mut shopping_list: ShoppingList,
+    ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
-            "Use most recent list?\n(\
+            "Add groceries to shopping list?\n(\
 	     'y' for yes, \
-	     any other key for new list)"
+	     any other key to skip)"
         );
-        if prompt_for_y()? {
-            shopping_list = read_list("list.json")?;
+        while prompt_for_y()? {
+            let groceries = read_groceries("groceries.json")?;
+            for groceries_section in &groceries.sections {
+                eprintln!(
+                    "Do we need {}?\n(\
+		     y for yes, \
+		     s to skip remaining sections, \
+		     any other key to continue)\n",
+                    groceries_section.name.to_lowercase()
+                );
+                match input()?.trim() {
+                    "y" => {
+                        eprintln!(
+                            "Do we need ...?\n(\
+			     y for yes, \
+			     c for check, \
+			     s to skip to next section, \
+			     any other key to continue)"
+                        );
+                        for item in &groceries_section.items {
+                            if !shopping_list.items.contains(&item.to_lowercase()) {
+                                eprintln!("{}?", item.to_lowercase());
+
+                                match input()?.trim() {
+                                    "y" => {
+                                        shopping_list.items.push(item.to_lowercase().to_string())
+                                    }
+                                    "c" => shopping_list
+                                        .checklist
+                                        .push(item.to_lowercase().to_string()),
+                                    "s" => break,
+                                    &_ => {}
+                                }
+                            }
+                        }
+                    }
+                    "s" => break,
+                    &_ => {}
+                }
+            }
         }
         Ok(shopping_list)
     }
-
-    fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
-        let reader = read_json(path)?;
-        let shopping_list = serde_json::from_reader(reader)?;
-        Ok(shopping_list)
-    }
-
+    
     pub fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Print shopping list?\n\
