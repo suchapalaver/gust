@@ -1,7 +1,7 @@
-# `grustery-list`
+# grusterylist
 ## how to use:
-- [Cloning the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
-- make `grustery-list` the present working directory by entering `$ cd grustery-list` 
-- Run `$ cargo run -- --help` for available options
+- [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+- make `grusterylist` the present working directory by entering `$ cd grusterylist` 
+- run `$ cargo run -- --help` for available options
 ### note
-The JSON files included respectively contain libraries of groceries we regularly buy, some recipes we regularly make, and an example most recent list. You could empty these files out manually to start your libraries from scratch.
+included JSON files respectively contain libraries of some groceries, some recipes, and an example saved list, which you could empty out manually to start from scratch. The `cargo run -- --list` option allows you to begin a new shopping list or use the most recently saved list.
