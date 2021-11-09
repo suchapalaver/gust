@@ -1,3 +1,4 @@
+use clap::{App, Arg};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
@@ -12,19 +13,33 @@ use std::{
 // - recipes.json
 // list.json will be created if not found
 pub fn run() -> Result<(), Box<dyn Error>> {
-    update_groceries()?;
+    let matches = App::new("grustery-list")
+        .about("makes grocery shopping lists")
+	.author("suchapalaver")
+	.arg(Arg::with_name("option")
+	     .takes_value(true)
+	     .short("o")
+	     .long("option")
+	     .required(true)).get_matches();
+			   
+    if let Some(o) = matches.value_of("option") { 
+	match o {
+	    "groceries" => update_groceries()?,
+	    "recipes" => new_recipes()?,
+	    "list" => {
+		let mut shopping_list = get_saved_or_new_list()?;
+		
+		shopping_list = add_recipes_to_list(shopping_list)?;
 
-    new_recipes()?;
+		shopping_list = add_groceries_to_list(shopping_list)?;
+	    
+		save_list(shopping_list)?;
 
-    let mut shopping_list = get_saved_or_new_list()?;
-
-    shopping_list = add_recipes_to_list(shopping_list)?;
-
-    shopping_list = add_groceries_to_list(shopping_list)?;
-
-    save_list(shopping_list)?;
-
-    print_list()?;
+		print_list()?;
+	    }
+	    &_ => return Err(Box::from("invalid option. ")), 
+	}
+    }
 
     forgotten_anything()?;
 
