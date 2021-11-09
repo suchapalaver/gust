@@ -1,6 +1,8 @@
 # grusterylist
+## requirements:
+- If you need to set up git for the first time [The Odin Project](https://www.theodinproject.com/paths/foundations/courses/foundations/lessons/setting-up-git) has a useful tutorial
+- See [The Rust Programming Language's installation chapter](https://doc.rust-lang.org/book/ch01-01-installation.html) if you want help installing Rust
 ## how to use:
-- [install Rust](https://doc.rust-lang.org/book/ch01-01-installation.html) if necessary
 - [clone the grusterylist repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 - make `grusterylist` the present working directory by entering `$ cd grusterylist` 
 - run `$ cargo run -- --help` for available options
