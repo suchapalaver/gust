@@ -14,14 +14,40 @@ use std::{
 // list.json will be created if not found
 pub fn run() -> Result<(), Box<dyn Error>> {
     let matches = App::new("grustery-list")
-        .about("makes grocery shopping lists")
-	.author("suchapalaver")
-	.arg(Arg::with_name("option")
-	     .takes_value(true)
-	     .short("o")
-	     .long("option")
-	     .required(true)).get_matches();
-			   
+        .about("Makes grocery lists in Rust")
+	.author("https://github.com/suchapalaver/")
+	.arg(Arg::with_name("groceries")
+	     .short("g")
+	     .long("groceries")
+             .help("Add groceries to groceries library"))
+	.arg(Arg::with_name("recipes")
+	     .short("r")
+	     .long("recipes")
+	     .help("Add recipes to recipes library"))
+        .arg(Arg::with_name("list")
+	     .short("l")
+	     .long("list")
+             .help("Makes a grocery list"))
+	.get_matches();
+
+    if matches.is_present("groceries") {
+	update_groceries()?;
+    }
+    if matches.is_present("recipes") {
+	new_recipes()?;
+    }
+    if matches.is_present("list") {
+	let mut shopping_list = get_saved_or_new_list()?;
+		
+		shopping_list = add_recipes_to_list(shopping_list)?;
+
+		shopping_list = add_groceries_to_list(shopping_list)?;
+	    
+		save_list(shopping_list)?;
+
+		print_list()?;
+    }
+    /*
     if let Some(o) = matches.value_of("option") { 
 	match o {
 	    "groceries" => update_groceries()?,
@@ -40,7 +66,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	    &_ => return Err(Box::from("invalid option. ")), 
 	}
     }
-
+*/
     forgotten_anything()?;
 
     Ok(())
