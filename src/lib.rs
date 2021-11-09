@@ -7,45 +7,42 @@ use std::{
     path::Path,
 };
 
-// assumes presence in pwd of
-// the following files, working
-// examples of which are in the
-// grustery-list repository:
+// assumes presence in pwd of the following
+// files:
 // - groceries.json
 // - recipes.json
 // - list.json
+// working examples can be found in the
+// grusterylist repository
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let matches = App::new("grustery-list")
-	.help("grustery-list 0.1.0\n\
+    let matches = App::new("grusterylist")
+        .help(
+            "\ngrusterylist 0.1.0\n\
 	       Makes grocery lists in Rust\n\
 	       (C) https://github.com/suchapalaver/\n\n\
-	       USAGE: cargo run -- <opts> (e.g., $ cargo run -- --list)\n\n\
+	       Usage: cargo run -- <opts>\n\n\
 	       Options:\n\
 	       -h, --help       Display this message\n\
 	       -V, --version    Display version info\n\
 	       -g, --groceries  Add groceries to groceries library\n\
 	       -r, --recipes    Add recipes to recipes library\n\
-	       -l, --list       Make a shopping list\n\n")
-	.arg(
-	    Arg::with_name("groceries")
-                .short("g")
+	       -l, --list       Make a shopping list\n\n\
+	       Examples:\n\
+	       $ cargo run -- --groceries\n\
+	       $ cargo run -- -r\n\n",
         )
-        .arg(
-	    Arg::with_name("recipes")
-                .short("r")
-        )
-        .arg(
-	    Arg::with_name("list")
-                .short("l")
-        ).get_matches();
+        .arg(Arg::with_name("groceries").long("groceries").short("g"))
+        .arg(Arg::with_name("recipes").short("r").long("recipes"))
+        .arg(Arg::with_name("list").short("l").long("list"))
+        .get_matches();
 
-    if matches.is_present("groceries") {
+    if matches.is_present("groceries") || matches.is_present("g") {
         update_groceries()?;
     }
-    if matches.is_present("recipes") {
+    if matches.is_present("recipes") || matches.is_present("r") {
         new_recipes()?;
     }
-    if matches.is_present("list") {
+    if matches.is_present("list") || matches.is_present("l") {
         let mut shopping_list = get_saved_or_new_list()?;
 
         shopping_list = add_recipes_to_list(shopping_list)?;
@@ -399,7 +396,7 @@ mod list {
                     println!("\t{}", item);
                 });
             }
-	    println!();
+            println!();
         }
         Ok(())
     }

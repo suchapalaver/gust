@@ -1,5 +1,5 @@
 [package]
-name = "grustery-list"
+name = "grusterylist"
 version = "0.1.0"
 edition = "2018"
 authors = ["https://github.com/suchapalaver"]

@@ -42,7 +42,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "groceries"
+name = "grusterylist"
 version = "0.1.0"
 dependencies = [
  "clap",
