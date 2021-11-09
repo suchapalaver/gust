@@ -17,19 +17,20 @@ use std::{
 pub fn run() -> Result<(), Box<dyn Error>> {
     let matches = App::new("grusterylist")
         .help(
-            "\ngrusterylist 0.1.0\n\
-	       Makes grocery lists in Rust\n\
-	       (C) https://github.com/suchapalaver/\n\n\
-	       Usage: cargo run -- <opts>\n\n\
-	       Options:\n\
-	       -h, --help       Display this message\n\
-	       -V, --version    Display version info\n\
-	       -g, --groceries  Add groceries to groceries library\n\
-	       -r, --recipes    Add recipes to recipes library\n\
-	       -l, --list       Make a shopping list\n\n\
-	       Examples:\n\
-	       $ cargo run -- --groceries\n\
-	       $ cargo run -- -r\n\n",
+            "\n\
+	     grusterylist 0.1.0\n\
+	     Makes grocery lists in Rust\n\
+	     (C) https://github.com/suchapalaver/\n\n\
+	     Usage: cargo run -- <opts>\n\n\
+	     Options:\n\
+	     -h, --help       Display this message\n\
+	     -V, --version    Display version info\n\
+	     -g, --groceries  Add groceries to groceries library\n\
+	     -r, --recipes    Add recipes to recipes library\n\
+	     -l, --list       Make a shopping list\n\n\
+	     Examples:\n\
+	     $ cargo run -- --groceries\n\
+	     $ cargo run -- -r\n\n",
         )
         .arg(Arg::with_name("groceries").long("groceries").short("g"))
         .arg(Arg::with_name("recipes").short("r").long("recipes"))
