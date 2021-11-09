@@ -1,6 +1,6 @@
 # `grustery-list`
 ## how to use:
-- [Cloning the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+- [Clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 - make `grustery-list` the present working directory by entering `$ cd grustery-list` 
 - Run `$ cargo run -- --help` for available options
 ### note
