@@ -1,4 +1,4 @@
-# `grustery-list`
+# grustery-list
 ## how to use:
 - [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 - make `grustery-list` the present working directory by entering `$ cd grustery-list` 
