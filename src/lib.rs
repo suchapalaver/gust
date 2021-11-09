@@ -396,7 +396,7 @@ mod list {
                     println!("\t{}", item);
                 });
             }
-	    println!("");
+	    println!();
         }
         Ok(())
     }
