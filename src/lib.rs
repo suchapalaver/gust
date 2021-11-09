@@ -7,34 +7,37 @@ use std::{
     path::Path,
 };
 
-// updating and using groceries and recipes
-// assumes presence in pwd of:
+// assumes presence in pwd of
+// the following files, working
+// examples of which are in the
+// grustery-list repository:
 // - groceries.json
 // - recipes.json
-// list.json will be created if not found
+// - list.json
 pub fn run() -> Result<(), Box<dyn Error>> {
     let matches = App::new("grustery-list")
-        .about("Makes grocery lists in Rust")
-        .author("https://github.com/suchapalaver/")
-        .arg(
-            Arg::with_name("groceries")
+	.help("grustery-list 0.1.0\n\
+	       Makes grocery lists in Rust\n\
+	       (C) https://github.com/suchapalaver/\n\n\
+	       USAGE: cargo run -- <opts> (e.g., $ cargo run -- --list)\n\n\
+	       Options:\n\
+	       -h, --help       Display this message\n\
+	       -V, --version    Display version info\n\
+	       -g, --groceries  Add groceries to groceries library\n\
+	       -r, --recipes    Add recipes to recipes library\n\
+	       -l, --list       Make a shopping list\n\n")
+	.arg(
+	    Arg::with_name("groceries")
                 .short("g")
-                .long("groceries")
-                .help("Add groceries to groceries library"),
         )
         .arg(
-            Arg::with_name("recipes")
+	    Arg::with_name("recipes")
                 .short("r")
-                .long("recipes")
-                .help("Add recipes to recipes library"),
         )
         .arg(
-            Arg::with_name("list")
+	    Arg::with_name("list")
                 .short("l")
-                .long("list")
-                .help("Makes a grocery list"),
-        )
-        .get_matches();
+        ).get_matches();
 
     if matches.is_present("groceries") {
         update_groceries()?;
@@ -169,8 +172,8 @@ mod groceries {
     pub fn update_groceries() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add groceries to our library?\n(\
-	     'y' for yes, \
-	     any other key for no)"
+	     Enter 'y' to add groceries, \
+	     any other key to exit)"
         );
         while prompt_for_y()? {
             let mut updated_groceries_sections = Vec::new();
