@@ -15,59 +15,44 @@ use std::{
 pub fn run() -> Result<(), Box<dyn Error>> {
     let matches = App::new("grustery-list")
         .about("Makes grocery lists in Rust")
-	.author("https://github.com/suchapalaver/")
-	.arg(Arg::with_name("groceries")
-	     .short("g")
-	     .long("groceries")
-             .help("Add groceries to groceries library"))
-	.arg(Arg::with_name("recipes")
-	     .short("r")
-	     .long("recipes")
-	     .help("Add recipes to recipes library"))
-        .arg(Arg::with_name("list")
-	     .short("l")
-	     .long("list")
-             .help("Makes a grocery list"))
-	.get_matches();
+        .author("https://github.com/suchapalaver/")
+        .arg(
+            Arg::with_name("groceries")
+                .short("g")
+                .long("groceries")
+                .help("Add groceries to groceries library"),
+        )
+        .arg(
+            Arg::with_name("recipes")
+                .short("r")
+                .long("recipes")
+                .help("Add recipes to recipes library"),
+        )
+        .arg(
+            Arg::with_name("list")
+                .short("l")
+                .long("list")
+                .help("Makes a grocery list"),
+        )
+        .get_matches();
 
     if matches.is_present("groceries") {
-	update_groceries()?;
+        update_groceries()?;
     }
     if matches.is_present("recipes") {
-	new_recipes()?;
+        new_recipes()?;
     }
     if matches.is_present("list") {
-	let mut shopping_list = get_saved_or_new_list()?;
-		
-		shopping_list = add_recipes_to_list(shopping_list)?;
+        let mut shopping_list = get_saved_or_new_list()?;
 
-		shopping_list = add_groceries_to_list(shopping_list)?;
-	    
-		save_list(shopping_list)?;
+        shopping_list = add_recipes_to_list(shopping_list)?;
 
-		print_list()?;
+        shopping_list = add_groceries_to_list(shopping_list)?;
+
+        save_list(shopping_list)?;
+
+        print_list()?;
     }
-    /*
-    if let Some(o) = matches.value_of("option") { 
-	match o {
-	    "groceries" => update_groceries()?,
-	    "recipes" => new_recipes()?,
-	    "list" => {
-		let mut shopping_list = get_saved_or_new_list()?;
-		
-		shopping_list = add_recipes_to_list(shopping_list)?;
-
-		shopping_list = add_groceries_to_list(shopping_list)?;
-	    
-		save_list(shopping_list)?;
-
-		print_list()?;
-	    }
-	    &_ => return Err(Box::from("invalid option. ")), 
-	}
-    }
-*/
-    forgotten_anything()?;
 
     Ok(())
 }
@@ -479,17 +464,5 @@ mod helpers {
         });
 
         Ok(items_list)
-    }
-
-    pub fn forgotten_anything() -> Result<(), Box<dyn Error>> {
-        eprintln!(
-            "\nForgotten anything?\n(\
-	     'y' for yes, \
-	     any other key to continue)"
-        );
-        if prompt_for_y()? {
-            run()?; // again
-        }
-        Ok(())
     }
 }
