@@ -1,6 +1,7 @@
 # grusterylist
 ## how to use:
-- [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+- [install Rust](https://doc.rust-lang.org/book/ch01-01-installation.html) if necessary
+- [clone the grusterylist repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 - make `grusterylist` the present working directory by entering `$ cd grusterylist` 
 - run `$ cargo run -- --help` for available options
 ### note
