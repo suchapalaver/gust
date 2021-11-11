@@ -118,31 +118,29 @@ mod groceries {
     pub fn update_groceries() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add groceries to our library?\n(\
-	     Enter 'y' to add groceries, \
+	     Enter 'y' to add groceries,\n\
 	     any other key to exit)"
         );
         while prompt_for_y()? {
             let mut updated_groceries_sections = Vec::new();
-
             let groceries = read_groceries("groceries.json")?;
-            for groceries_section in groceries.sections {
+            let groceries_sections = groceries.sections;
+            for groceries_section in groceries_sections {
                 eprintln!(
                     "Add to our {} section?\n(\
 		     y for yes, \
-		     any other key for no, \
-		     s to skip remaining sections)",
+		     any other key for no)",
                     groceries_section.name
                 );
                 match input()?.trim() {
                     "y" => {
                         let items = list_input(groceries_section.items)?;
 
-                        updated_groceries_sections.push(GroceriesSection {
+			updated_groceries_sections.push(GroceriesSection {
                             name: groceries_section.name,
                             items,
                         });
                     }
-                    "s" => break,
                     &_ => {
                         updated_groceries_sections.push(GroceriesSection {
                             name: groceries_section.name,
@@ -151,15 +149,19 @@ mod groceries {
                     }
                 }
             }
+            let groceries = Groceries {
+                sections: updated_groceries_sections,
+            };
+            let json = serde_json::to_string(&groceries)?;
+            write_json("groceries.json", json)?;
 
-            if !updated_groceries_sections.len() == 0 {
-                let groceries = Groceries {
-                    sections: updated_groceries_sections,
-                };
-                let json = serde_json::to_string(&groceries)?;
-                write_json("groceries.json", json)?;
-            }
+            eprintln!(
+                "Add more groceries to our library?\n(\
+		 Enter 'y' to add groceries,\n\
+		 any other key to exit)"
+            );
         }
+
         Ok(())
     }
 
@@ -187,6 +189,11 @@ mod recipes {
             updated.push(new_recipe);
             let recipes = Recipes { library: updated };
             save_recipes(recipes)?;
+            eprintln!(
+                "Add more recipes to our library?\n(\
+		 'y' for yes, \
+		 any other key for no)"
+            );
         }
         Ok(())
     }
@@ -231,6 +238,10 @@ mod list {
         );
         if prompt_for_y()? {
             shopping_list = read_list("list.json")?;
+        }
+        eprintln!("View current list?");
+        if prompt_for_y()? {
+            print_list()?;
         }
         Ok(shopping_list)
     }
@@ -363,7 +374,7 @@ mod list {
         }
         Ok(shopping_list)
     }
-    
+
     pub fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Print shopping list?\n\
@@ -456,7 +467,9 @@ mod helpers {
 	     separated by commas"
         );
         let mut input_string = input()?;
+
         input_string.pop();
+
         let input_list: Vec<&str> = input_string.split(',').collect();
 
         input_list.iter().for_each(|i| {
