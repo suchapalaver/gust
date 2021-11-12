@@ -115,6 +115,12 @@ use crate::groceries::*;
 mod groceries {
     use super::*;
 
+    pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
+        let reader = read_json(path)?;
+        let groceries = serde_json::from_reader(reader)?;
+        Ok(groceries)
+    }
+
     pub fn update_groceries() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add groceries to our library?\n(\
@@ -122,35 +128,16 @@ mod groceries {
 	     any other key to exit)"
         );
         while prompt_for_y()? {
-            let mut updated_groceries_sections = Vec::new();
             let groceries = read_groceries("groceries.json")?;
-            let groceries_sections = groceries.sections;
-            for groceries_section in groceries_sections {
-                eprintln!(
-                    "Add to our {} section?\n(\
-		     y for yes,\n\
-		     any other key for no)",
-                    groceries_section.name
-                );
-                if prompt_for_y()? {
-                    let items = list_input(groceries_section.items)?;
+	    
+	    let updated_groceries_sections = update_groceries_sections(groceries)?;
 
-                    updated_groceries_sections.push(GroceriesSection {
-                        name: groceries_section.name,
-                        items,
-                    });
-                } else {
-                    updated_groceries_sections.push(GroceriesSection {
-                        name: groceries_section.name,
-                        items: groceries_section.items,
-                    });
-                }
-            }
-            let groceries = Groceries {
+	    let groceries = Groceries {
                 sections: updated_groceries_sections,
             };
             let json = serde_json::to_string(&groceries)?;
-            write_json("groceries.json", json)?;
+
+	    write_json("groceries.json", json)?;
 
             eprintln!(
                 "Add more groceries to our library?\n(\
@@ -158,14 +145,36 @@ mod groceries {
 		 any other key to exit)"
             );
         }
-
         Ok(())
     }
 
-    pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path)?;
-        let groceries = serde_json::from_reader(reader)?;
-        Ok(groceries)
+    fn update_groceries_sections(groceries: Groceries) -> Result<Vec<GroceriesSection>, Box<dyn Error>>{
+	let mut updated_groceries_sections = Vec::new();
+
+	let groceries_sections = groceries.sections;
+	
+        for groceries_section in groceries_sections {
+            eprintln!(
+                "Add to our {} section?\n(\
+		 y for yes,\n\
+		 any other key for no)",
+                groceries_section.name
+            );
+            if prompt_for_y()? {
+                let items = list_input(groceries_section.items)?;
+
+                updated_groceries_sections.push(GroceriesSection {
+                    name: groceries_section.name,
+                    items,
+                });
+            } else {
+                updated_groceries_sections.push(GroceriesSection {
+                    name: groceries_section.name,
+                    items: groceries_section.items,
+                });
+            }
+        }
+	Ok(updated_groceries_sections)
     }
 }
 
