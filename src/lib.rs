@@ -350,11 +350,7 @@ mod list {
 
             match input()?.trim() {
                 "y" => shopping_list = add_ingredient_to_list(shopping_list, ingredient)?,
-                "c" => {
-                    shopping_list
-                        .checklist
-                        .push(ingredient.to_owned().to_lowercase());
-                }
+                "c" => shopping_list = add_ingredient_to_checklist(shopping_list, ingredient)?,
                 "a" => {
                     for ingredient in recipe_items {
                         if !shopping_list
@@ -381,6 +377,13 @@ mod list {
                 .items
                 .push(ingredient.to_owned().to_lowercase());
         }
+	Ok(shopping_list)
+    }
+
+    fn add_ingredient_to_checklist(mut shopping_list: ShoppingList, ingredient: &String) -> Result<ShoppingList, Box<dyn Error>> {
+	shopping_list
+            .checklist
+            .push(ingredient.to_owned().to_lowercase());
 	Ok(shopping_list)
     }
 
