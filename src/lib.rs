@@ -136,7 +136,7 @@ mod groceries {
                     "y" => {
                         let items = list_input(groceries_section.items)?;
 
-			updated_groceries_sections.push(GroceriesSection {
+                        updated_groceries_sections.push(GroceriesSection {
                             name: groceries_section.name,
                             items,
                         });
@@ -177,6 +177,20 @@ mod recipes {
     use super::*;
 
     pub fn new_recipes() -> Result<(), Box<dyn Error>> {
+        eprintln!(
+            "View the recipes we have\
+	     in our library?\n(\
+	     'y' for yes,\
+	     any other key for no)"
+        );
+        if prompt_for_y()? {
+            let recipes = read_recipes("recipes.json")?;
+            eprintln!("Here are our recipes:");
+            for recipe in recipes.library {
+                eprintln!("- {}", recipe.name.to_string());
+            }
+            eprintln!();
+        }
         eprintln!(
             "Add recipes to our library?\n(\
 	     'y' for yes,\n\
@@ -319,12 +333,11 @@ mod list {
                     &_ => {}
                 }
             }
-	    eprintln!(
-            "Add any more recipe ingredients to our list?\n(\
+            eprintln!(
+                "Add any more recipe ingredients to our list?\n(\
 	     'y' for yes,\n\
 	     any other key for no)"
-        );
-       
+            );
         }
         Ok(shopping_list)
     }
@@ -377,12 +390,11 @@ mod list {
                     &_ => {}
                 }
             }
-	    eprintln!(
-		"Add more groceries to shopping list?\n(\
+            eprintln!(
+                "Add more groceries to shopping list?\n(\
 		 'y' for yes,\n\
 		 any other key to skip)"
             );
-      
         }
         Ok(shopping_list)
     }
