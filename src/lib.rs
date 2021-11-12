@@ -319,6 +319,12 @@ mod list {
                     &_ => {}
                 }
             }
+	    eprintln!(
+            "Add any more recipe ingredients to our list?\n(\
+	     'y' for yes,\n\
+	     any other key for no)"
+        );
+       
         }
         Ok(shopping_list)
     }
@@ -371,6 +377,12 @@ mod list {
                     &_ => {}
                 }
             }
+	    eprintln!(
+		"Add more groceries to shopping list?\n(\
+		 'y' for yes,\n\
+		 any other key to skip)"
+            );
+      
         }
         Ok(shopping_list)
     }
