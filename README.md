@@ -1,5 +1,5 @@
 # `grusterylist`: makes grocery lists, written in Rust  
-`grusterylist` uses and can add to local libraries of user-added recipes (`recipes.json`) and grocery items (`groceries.json`) to put together grocery lists conveniently
+`grusterylist` uses and can add to local libraries of user-added recipes and grocery items to put together grocery lists conveniently
 ## how to ...
 - make `grusterylist` the present working directory by entering `$ cd grusterylist`  
 - run `$ cargo run -- --help` for available options  
