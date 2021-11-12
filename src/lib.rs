@@ -54,7 +54,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
         print_list()?;
     }
-
     Ok(())
 }
 
@@ -407,7 +406,8 @@ mod list {
         mut shopping_list: ShoppingList,
         groceries: Groceries,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        for groceries_section in &groceries.sections {
+        let groceries_sections = groceries.sections;
+        for groceries_section in groceries_sections {
             eprintln!(
                 "Do we need {}?\n(\
 		 y for yes,\n\
@@ -417,32 +417,41 @@ mod list {
             );
             match input()?.trim() {
                 "y" => {
-                    eprintln!(
-                        "Do we need ...?\n(\
-			 y for yes,\n\
-			 c for check,\n\
-			 s to skip to next section,\n\
-			 any other key to continue)"
-                    );
-                    for item in &groceries_section.items {
-                        if !shopping_list.items.contains(&item.to_lowercase()) {
-                            eprintln!("{}?", item.to_lowercase());
-
-                            match input()?.trim() {
-                                "y" => shopping_list.items.push(item.to_lowercase().to_string()),
-                                "c" => shopping_list
-                                    .checklist
-                                    .push(item.to_lowercase().to_string()),
-                                "s" => break,
-                                &_ => {}
-                            }
-                        }
-                    }
+                    shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?;
                 }
                 "s" => break,
                 &_ => {}
             }
         }
+        Ok(shopping_list)
+    }
+
+    fn add_grocery_section_to_list(
+        mut shopping_list: ShoppingList,
+        groceries_section: GroceriesSection,
+    ) -> Result<ShoppingList, Box<dyn Error>> {
+        eprintln!(
+            "Do we need ...?\n(\
+	     y for yes,\n\
+	     c for check,\n\
+	     s to skip to next section,\n\
+	     any other key to continue)"
+        );
+        for item in groceries_section.items {
+            if !shopping_list.items.contains(&item.to_lowercase()) {
+                eprintln!("{}?", item.to_lowercase());
+
+                match input()?.trim() {
+                    "y" => shopping_list.items.push(item.to_lowercase().to_string()),
+                    "c" => shopping_list
+                        .checklist
+                        .push(item.to_lowercase().to_string()),
+                    "s" => break,
+                    &_ => {}
+                }
+            }
+        }
+
         Ok(shopping_list)
     }
 
