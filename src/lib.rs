@@ -314,12 +314,8 @@ mod list {
                 eprintln!("{}?", recipe.name);
 
                 match input()?.trim() {
-                    "s" => {
-                        break;
-                    }
-                    "y" => {
-                        shopping_list = add_recipe_to_list(shopping_list, recipe)?;
-                    }
+                    "y" => shopping_list = add_recipe_to_list(shopping_list, recipe)?,
+		    "s" => break,
                     &_ => {}
                 }
             }
@@ -344,7 +340,7 @@ mod list {
 	     a to add this and all remaining ingredients,\n\
 	     any other key for next ingredient)"
         );
-	let recipe_items = recipe.items; 
+        let recipe_items = recipe.items;
         for ingredient in &recipe_items {
             eprintln!("{}?", ingredient.to_lowercase());
 
@@ -352,14 +348,7 @@ mod list {
                 "y" => shopping_list = add_ingredient_to_list(shopping_list, ingredient)?,
                 "c" => shopping_list = add_ingredient_to_checklist(shopping_list, ingredient)?,
                 "a" => {
-                    for ingredient in recipe_items {
-                        if !shopping_list
-                            .items
-                            .contains(&ingredient.to_owned().to_lowercase())
-                        {
-                            shopping_list.items.push(ingredient);
-                        }
-                    }
+                    shopping_list = add_all_ingredients_to_list(shopping_list, recipe_items)?;
                     break;
                 }
                 &_ => {}
@@ -368,8 +357,11 @@ mod list {
         Ok(shopping_list)
     }
 
-    fn add_ingredient_to_list(mut shopping_list: ShoppingList, ingredient: &String) -> Result<ShoppingList, Box<dyn Error>> {
-	if !shopping_list
+    fn add_ingredient_to_list(
+        mut shopping_list: ShoppingList,
+        ingredient: &str,
+    ) -> Result<ShoppingList, Box<dyn Error>> {
+        if !shopping_list
             .items
             .contains(&ingredient.to_owned().to_lowercase())
         {
@@ -377,14 +369,32 @@ mod list {
                 .items
                 .push(ingredient.to_owned().to_lowercase());
         }
-	Ok(shopping_list)
+        Ok(shopping_list)
     }
 
-    fn add_ingredient_to_checklist(mut shopping_list: ShoppingList, ingredient: &String) -> Result<ShoppingList, Box<dyn Error>> {
-	shopping_list
+    fn add_all_ingredients_to_list(
+        mut shopping_list: ShoppingList,
+        recipe_items: Vec<String>,
+    ) -> Result<ShoppingList, Box<dyn Error>> {
+        for ingredient in recipe_items {
+            if !shopping_list
+                .items
+                .contains(&ingredient.to_owned().to_lowercase())
+            {
+                shopping_list.items.push(ingredient);
+            }
+        }
+        Ok(shopping_list)
+    }
+
+    fn add_ingredient_to_checklist(
+        mut shopping_list: ShoppingList,
+        ingredient: &str,
+    ) -> Result<ShoppingList, Box<dyn Error>> {
+        shopping_list
             .checklist
             .push(ingredient.to_owned().to_lowercase());
-	Ok(shopping_list)
+        Ok(shopping_list)
     }
 
     pub fn add_groceries_to_list(
@@ -414,6 +424,7 @@ mod list {
         groceries: Groceries,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         let groceries_sections = groceries.sections;
+
         for groceries_section in groceries_sections {
             eprintln!(
                 "Do we need {}?\n(\
@@ -423,9 +434,7 @@ mod list {
                 groceries_section.name.to_lowercase()
             );
             match input()?.trim() {
-                "y" => {
-                    shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?;
-                }
+                "y" => shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?,
                 "s" => break,
                 &_ => {}
             }
