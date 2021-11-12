@@ -132,21 +132,18 @@ mod groceries {
 		     any other key for no)",
                     groceries_section.name
                 );
-                match input()?.trim() {
-                    "y" => {
-                        let items = list_input(groceries_section.items)?;
+                if prompt_for_y()? {
+                    let items = list_input(groceries_section.items)?;
 
-                        updated_groceries_sections.push(GroceriesSection {
-                            name: groceries_section.name,
-                            items,
-                        });
-                    }
-                    &_ => {
-                        updated_groceries_sections.push(GroceriesSection {
-                            name: groceries_section.name,
-                            items: groceries_section.items,
-                        });
-                    }
+                    updated_groceries_sections.push(GroceriesSection {
+                        name: groceries_section.name,
+                        items,
+                    });
+                } else {
+                    updated_groceries_sections.push(GroceriesSection {
+                        name: groceries_section.name,
+                        items: groceries_section.items,
+                    });
                 }
             }
             let groceries = Groceries {
@@ -157,7 +154,7 @@ mod groceries {
 
             eprintln!(
                 "Add more groceries to our library?\n(\
-		 Enter 'y' to add groceries,\n\
+		 'y' to keep adding,\n\
 		 any other key to exit)"
             );
         }
