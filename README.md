@@ -2,7 +2,7 @@
 `grusterylist` uses and can add to local libraries of user-added recipes (`recipes.json`) and grocery items (`groceries.json`) to put together grocery lists conveniently
 ## how to ...
 - make `grusterylist` the present working directory by entering `$ cd grusterylist`  
-- run `$ cargo run -- --help` for available options
+- run `$ cargo run -- --help` for available options  
 (no need to type the `$`, that's just a convention to show that these are command line interface commands)
 ## in order to clone the repository and run a program using Rust ...
 - [clone the grusterylist repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
