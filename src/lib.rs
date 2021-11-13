@@ -115,25 +115,25 @@ mod groceries {
     use super::*;
 
     pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path).map_err(|e| {
+        let reader = read_json(path).map_err(|err_msg| {
             format!(
                 "Error message:\n\
 		 '{}'\n\
 		 Make sure a groceries library file \
 		 named 'groceries.json' is in the \
 		 present working directory",
-                e
+                err_msg
             )
         })?;
 
-        let groceries = serde_json::from_reader(reader).map_err(|e| {
+        let groceries = serde_json::from_reader(reader).map_err(|err_msg| {
             format!(
                 "Error deserializing groceries library!\n\
 		 This suggests something's wrong with the JSON file. \
 		 See the example json files in the grusterylist repository.\n\
 		 Here's the error message:\n\
 		 '{}'",
-                e
+                err_msg
             )
         })?;
 
@@ -212,25 +212,25 @@ mod recipes {
     use super::*;
 
     pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
-        let reader = read_json(path).map_err(|e| {
+        let reader = read_json(path).map_err(|err_msg| {
             format!(
                 "Error message:\n\
 		 '{}'\n\
 		 Make sure a recipes library file \
 		 named 'recipes.json' is in the \
 		 present working directory",
-                e
+                err_msg
             )
         })?;
 
-        let recipes = serde_json::from_reader(reader).map_err(|e| {
+        let recipes = serde_json::from_reader(reader).map_err(|err_msg| {
             format!(
                 "Error deserializing recipes library!\n\
 		 This suggests something's wrong with the JSON file. \
 		 See the example json files in the grusterylist repository.\n\
 		 Here's the error message:\n\
 		 '{}'",
-                e
+                err_msg
             )
         })?;
 
@@ -247,11 +247,11 @@ mod recipes {
         if prompt_for_y()? {
             let path = "recipes.json";
 
-            let recipes = read_recipes(path).map_err(|e| {
+            let recipes = read_recipes(path).map_err(|err_msg| {
                 format!(
                     "Error reading from path '{}':\n\
 		     '{}'",
-                    path, e
+                    path, err_msg
                 )
             })?;
 
@@ -270,11 +270,11 @@ mod recipes {
         while prompt_for_y()? {
             let path = "recipes.json";
 
-            let recipes = read_recipes(path).map_err(|e| {
+            let recipes = read_recipes(path).map_err(|err_msg| {
                 format!(
                     "Error reading from path '{}':\n\
 		     '{}'",
-                    path, e
+                    path, err_msg
                 )
             })?;
 
@@ -330,16 +330,25 @@ mod list {
         let mut shopping_list = ShoppingList::new()?;
 
         eprintln!(
-            "Use most recent list?\n\
+            "Use saved list?\n\
 	     (*y* for yes, \
 	     any other key for new list)"
         );
         if prompt_for_y()? {
-            shopping_list = read_list("list.json")?;
+            let path = "list.json";
+            shopping_list = read_list(path).map_err(|err_msg| {
+                format!(
+                    "Error reading from path '{}':\n\
+		     '{}'",
+                    path, err_msg
+                )
+            })?;
         }
-        eprintln!("View current list?\n\
+        eprintln!(
+            "View current list?\n\
 		   (*y* for yes, \
-		   or *any other key*)");
+		   or *any other key*)"
+        );
 
         if prompt_for_y()? {
             print_list()?;
@@ -348,9 +357,27 @@ mod list {
     }
 
     fn read_list<P: AsRef<Path>>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
-        let reader = read_json(path)?;
+        let reader = read_json(path).map_err(|err_msg| {
+            format!(
+                "Error message:\n\
+		 '{}'\n\
+		 Make sure a list file \
+		 named 'list.json' is in the \
+		 present working directory",
+                err_msg
+            )
+        })?;
 
-        let shopping_list = serde_json::from_reader(reader)?;
+        let shopping_list = serde_json::from_reader(reader).map_err(|err_msg| {
+            format!(
+                "Error deserializing list!\n\
+		 This suggests something's wrong with the JSON file. \
+		 See the example json files in the grusterylist repository.\n\
+		 Here's the error message:\n\
+		 '{}'",
+                err_msg
+            )
+        })?;
 
         Ok(shopping_list)
     }
@@ -364,7 +391,15 @@ mod list {
 	     any other key for no)"
         );
         while prompt_for_y()? {
-            let recipes = read_recipes("recipes.json")?;
+            let path = "recipes.json";
+
+            let recipes = read_recipes(path).map_err(|err_msg| {
+                format!(
+                    "Error reading from path '{}':\n\
+		     '{}'",
+                    path, err_msg
+                )
+            })?;
 
             eprintln!(
                 "Shall we add ...\n(\
@@ -395,6 +430,7 @@ mod list {
         recipe: Recipe,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         shopping_list.recipes.push(recipe.name.to_owned());
+
         eprintln!(
             "Do we need ... ?\n\
 	     (*y* to add ingredient, \
@@ -402,7 +438,9 @@ mod list {
 	     *a* to add this and all remaining ingredients, \
 	     *any other key* for next ingredient)"
         );
+
         let recipe_items = recipe.items;
+
         for ingredient in &recipe_items {
             eprintln!("{}?", ingredient.to_lowercase());
 
@@ -468,8 +506,15 @@ mod list {
 	     *any other key* to skip)"
         );
         while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")
-                .map_err(|e| format!("Issue reading groceries JSON file:\n'{}'", e))?;
+            let path = "groceries.json";
+
+            let groceries = read_groceries(path).map_err(|err_msg| {
+                format!(
+                    "Error reading from path '{}':\n\
+		     '{}'",
+                    path, err_msg
+                )
+            })?;
 
             shopping_list = add_grocery_sections_to_list(shopping_list, groceries)?;
 
@@ -542,8 +587,17 @@ mod list {
 	     (*y* for yes, \
 	     *any other key* to continue)"
         );
+	
         if prompt_for_y()? {
-            let shopping_list = read_list("list.json")?;
+            let path = "list.json";
+
+            let shopping_list = read_list(path).map_err(|err_msg| {
+                format!(
+                    "Error reading from path '{}':\n\
+		     '{}'",
+                    path, err_msg
+                )
+            })?;
 
             if !shopping_list.checklist.is_empty()
                 && !shopping_list.recipes.is_empty()
@@ -638,6 +692,7 @@ mod helpers {
             "Enter the items, \
 	     separated by commas"
         );
+	
         let mut input_string = input()?;
 
         input_string.pop();
