@@ -115,21 +115,47 @@ mod groceries {
     use super::*;
 
     pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path)?;
+        let reader = read_json(path).map_err(|e| {
+            format!(
+                "Error message:\n\
+		 '{}'\n\
+		 Make sure a groceries library file \
+		 named 'groceries.json' is in the \
+		 present working directory",
+                e
+            )
+        })?;
 
-        let groceries = serde_json::from_reader(reader)?;
+        let groceries = serde_json::from_reader(reader).map_err(|e| {
+            format!(
+                "Error deserializing groceries library!\n\
+		 This suggests something's wrong with the JSON file. \
+		 See the example json files in the grusterylist repository.\n\
+		 Here's the error message:\n\
+		 '{}'",
+                e
+            )
+        })?;
 
         Ok(groceries)
     }
 
     pub fn update_groceries() -> Result<(), Box<dyn Error>> {
         eprintln!(
-            "Add groceries to our library?\n(\
-	     Enter 'y' to add groceries,\n\
-	     any other key to exit)"
+            "Add groceries to our library?\n\
+	     (*y* to add groceries, \
+	     *any other key* to exit)"
         );
         while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")?;
+            let path = "groceries.json";
+
+            let groceries = read_groceries(path).map_err(|e| {
+                format!(
+                    "Error reading from path '{}':\n\
+		     '{}'",
+                    path, e
+                )
+            })?;
 
             let updated_groceries_sections = update_groceries_sections(groceries)?;
 
@@ -138,12 +164,12 @@ mod groceries {
             };
             let json = serde_json::to_string(&groceries)?;
 
-            write_json("groceries.json", json)?;
+            write_json(path, json)?;
 
             eprintln!(
-                "Add more groceries to our library?\n(\
-		 'y' to keep adding,\n\
-		 any other key to exit)"
+                "Add more groceries to our library?\n\
+		 (*y* to keep adding, \
+		 *any other key* to exit)"
             );
         }
         Ok(())
@@ -158,9 +184,9 @@ mod groceries {
 
         for groceries_section in groceries_sections {
             eprintln!(
-                "Add to our {} section?\n(\
-		 y for yes,\n\
-		 any other key for no)",
+                "Add to our {} section?\n\
+		 (*y* for yes, \
+		 *any other key* for no)",
                 groceries_section.name
             );
             if prompt_for_y()? {
@@ -185,15 +211,49 @@ use crate::recipes::*;
 mod recipes {
     use super::*;
 
+    pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
+        let reader = read_json(path).map_err(|e| {
+            format!(
+                "Error message:\n\
+		 '{}'\n\
+		 Make sure a recipes library file \
+		 named 'recipes.json' is in the \
+		 present working directory",
+                e
+            )
+        })?;
+
+        let recipes = serde_json::from_reader(reader).map_err(|e| {
+            format!(
+                "Error deserializing recipes library!\n\
+		 This suggests something's wrong with the JSON file. \
+		 See the example json files in the grusterylist repository.\n\
+		 Here's the error message:\n\
+		 '{}'",
+                e
+            )
+        })?;
+
+        Ok(recipes)
+    }
+
     pub fn new_recipes() -> Result<(), Box<dyn Error>> {
         eprintln!(
-            "View the recipes we have\
-	     in our library?\n(\
-	     'y' for yes,\
-	     any other key for no)"
+            "View the recipes we have \
+	     in our library?\n\
+	     (*y* for yes, \
+	     *any other key* for no)"
         );
         if prompt_for_y()? {
-            let recipes = read_recipes("recipes.json")?;
+            let path = "recipes.json";
+
+            let recipes = read_recipes(path).map_err(|e| {
+                format!(
+                    "Error reading from path '{}':\n\
+		     '{}'",
+                    path, e
+                )
+            })?;
 
             eprintln!("Here are our recipes:");
 
@@ -203,12 +263,20 @@ mod recipes {
             eprintln!();
         }
         eprintln!(
-            "Add recipes to our library?\n(\
-	     'y' for yes,\n\
-	     any other key for no)"
+            "Add recipes to our library?\n\
+	     (*y* for yes, \
+	     *any other key* for no)"
         );
         while prompt_for_y()? {
-            let recipes = read_recipes("recipes.json")?;
+            let path = "recipes.json";
+
+            let recipes = read_recipes(path).map_err(|e| {
+                format!(
+                    "Error reading from path '{}':\n\
+		     '{}'",
+                    path, e
+                )
+            })?;
 
             let mut updated = recipes.library;
 
@@ -221,20 +289,12 @@ mod recipes {
             save_recipes(recipes)?;
 
             eprintln!(
-                "Add more recipes to our library?\n(\
-		 'y' for yes,\n\
-		 any other key for no)"
+                "Add more recipes to our library?\n\
+		 (*y* for yes, \
+		 *any other key* for no)"
             );
         }
         Ok(())
-    }
-
-    pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
-        let reader = read_json(path)?;
-
-        let recipes = serde_json::from_reader(reader)?;
-
-        Ok(recipes)
     }
 
     // Gets a new recipe from user
@@ -270,14 +330,16 @@ mod list {
         let mut shopping_list = ShoppingList::new()?;
 
         eprintln!(
-            "Use most recent list?\n(\
-	     'y' for yes, \
+            "Use most recent list?\n\
+	     (*y* for yes, \
 	     any other key for new list)"
         );
         if prompt_for_y()? {
             shopping_list = read_list("list.json")?;
         }
-        eprintln!("View current list?");
+        eprintln!("View current list?\n\
+		   (*y* for yes, \
+		   or *any other key*)");
 
         if prompt_for_y()? {
             print_list()?;
@@ -297,8 +359,8 @@ mod list {
         mut shopping_list: ShoppingList,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
-            "Add recipe ingredients to our list?\n(\
-	     'y' for yes,\n\
+            "Add recipe ingredients to our list?\n\
+	     (*y* for yes, \
 	     any other key for no)"
         );
         while prompt_for_y()? {
@@ -306,23 +368,23 @@ mod list {
 
             eprintln!(
                 "Shall we add ...\n(\
-		 y to add recipe,\n\
-		 s to skip to end of recipes,\n\
-		 any other key for next recipe)"
+		 *y* to add recipe, \
+		 *s* to skip to end of recipes, \
+		 *any other key* for next recipe)"
             );
             for recipe in recipes.library {
                 eprintln!("{}?", recipe.name);
 
                 match input()?.trim() {
                     "y" => shopping_list = add_recipe_to_list(shopping_list, recipe)?,
-		    "s" => break,
+                    "s" => break,
                     &_ => {}
                 }
             }
             eprintln!(
                 "Add any more recipe ingredients to our list?\n(\
-		 'y' for yes,\n\
-		 any other key for no)"
+		 *y* for yes, \
+		 *any other key* for no)"
             );
         }
         Ok(shopping_list)
@@ -334,11 +396,11 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         shopping_list.recipes.push(recipe.name.to_owned());
         eprintln!(
-            "Do we need ... ?\n(\
-	     y to add ingredient,\n\
-	     c to remind to check,\n\
-	     a to add this and all remaining ingredients,\n\
-	     any other key for next ingredient)"
+            "Do we need ... ?\n\
+	     (*y* to add ingredient, \
+	     *c* to remind to check, \
+	     *a* to add this and all remaining ingredients, \
+	     *any other key* for next ingredient)"
         );
         let recipe_items = recipe.items;
         for ingredient in &recipe_items {
@@ -401,19 +463,20 @@ mod list {
         mut shopping_list: ShoppingList,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
-            "Add groceries to shopping list?\n(\
-	     'y' for yes,\n\
-	     any other key to skip)"
+            "Add groceries to shopping list?\n\
+	     (*y* for yes, \
+	     *any other key* to skip)"
         );
         while prompt_for_y()? {
-            let groceries = read_groceries("groceries.json")?;
+            let groceries = read_groceries("groceries.json")
+                .map_err(|e| format!("Issue reading groceries JSON file:\n'{}'", e))?;
 
             shopping_list = add_grocery_sections_to_list(shopping_list, groceries)?;
 
             eprintln!(
-                "Add more groceries to shopping list?\n(\
-		 'y' for yes,\n\
-		 any other key to skip)"
+                "Add more groceries to shopping list?\n\
+		 (*y* for yes, \
+		 *any other key* to skip)"
             );
         }
         Ok(shopping_list)
@@ -427,14 +490,16 @@ mod list {
 
         for groceries_section in groceries_sections {
             eprintln!(
-                "Do we need {}?\n(\
-		 y for yes,\n\
-		 s to skip remaining sections,\
-		 any other key to continue)\n",
+                "Do we need {}?\n\
+		 (*y* for yes, \
+		 *s* to skip remaining sections, \
+		 *any other key* to continue)\n",
                 groceries_section.name.to_lowercase()
             );
             match input()?.trim() {
-                "y" => shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?,
+                "y" => {
+                    shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?
+                }
                 "s" => break,
                 &_ => {}
             }
@@ -447,11 +512,11 @@ mod list {
         groceries_section: GroceriesSection,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
-            "Do we need ...?\n(\
-	     y for yes,\n\
-	     c for check,\n\
-	     s to skip to next section,\n\
-	     any other key to continue)"
+            "Do we need ...?\n\
+	     (*y* for yes, \
+	     *c* for check, \
+	     *s* to skip to next section, \
+	     *any other key* to continue)"
         );
         for item in groceries_section.items {
             if !shopping_list.items.contains(&item.to_lowercase()) {
@@ -474,8 +539,8 @@ mod list {
     pub fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Print shopping list?\n\
-	     ('y' for yes,\n\
-	     any other key to continue)"
+	     (*y* for yes, \
+	     *any other key* to continue)"
         );
         if prompt_for_y()? {
             let shopping_list = read_list("list.json")?;
@@ -515,8 +580,8 @@ mod list {
     pub fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Save current list?\n\
-	     ('y' for yes,\n\
-	     any other key to continue)"
+	     (*y* for yes, \
+	     *any other key* to continue)"
         );
         if prompt_for_y()? {
             let json = serde_json::to_string(&shopping_list)?;
@@ -567,9 +632,10 @@ mod helpers {
         Ok(input)
     }
 
+    //
     pub fn list_input(mut items_list: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
         eprintln!(
-            "Enter the items,\n\
+            "Enter the items, \
 	     separated by commas"
         );
         let mut input_string = input()?;
