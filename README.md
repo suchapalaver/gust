@@ -5,7 +5,7 @@
 - run `$ cargo run -- --help` for available options  
 (no need to type the `$`, that's just a convention to show that these are command line interface commands)
 ## in order to clone the repository and run a program using Rust ...
-- [clone the grusterylist repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+- [clone the `grusterylist` repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 - to set up git for the first time [The Odin Project](https://www.theodinproject.com/paths/foundations/courses/foundations/lessons/setting-up-git) has a useful tutorial
 - see [The Rust Programming Language's installation chapter](https://doc.rust-lang.org/book/ch01-01-installation.html) if you want help installing Rust
 ### note
