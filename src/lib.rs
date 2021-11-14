@@ -355,15 +355,8 @@ mod list {
                 )
             })?;
         }
-        eprintln!(
-            "View current list?\n\
-		   (*y* for yes, \
-		   or *any other key*)"
-        );
-
-        if prompt_for_y()? {
-            print_list()?;
-        }
+        print_list()?;
+        
         Ok(shopping_list)
     }
 
@@ -598,7 +591,7 @@ mod list {
 
     pub fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
-            "Print shopping list?\n\
+            "Print out shopping list?\n\
 	     (*y* for yes, \
 	     *any other key* to continue)"
         );
