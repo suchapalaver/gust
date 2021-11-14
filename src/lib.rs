@@ -129,7 +129,7 @@ mod groceries {
         let groceries = serde_json::from_reader(reader).map_err(|err_msg| {
             format!(
                 "Error deserializing groceries library!\n\
-		 This suggests something's wrong with the JSON file. \
+		 Something's wrong with the JSON file? \
 		 See the example json files in the grusterylist repository.\n\
 		 Here's the error message:\n\
 		 '{}'",
@@ -146,6 +146,7 @@ mod groceries {
 	     (*y* to add groceries, \
 	     *any other key* to exit)"
         );
+
         while prompt_for_y()? {
             let path = "groceries.json";
 
@@ -162,6 +163,7 @@ mod groceries {
             let groceries = Groceries {
                 sections: updated_groceries_sections,
             };
+
             let json = serde_json::to_string(&groceries)?;
 
             write_json(path, json)?;
@@ -189,6 +191,7 @@ mod groceries {
 		 *any other key* for no)",
                 groceries_section.name
             );
+
             if prompt_for_y()? {
                 let items = list_input(groceries_section.items)?;
 
@@ -226,7 +229,7 @@ mod recipes {
         let recipes = serde_json::from_reader(reader).map_err(|err_msg| {
             format!(
                 "Error deserializing recipes library!\n\
-		 This suggests something's wrong with the JSON file. \
+		 Something's wrong with the JSON file? \
 		 See the example json files in the grusterylist repository.\n\
 		 Here's the error message:\n\
 		 '{}'",
@@ -244,6 +247,7 @@ mod recipes {
 	     (*y* for yes, \
 	     *any other key* for no)"
         );
+
         if prompt_for_y()? {
             print_recipes()?;
         }
@@ -252,7 +256,7 @@ mod recipes {
 	     (*y* for yes, \
 	     *any other key* for no)"
         );
-	
+
         while prompt_for_y()? {
             let path = "recipes.json";
 
@@ -284,7 +288,7 @@ mod recipes {
     }
 
     fn print_recipes() -> Result<(), Box<dyn Error>> {
-	let path = "recipes.json";
+        let path = "recipes.json";
 
         let recipes = read_recipes(path).map_err(|err_msg| {
             format!(
@@ -293,15 +297,15 @@ mod recipes {
                 path, err_msg
             )
         })?;
-	
+
         eprintln!("Here are our recipes:");
 
         for recipe in recipes.library {
             eprintln!("- {}", recipe.name.to_string());
         }
         eprintln!();
-	
-	Ok(())
+
+        Ok(())
     }
 
     // Gets a new recipe from user
@@ -378,7 +382,7 @@ mod list {
         let shopping_list = serde_json::from_reader(reader).map_err(|err_msg| {
             format!(
                 "Error deserializing list!\n\
-		 This suggests something's wrong with the JSON file. \
+		 Something's wrong with the JSON file? \
 		 See the example json files in the grusterylist repository.\n\
 		 Here's the error message:\n\
 		 '{}'",
@@ -414,6 +418,7 @@ mod list {
 		 *s* to skip to end of recipes, \
 		 *any other key* for next recipe)"
             );
+
             for recipe in recipes.library {
                 eprintln!("{}?", recipe.name);
 
@@ -501,6 +506,7 @@ mod list {
         shopping_list
             .checklist
             .push(ingredient.to_owned().to_lowercase());
+
         Ok(shopping_list)
     }
 
@@ -512,6 +518,7 @@ mod list {
 	     (*y* for yes, \
 	     *any other key* to skip)"
         );
+
         while prompt_for_y()? {
             let path = "groceries.json";
 
@@ -548,6 +555,7 @@ mod list {
 		 *any other key* to continue)\n",
                 groceries_section.name.to_lowercase()
             );
+
             match input()?.trim() {
                 "y" => {
                     shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?
@@ -570,6 +578,7 @@ mod list {
 	     *s* to skip to next section, \
 	     *any other key* to continue)"
         );
+
         for item in groceries_section.items {
             if !shopping_list.items.contains(&item.to_lowercase()) {
                 eprintln!("{}?", item.to_lowercase());
@@ -584,7 +593,6 @@ mod list {
                 }
             }
         }
-
         Ok(shopping_list)
     }
 
@@ -594,7 +602,7 @@ mod list {
 	     (*y* for yes, \
 	     *any other key* to continue)"
         );
-	
+
         if prompt_for_y()? {
             let path = "list.json";
 
@@ -644,6 +652,7 @@ mod list {
 	     (*y* for yes, \
 	     *any other key* to continue)"
         );
+
         if prompt_for_y()? {
             let json = serde_json::to_string(&shopping_list)?;
 
@@ -699,7 +708,7 @@ mod helpers {
             "Enter the items, \
 	     separated by commas"
         );
-	
+
         let mut input_string = input()?;
 
         input_string.pop();
