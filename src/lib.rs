@@ -245,28 +245,14 @@ mod recipes {
 	     *any other key* for no)"
         );
         if prompt_for_y()? {
-            let path = "recipes.json";
-
-            let recipes = read_recipes(path).map_err(|err_msg| {
-                format!(
-                    "Error reading from path '{}':\n\
-		     '{}'",
-                    path, err_msg
-                )
-            })?;
-
-            eprintln!("Here are our recipes:");
-
-            for recipe in recipes.library {
-                eprintln!("- {}", recipe.name.to_string());
-            }
-            eprintln!();
+            print_recipes()?;
         }
         eprintln!(
             "Add recipes to our library?\n\
 	     (*y* for yes, \
 	     *any other key* for no)"
         );
+	
         while prompt_for_y()? {
             let path = "recipes.json";
 
@@ -295,6 +281,27 @@ mod recipes {
             );
         }
         Ok(())
+    }
+
+    fn print_recipes() -> Result<(), Box<dyn Error>> {
+	let path = "recipes.json";
+
+        let recipes = read_recipes(path).map_err(|err_msg| {
+            format!(
+                "Error reading from path '{}':\n\
+		 '{}'",
+                path, err_msg
+            )
+        })?;
+	
+        eprintln!("Here are our recipes:");
+
+        for recipe in recipes.library {
+            eprintln!("- {}", recipe.name.to_string());
+        }
+        eprintln!();
+	
+	Ok(())
     }
 
     // Gets a new recipe from user
