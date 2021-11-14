@@ -143,8 +143,8 @@ mod groceries {
     pub fn update_groceries() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add groceries to our library?\n\
-	     (*y* to add groceries, \
-	     *any other key* to exit)"
+	     --y\n\
+	     --any other key to exit"
         );
 
         while prompt_for_y()? {
@@ -170,8 +170,8 @@ mod groceries {
 
             eprintln!(
                 "Add more groceries to our library?\n\
-		 (*y* to keep adding, \
-		 *any other key* to exit)"
+		 --y\n\
+		 --any other key to exit"
             );
         }
         Ok(())
@@ -187,8 +187,8 @@ mod groceries {
         for groceries_section in groceries_sections {
             eprintln!(
                 "Add to our {} section?\n\
-		 (*y* for yes, \
-		 *any other key* for no)",
+		 --y\n\
+		 --any other key to continue",
                 groceries_section.name
             );
 
@@ -244,8 +244,8 @@ mod recipes {
         eprintln!(
             "View the recipes we have \
 	     in our library?\n\
-	     (*y* for yes, \
-	     *any other key* for no)"
+	     --y\n\
+	     --any other key to continue"
         );
 
         if prompt_for_y()? {
@@ -253,8 +253,8 @@ mod recipes {
         }
         eprintln!(
             "Add recipes to our library?\n\
-	     (*y* for yes, \
-	     *any other key* for no)"
+	     --y\n\
+	     --any other key to continue"
         );
 
         while prompt_for_y()? {
@@ -280,8 +280,8 @@ mod recipes {
 
             eprintln!(
                 "Add more recipes to our library?\n\
-		 (*y* for yes, \
-		 *any other key* for no)"
+		 --y\n\
+		 --any other key to exit"
             );
         }
         Ok(())
@@ -342,8 +342,8 @@ mod list {
 
         eprintln!(
             "Use saved list?\n\
-	     (*y* for yes, \
-	     any other key for new list)"
+	     --y\n\
+	     --any other key for new list"
         );
         if prompt_for_y()? {
             let path = "list.json";
@@ -391,8 +391,8 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
             "Add recipe ingredients to our list?\n\
-	     (*y* for yes, \
-	     any other key for no)"
+	     --y\n\
+	     --any other key to continue"
         );
         while prompt_for_y()? {
             let path = "recipes.json";
@@ -405,16 +405,16 @@ mod list {
                 )
             })?;
 
-            eprintln!(
-                "Shall we add ...\n(\
-		 *y* to add recipe, \
-		 *s* to skip to end of recipes, \
-		 *any other key* for next recipe)"
-            );
-
             for recipe in recipes.library {
-                eprintln!("{}?", recipe.name);
-
+		eprintln!(
+                    "Shall we add ...\n\
+		     {}?\n\
+		     --y\n\
+		     --s to skip to end of recipes\n\
+		     --any other key for next recipe",
+		    recipe.name
+		);
+		
                 match input()?.trim() {
                     "y" => shopping_list = add_recipe_to_list(shopping_list, recipe)?,
                     "s" => break,
@@ -423,8 +423,8 @@ mod list {
             }
             eprintln!(
                 "Add any more recipe ingredients to our list?\n(\
-		 *y* for yes, \
-		 *any other key* for no)"
+		 --y\n\
+		 --any other key to continue"
             );
         }
         Ok(shopping_list)
@@ -438,10 +438,10 @@ mod list {
 
         eprintln!(
             "Do we need ... ?\n\
-	     (*y* to add ingredient, \
-	     *c* to remind to check, \
-	     *a* to add this and all remaining ingredients, \
-	     *any other key* for next ingredient)"
+	     --y\n\
+	     --c to remind to check\n\
+	     --a to add this and all remaining ingredients\n\
+	     --any other key for next ingredient"
         );
 
         let recipe_items = recipe.items;
@@ -508,8 +508,8 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
             "Add groceries to shopping list?\n\
-	     (*y* for yes, \
-	     *any other key* to skip)"
+	     --y\n\
+	     --any other key to skip"
         );
 
         while prompt_for_y()? {
@@ -527,8 +527,8 @@ mod list {
 
             eprintln!(
                 "Add more groceries to shopping list?\n\
-		 (*y* for yes, \
-		 *any other key* to skip)"
+		 --y\n\
+		 --any other key to skip"
             );
         }
         Ok(shopping_list)
@@ -543,9 +543,9 @@ mod list {
         for groceries_section in groceries_sections {
             eprintln!(
                 "Do we need {}?\n\
-		 (*y* for yes, \
-		 *s* to skip remaining sections, \
-		 *any other key* to continue)\n",
+		 --y\n\
+		 --s to skip remaining sections\n\
+		 --any other key to continue",
                 groceries_section.name.to_lowercase()
             );
 
@@ -566,10 +566,10 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
             "Do we need ...?\n\
-	     (*y* for yes, \
-	     *c* for check, \
-	     *s* to skip to next section, \
-	     *any other key* to continue)"
+	     --y\n\
+	     --c to check later\n\
+	     --s to skip to next section\n\
+	     --any other key to continue"
         );
 
         for item in groceries_section.items {
@@ -592,8 +592,8 @@ mod list {
     pub fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Print out shopping list?\n\
-	     (*y* for yes, \
-	     *any other key* to continue)"
+	     --y\n\
+	     --any other key to continue"
         );
 
         if prompt_for_y()? {
@@ -642,8 +642,8 @@ mod list {
     pub fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Save current list?\n\
-	     (*y* for yes, \
-	     *any other key* to continue)"
+	     --y\n\
+	     --any other key to continue"
         );
 
         if prompt_for_y()? {
