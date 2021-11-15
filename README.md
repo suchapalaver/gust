@@ -4,9 +4,10 @@
 - run `$ cargo run -- --help` for available options  
 ### example shopping list
 ```
-Print shopping list?
-(*y* for yes, *any other key* to continue)
-y
+Print out shopping list?  
+--y  
+--any other key to continue  
+y  
 We're making ...
 	crispy tofu with cashews and blistered snap peas
 We need ...
