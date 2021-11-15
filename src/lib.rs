@@ -422,7 +422,7 @@ mod list {
                 }
             }
             eprintln!(
-                "Add any more recipe ingredients to our list?\n(\
+                "Add any more recipe ingredients to our list?\n\
 		 --y\n\
 		 --any other key to continue"
             );
