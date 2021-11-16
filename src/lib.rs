@@ -490,7 +490,7 @@ mod list {
         for ingredient in recipe_items {
             if !shopping_list
                 .items
-                .contains(&ingredient.to_owned().to_lowercase())
+                .contains(&ingredient.to_lowercase())
             {
                 shopping_list.items.push(ingredient);
             }
