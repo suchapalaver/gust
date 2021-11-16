@@ -440,7 +440,7 @@ mod list {
         mut shopping_list: ShoppingList,
         recipe: Recipe,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        shopping_list.recipes.push(recipe.name.to_owned());
+        shopping_list.recipes.push(recipe.name);
 
         eprintln!(
             "Do we need ... ?\n\
@@ -504,7 +504,7 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         shopping_list
             .checklist
-            .push(ingredient.to_owned().to_lowercase());
+            .push(ingredient.to_lowercase());
 
         Ok(shopping_list)
     }
