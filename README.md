@@ -2,6 +2,8 @@
 `grusterylist` uses and can add to local libraries of user-added recipes and grocery items to put together shopping lists
 ## how to ... 
 - run `$ cargo run -- --help` for available options  
+- `cargo run -- --list` allows you to begin a new shopping list or use the most recently saved list.  
+`recipes.json`, `groceries.json`, and `list.json` contain libraries of some recipes, groceries, and a saved list that could be emptied out manually to start from scratch.  
 ### example shopping list
 ```
 Print out shopping list?  
@@ -34,4 +36,8 @@ We need ...
 `$ cd grusterylist`  
 (no need to type the `$`, that's just a convention to show that these are command line interface commands)
 ### note
-`recipes.json`, `groceries.json`, and `list.json` contain libraries of some recipes, groceries, and a saved list that could be emptied out manually to start from scratch. The `cargo run -- --list` option allows you to begin a new shopping list or use the most recently saved list.
+This is a learning project that uses:  
+- [clap](https://docs.rs/clap/2.33.3/clap/) for command line argument parsing  
+- [serde](https://docs.serde.rs/serde/index.html) to deserialize and serialize JSON files  
+- Rust's [`Result`](https://doc.rust-lang.org/std/result/) type and [`?` operator](https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator) to handle errors.
+- custom error types (`ReadError`) in Rust
