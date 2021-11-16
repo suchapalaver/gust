@@ -106,15 +106,15 @@ use crate::groceries::*;
 mod groceries {
     use super::*;
 
-    pub fn read_groceries<P: AsRef<Path>>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path).map_err(|err_msg| {
+    pub fn read_groceries<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
+	let reader = read_json(path).map_err(|err_msg| {
             format!(
                 "Error message:\n\
 		 '{}'\n\
 		 Make sure a groceries library file \
-		 named 'groceries.json' is in the \
+		 with path '{}' is in the \
 		 present working directory",
-                err_msg
+                err_msg, path.as_ref().display()
             )
         })?;
 
@@ -142,13 +142,7 @@ mod groceries {
         while prompt_for_y()? {
             let path = "groceries.json";
 
-            let groceries = read_groceries(path).map_err(|e| {
-                format!(
-                    "Error reading from path '{}':\n\
-		     '{}'",
-                    path, e
-                )
-            })?;
+            let groceries = read_groceries(path)?;
 
             let updated_groceries_sections = update_groceries_sections(groceries)?;
 
