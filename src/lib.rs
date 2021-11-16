@@ -2,18 +2,12 @@ use clap::{App, Arg};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
+    fmt,
     fs::{self, File},
     io::{stdin, stdout, BufReader, Write},
     path::Path,
 };
 
-// assumes presence in pwd of the following
-// files:
-// - groceries.json
-// - recipes.json
-// - list.json
-// working examples can be found in the
-// grusterylist repository
 pub fn run() -> Result<(), Box<dyn Error>> {
     let matches = App::new("grusterylist")
         .help(
@@ -47,6 +41,46 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         make_list()?;
     }
     Ok(())
+}
+
+#[derive(Debug)]
+pub enum ReadError {
+    DeserializingError(serde_json::Error),
+    PathError(Box<dyn Error>),
+}
+
+impl fmt::Display for ReadError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ReadError::DeserializingError(e) => write!(
+                f,
+                "Error deserializing from JSON file:\n\
+                 '{}'!\n\
+		 Something's wrong with the JSON file?\n\
+		 See the example json files in the \
+		 grusterylist repository to see \
+		 how things should look.\n",
+                e
+            ),
+            ReadError::PathError(e) => write!(
+                f,
+                "Error: '{}'!\n\
+		 Make sure file with that path \
+		 can be accessed by the \
+		 present working directory",
+                e
+            ),
+        }
+    }
+}
+
+impl Error for ReadError {
+    fn description(&self) -> &str {
+        match self {
+            &ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
+            &ReadError::PathError(_) => "File does not exist!",
+        }
+    }
 }
 
 // used to serialize and deserialize a
@@ -107,29 +141,10 @@ mod groceries {
     use super::*;
 
     pub fn read_groceries<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path).map_err(|err_msg| {
-            format!(
-                "Error message:\n\
-		 '{}'\n\
-		 Make sure a groceries library file \
-		 with path '{}' is in the \
-		 present working directory",
-                err_msg,
-                path.as_ref().display()
-            )
-        })?;
+        let reader = read_json(path)?;
 
-        let groceries = serde_json::from_reader(reader).map_err(|err_msg| {
-            format!(
-                "Error deserializing '{}'!\n\
-		 Something's wrong with the JSON file? \
-		 See the example json files in the grusterylist repository.\n\
-		 Here's the error message:\n\
-		 '{}'",
-                path.as_ref().display(), err_msg
-            )
-		
-        })?;
+        let groceries = serde_json::from_reader(reader)
+            .map_err(|err_msg| ReadError::DeserializingError(err_msg))?;
 
         Ok(groceries)
     }
@@ -144,7 +159,13 @@ mod groceries {
         while prompt_for_y()? {
             let path = "groceries.json";
 
-            let groceries = read_groceries(path)?;
+            let groceries = read_groceries(path).map_err(|e| {
+                format!(
+                    "Failed to read groceries file '{}':\n\
+								      {}",
+                    path, e
+                )
+            })?;
 
             let updated_groceries_sections = update_groceries_sections(groceries)?;
 
@@ -203,29 +224,10 @@ mod recipes {
     use super::*;
 
     pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
-        let reader = read_json(path).map_err(|err_msg| {
-            format!(
-                "Error reading from path '{}':\n\
-		 '{}'\n\
-		 Make sure a recipes library file \
-		 named '{}' is in the \
-		 present working directory",
-                path.as_ref().display(),
-                err_msg,
-                path.as_ref().display()
-            )
-        })?;
+        let reader = read_json(path)?;
 
-        let recipes = serde_json::from_reader(reader).map_err(|err_msg| {
-            format!(
-                "Error deserializing '{}'!\n\
-		 Something's wrong with the JSON file? \
-		 See the example json files in the grusterylist repository.\n\
-		 Here's the error message:\n\
-		 '{}'",
-                path.as_ref().display(), err_msg
-            )
-        })?;
+        let recipes = serde_json::from_reader(reader)
+            .map_err(|err_msg| ReadError::DeserializingError(err_msg))?;
 
         Ok(recipes)
     }
@@ -250,7 +252,13 @@ mod recipes {
         while prompt_for_y()? {
             let path = "recipes.json";
 
-            let recipes = read_recipes(path)?;
+            let recipes = read_recipes(path).map_err(|e| {
+                format!(
+                    "Failed to read recipes file '{}':\n\
+								      {}",
+                    path, e
+                )
+            })?;
 
             let mut updated = recipes.library;
 
@@ -274,7 +282,13 @@ mod recipes {
     fn print_recipes() -> Result<(), Box<dyn Error>> {
         let path = "recipes.json";
 
-        let recipes = read_recipes(path)?;
+        let recipes = read_recipes(path).map_err(|e| {
+            format!(
+                "Failed to read recipes file '{}':\n\
+								      {}",
+                path, e
+            )
+        })?;
 
         eprintln!("Here are our recipes:");
 
@@ -339,11 +353,11 @@ mod list {
         );
         if prompt_for_y()? {
             let path = "list.json";
-            shopping_list = read_list(path).map_err(|err_msg| {
+            shopping_list = read_list(path).map_err(|e| {
                 format!(
-                    "Error reading from path '{}':\n\
-		     '{}'",
-                    path, err_msg
+                    "Failed to read list file '{}':\n\
+								      {}",
+                    path, e
                 )
             })?;
         }
@@ -353,30 +367,10 @@ mod list {
     }
 
     fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
-        let reader = read_json(path).map_err(|err_msg| {
-            format!(
-                "Error reading from path '{}':\n\
-		 '{}'\n\
-		 Make sure a list file \
-		 named '{}' is in the \
-		 present working directory",
-                path.as_ref().display(),
-                err_msg,
-                path.as_ref().display()
-            )
-        })?;
+        let reader = read_json(path)?;
 
-        let shopping_list = serde_json::from_reader(reader).map_err(|err_msg| {
-            format!(
-                "Error deserializing '{}'!\n\
-		 Something's wrong with the JSON file? \
-		 See the example json files in the grusterylist repository.\n\
-		 Here's the error message:\n\
-		 '{}'",
-                path.as_ref().display(), err_msg
-            )
-		
-        })?;
+        let shopping_list = serde_json::from_reader(reader)
+            .map_err(|err_msg| ReadError::DeserializingError(err_msg))?;
 
         Ok(shopping_list)
     }
@@ -392,7 +386,13 @@ mod list {
         while prompt_for_y()? {
             let path = "recipes.json";
 
-            let recipes = read_recipes(path)?;
+            let recipes = read_recipes(path).map_err(|e| {
+                format!(
+                    "Failed to read recipes file '{}':\n\
+								      {}",
+                    path, e
+                )
+            })?;
 
             for recipe in recipes.library {
                 eprintln!(
@@ -494,11 +494,11 @@ mod list {
         while prompt_for_y()? {
             let path = "groceries.json";
 
-            let groceries = read_groceries(path).map_err(|err_msg| {
+            let groceries = read_groceries(path).map_err(|e| {
                 format!(
-                    "Error reading from path '{}':\n\
-		     '{}'",
-                    path, err_msg
+                    "Failed to read groceries file '{}':\n\
+		     {}",
+                    path, e
                 )
             })?;
 
@@ -578,11 +578,11 @@ mod list {
         if prompt_for_y()? {
             let path = "list.json";
 
-            let shopping_list = read_list(path).map_err(|err_msg| {
+            let shopping_list = read_list(path).map_err(|e| {
                 format!(
-                    "Error reading from path '{}':\n\
-		     '{}'",
-                    path, err_msg
+                    "Failed to read list file '{}':\n\
+		     {}",
+                    path, e
                 )
             })?;
 
@@ -640,7 +640,7 @@ mod json_rw {
 
     pub fn read_json<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
         // Open the file in read-only mode with buffer.
-        let file = File::open(path)?;
+        let file = File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
 
         let reader = BufReader::new(file);
 
