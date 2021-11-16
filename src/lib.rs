@@ -44,15 +44,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         new_recipes()?;
     }
     if matches.is_present("list") || matches.is_present("l") {
-        let mut shopping_list = get_saved_or_new_list()?;
-
-        shopping_list = add_recipes_to_list(shopping_list)?;
-
-        shopping_list = add_groceries_to_list(shopping_list)?;
-
-        save_list(shopping_list)?;
-
-        print_list()?;
+        make_list()?;
     }
     Ok(())
 }
@@ -337,7 +329,21 @@ use crate::list::*;
 mod list {
     use super::*;
 
-    pub fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
+    pub fn make_list() -> Result<(), Box<dyn Error>> {
+        let mut shopping_list = get_saved_or_new_list()?;
+
+        shopping_list = add_recipes_to_list(shopping_list)?;
+
+        shopping_list = add_groceries_to_list(shopping_list)?;
+
+        save_list(shopping_list)?;
+
+        print_list()?;
+
+        Ok(())
+    }
+
+    fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
         let mut shopping_list = ShoppingList::new()?;
 
         eprintln!(
@@ -356,7 +362,7 @@ mod list {
             })?;
         }
         print_list()?;
-        
+
         Ok(shopping_list)
     }
 
@@ -386,7 +392,7 @@ mod list {
         Ok(shopping_list)
     }
 
-    pub fn add_recipes_to_list(
+    fn add_recipes_to_list(
         mut shopping_list: ShoppingList,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
@@ -406,15 +412,15 @@ mod list {
             })?;
 
             for recipe in recipes.library {
-		eprintln!(
+                eprintln!(
                     "Shall we add ...\n\
 		     {}?\n\
 		     --y\n\
 		     --s to skip to end of recipes\n\
 		     --any other key for next recipe",
-		    recipe.name
-		);
-		
+                    recipe.name
+                );
+
                 match input()?.trim() {
                     "y" => shopping_list = add_recipe_to_list(shopping_list, recipe)?,
                     "s" => break,
@@ -468,11 +474,11 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         if !shopping_list
             .items
-            .contains(&ingredient.to_owned().to_lowercase())
+            .contains(&ingredient.to_lowercase())
         {
             shopping_list
                 .items
-                .push(ingredient.to_owned().to_lowercase());
+                .push(ingredient.to_lowercase());
         }
         Ok(shopping_list)
     }
@@ -503,7 +509,7 @@ mod list {
         Ok(shopping_list)
     }
 
-    pub fn add_groceries_to_list(
+    fn add_groceries_to_list(
         mut shopping_list: ShoppingList,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         eprintln!(
@@ -589,7 +595,7 @@ mod list {
         Ok(shopping_list)
     }
 
-    pub fn print_list() -> Result<(), Box<dyn Error>> {
+    fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Print out shopping list?\n\
 	     --y\n\
