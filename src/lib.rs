@@ -107,14 +107,15 @@ mod groceries {
     use super::*;
 
     pub fn read_groceries<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
-	let reader = read_json(path).map_err(|err_msg| {
+        let reader = read_json(path).map_err(|err_msg| {
             format!(
                 "Error message:\n\
 		 '{}'\n\
 		 Make sure a groceries library file \
 		 with path '{}' is in the \
 		 present working directory",
-                err_msg, path.as_ref().display()
+                err_msg,
+                path.as_ref().display()
             )
         })?;
 
@@ -200,15 +201,17 @@ use crate::recipes::*;
 mod recipes {
     use super::*;
 
-    pub fn read_recipes<P: AsRef<Path>>(path: P) -> Result<Recipes, Box<dyn Error>> {
+    pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
         let reader = read_json(path).map_err(|err_msg| {
             format!(
-                "Error message:\n\
+                "Error reading from path '{}':\n\
 		 '{}'\n\
 		 Make sure a recipes library file \
-		 named 'recipes.json' is in the \
+		 named '{}' is in the \
 		 present working directory",
-                err_msg
+                path.as_ref().display(),
+                err_msg,
+                path.as_ref().display()
             )
         })?;
 
@@ -246,13 +249,7 @@ mod recipes {
         while prompt_for_y()? {
             let path = "recipes.json";
 
-            let recipes = read_recipes(path).map_err(|err_msg| {
-                format!(
-                    "Error reading from path '{}':\n\
-		     '{}'",
-                    path, err_msg
-                )
-            })?;
+            let recipes = read_recipes(path)?;
 
             let mut updated = recipes.library;
 
@@ -276,13 +273,7 @@ mod recipes {
     fn print_recipes() -> Result<(), Box<dyn Error>> {
         let path = "recipes.json";
 
-        let recipes = read_recipes(path).map_err(|err_msg| {
-            format!(
-                "Error reading from path '{}':\n\
-		 '{}'",
-                path, err_msg
-            )
-        })?;
+        let recipes = read_recipes(path)?;
 
         eprintln!("Here are our recipes:");
 
@@ -466,13 +457,8 @@ mod list {
         mut shopping_list: ShoppingList,
         ingredient: &str,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        if !shopping_list
-            .items
-            .contains(&ingredient.to_lowercase())
-        {
-            shopping_list
-                .items
-                .push(ingredient.to_lowercase());
+        if !shopping_list.items.contains(&ingredient.to_lowercase()) {
+            shopping_list.items.push(ingredient.to_lowercase());
         }
         Ok(shopping_list)
     }
@@ -482,10 +468,7 @@ mod list {
         recipe_items: Vec<String>,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         for ingredient in recipe_items {
-            if !shopping_list
-                .items
-                .contains(&ingredient.to_lowercase())
-            {
+            if !shopping_list.items.contains(&ingredient.to_lowercase()) {
                 shopping_list.items.push(ingredient);
             }
         }
@@ -496,9 +479,7 @@ mod list {
         mut shopping_list: ShoppingList,
         ingredient: &str,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        shopping_list
-            .checklist
-            .push(ingredient.to_lowercase());
+        shopping_list.checklist.push(ingredient.to_lowercase());
 
         Ok(shopping_list)
     }
