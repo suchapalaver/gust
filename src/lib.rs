@@ -10,37 +10,38 @@ use std::{
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let matches = App::new("grusterylist")
-        .help(
+        .override_help(
             "\n\
 	     grusterylist 0.1.0\n\
 	     Makes grocery lists in Rust\n\
 	     (C) https://github.com/suchapalaver/\n\n\
 	     Usage: cargo run -- <opts>\n\n\
-	     Options:\n\
-	     -h, --help       Display this message\n\
-	     -V, --version    Display version info\n\
-	     -g, --groceries  Add groceries to groceries library\n\
-	     -r, --recipes    Add recipes to recipes library\n\
-	     -l, --list       Make a shopping list\n\n\
-	     Examples:\n\
-	     $ cargo run -- --groceries\n\
-	     $ cargo run -- -r\n\n",
+	     OPTIONS:\n    \
+	     -h, --help       Print help information\n    \
+	     -V, --version    Print version information\n    \
+	     \n\
+	     SUBCOMMANDS:\n    \
+	     g     Add groceries to groceries library\n    \
+	     r     Add recipes to recipes library\n    \
+	     l     Make a shopping list\n\
+	     \n\
+	     EXAMPLE:\n    \
+	     cargo run -- l",
         )
-        .arg(Arg::with_name("groceries").long("groceries").short("g"))
-        .arg(Arg::with_name("recipes").short("r").long("recipes"))
-        .arg(Arg::with_name("list").short("l").long("list"))
-        .get_matches();
-
-    if matches.is_present("groceries") || matches.is_present("g") {
-        update_groceries()?;
+	.arg(Arg::new("subcommands")
+	     .required(true)
+	     .max_values(1)
+	)
+	.get_matches();
+    
+    match matches.value_of("subcommands").unwrap() {
+	"l" => Ok(make_list()?),
+	"g" => Ok(update_groceries()?),
+	"r" => Ok(new_recipes()?),
+	&_ => Err("Invalid command.\n\
+		   For help, try:\n\
+		   cargo run -- -h".into()),
     }
-    if matches.is_present("recipes") || matches.is_present("r") {
-        new_recipes()?;
-    }
-    if matches.is_present("list") || matches.is_present("l") {
-        make_list()?;
-    }
-    Ok(())
 }
 
 #[derive(Debug)]
@@ -76,9 +77,9 @@ impl fmt::Display for ReadError {
 
 impl Error for ReadError {
     fn description(&self) -> &str {
-        match self {
-            &ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
-            &ReadError::PathError(_) => "File does not exist!",
+        match *self {
+            ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
+            ReadError::PathError(_) => "File does not exist!",
         }
     }
 }
@@ -141,10 +142,10 @@ mod groceries {
     use super::*;
 
     pub fn read_groceries<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader = read_json(path)?;
+        let reader = read(path)?;
 
         let groceries = serde_json::from_reader(reader)
-            .map_err(|err_msg| ReadError::DeserializingError(err_msg))?;
+            .map_err(ReadError::DeserializingError)?;
 
         Ok(groceries)
     }
@@ -162,7 +163,7 @@ mod groceries {
             let groceries = read_groceries(path).map_err(|e| {
                 format!(
                     "Failed to read groceries file '{}':\n\
-								      {}",
+		     {}",
                     path, e
                 )
             })?;
@@ -175,7 +176,7 @@ mod groceries {
 
             let json = serde_json::to_string(&groceries)?;
 
-            write_json(path, json)?;
+            write(path, json)?;
 
             eprintln!(
                 "Add more groceries to our library?\n\
@@ -224,10 +225,10 @@ mod recipes {
     use super::*;
 
     pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
-        let reader = read_json(path)?;
+        let reader = read(path)?;
 
         let recipes = serde_json::from_reader(reader)
-            .map_err(|err_msg| ReadError::DeserializingError(err_msg))?;
+            .map_err(ReadError::DeserializingError)?;
 
         Ok(recipes)
     }
@@ -255,7 +256,7 @@ mod recipes {
             let recipes = read_recipes(path).map_err(|e| {
                 format!(
                     "Failed to read recipes file '{}':\n\
-								      {}",
+		     {}",
                     path, e
                 )
             })?;
@@ -285,7 +286,7 @@ mod recipes {
         let recipes = read_recipes(path).map_err(|e| {
             format!(
                 "Failed to read recipes file '{}':\n\
-								      {}",
+		 {}",
                 path, e
             )
         })?;
@@ -319,7 +320,7 @@ mod recipes {
     fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
         let json = serde_json::to_string(&recipes)?;
 
-        write_json("recipes.json", json)?;
+        write("recipes.json", json)?;
 
         Ok(())
     }
@@ -356,7 +357,7 @@ mod list {
             shopping_list = read_list(path).map_err(|e| {
                 format!(
                     "Failed to read list file '{}':\n\
-								      {}",
+		     {}",
                     path, e
                 )
             })?;
@@ -367,10 +368,10 @@ mod list {
     }
 
     fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
-        let reader = read_json(path)?;
+        let reader = read(path)?;
 
         let shopping_list = serde_json::from_reader(reader)
-            .map_err(|err_msg| ReadError::DeserializingError(err_msg))?;
+            .map_err(ReadError::DeserializingError)?;
 
         Ok(shopping_list)
     }
@@ -389,7 +390,7 @@ mod list {
             let recipes = read_recipes(path).map_err(|e| {
                 format!(
                     "Failed to read recipes file '{}':\n\
-								      {}",
+		     {}",
                     path, e
                 )
             })?;
@@ -628,28 +629,8 @@ mod list {
         if prompt_for_y()? {
             let json = serde_json::to_string(&shopping_list)?;
 
-            write_json("list.json", json)?;
+            write("list.json", json)?;
         }
-        Ok(())
-    }
-}
-
-use crate::json_rw::*;
-mod json_rw {
-    use super::*;
-
-    pub fn read_json<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
-        // Open the file in read-only mode with buffer.
-        let file = File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
-
-        let reader = BufReader::new(file);
-
-        Ok(reader)
-    }
-
-    pub fn write_json<P: AsRef<Path>>(path: P, json: String) -> Result<(), Box<dyn Error>> {
-        fs::write(path, &json)?;
-
         Ok(())
     }
 }
@@ -674,7 +655,7 @@ mod helpers {
         Ok(input)
     }
 
-    //
+    // Input a list and return it having added a list of user input strings 
     pub fn list_input(mut items_list: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
         eprintln!(
             "Enter the items, \
@@ -694,5 +675,19 @@ mod helpers {
         });
 
         Ok(items_list)
+    }
+
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
+        // Open the file in read-only mode with buffer.
+        let file = File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
+
+        let reader = BufReader::new(file);
+
+        Ok(reader)
+    }
+
+    pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), Box<dyn Error>> {
+        let _ = fs::write(path, &object)?;
+        Ok(())
     }
 }
