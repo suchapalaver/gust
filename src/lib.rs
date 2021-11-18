@@ -44,12 +44,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     }
 }
 
+// Customized handling of file reading errors
 #[derive(Debug)]
 pub enum ReadError {
     DeserializingError(serde_json::Error),
     PathError(Box<dyn Error>),
 }
 
+// Yup, you can't just return some string as an error message
 impl fmt::Display for ReadError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -75,6 +77,7 @@ impl fmt::Display for ReadError {
     }
 }
 
+// This is to make compatibility with the chain of Box<dyn Error> messaging
 impl Error for ReadError {
     fn description(&self) -> &str {
         match *self {
@@ -89,7 +92,7 @@ impl Error for ReadError {
 // by kind of by kitchen section
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Groceries {
-    sections: Vec<GroceriesSection>,
+    groceries_sections: Vec<GroceriesSection>,
 }
 
 // works with structure of Groceries struct
@@ -102,7 +105,7 @@ pub struct GroceriesSection {
 // to serialize and deserialize a database of recipes
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Recipes {
-    library: Vec<Recipe>,
+    recipes_library: Vec<Recipe>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -163,16 +166,14 @@ mod groceries {
             let groceries = read_groceries(path).map_err(|e| {
                 format!(
                     "Failed to read groceries file '{}':\n\
-		     {}",
+		     {}\n",
                     path, e
                 )
             })?;
 
             let updated_groceries_sections = update_groceries_sections(groceries)?;
 
-            let groceries = Groceries {
-                sections: updated_groceries_sections,
-            };
+            let groceries = updated_groceries_sections;
 
             let json = serde_json::to_string(&groceries)?;
 
@@ -192,8 +193,8 @@ mod groceries {
     ) -> Result<Vec<GroceriesSection>, Box<dyn Error>> {
         let mut updated_groceries_sections = Vec::new();
 
-        let groceries_sections = groceries.sections;
-
+	let groceries_sections = groceries.groceries_sections;
+	
         for groceries_section in groceries_sections {
             eprintln!(
                 "Add to our {} section?\n\
@@ -234,16 +235,8 @@ mod recipes {
     }
 
     pub fn new_recipes() -> Result<(), Box<dyn Error>> {
-        eprintln!(
-            "View the recipes we have \
-	     in our library?\n\
-	     --y\n\
-	     --any other key to continue"
-        );
-
-        if prompt_for_y()? {
-            print_recipes()?;
-        }
+	let _ = view_recipes()?;
+	
         eprintln!(
             "Add recipes to our library?\n\
 	     --y\n\
@@ -261,13 +254,13 @@ mod recipes {
                 )
             })?;
 
-            let mut updated = recipes.library;
+            let mut updated = recipes.recipes_library;
 
             let new_recipe = get_new_recipe()?;
 
             updated.push(new_recipe);
 
-            let recipes = Recipes { library: updated };
+            let recipes = Recipes { recipes_library: updated };
 
             save_recipes(recipes)?;
 
@@ -278,6 +271,20 @@ mod recipes {
             );
         }
         Ok(())
+    }
+
+    fn view_recipes() -> Result<(), Box<dyn Error>> {
+    eprintln!(
+            "View the recipes we have \
+	     in our library?\n\
+	     --y\n\
+	     --any other key to continue"
+        );
+
+        if prompt_for_y()? {
+            print_recipes()?;
+        }
+	Ok(())
     }
 
     fn print_recipes() -> Result<(), Box<dyn Error>> {
@@ -293,7 +300,7 @@ mod recipes {
 
         eprintln!("Here are our recipes:");
 
-        for recipe in recipes.library {
+        for recipe in recipes.recipes_library {
             eprintln!("- {}", recipe.name.to_string());
         }
         eprintln!();
@@ -314,7 +321,7 @@ mod recipes {
 
         let items = list_input(items_list)?;
 
-        Ok(Recipe { name, items })
+	Ok(Recipe { name, items })
     }
 
     fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
@@ -330,20 +337,32 @@ use crate::list::*;
 mod list {
     use super::*;
 
+    // Like run() for the shopping-list-making function in grusterylist
     pub fn make_list() -> Result<(), Box<dyn Error>> {
+	// Open a saved or new list
         let mut shopping_list = get_saved_or_new_list()?;
 
+	// view list if using saved list
+	if !shopping_list.items.is_empty() {
+	    print_list()?;
+	}
+
+	// add recipes
         shopping_list = add_recipes_to_list(shopping_list)?;
 
+	// add individual groceries
         shopping_list = add_groceries_to_list(shopping_list)?;
 
+	// overwrite saved list with current list
         save_list(shopping_list)?;
 
+	// view list
         print_list()?;
 
         Ok(())
     }
 
+    // Prompt user whether to use a saved or new list and return their choice
     fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
         let mut shopping_list = ShoppingList::new()?;
 
@@ -362,11 +381,10 @@ mod list {
                 )
             })?;
         }
-        print_list()?;
-
         Ok(shopping_list)
     }
 
+    // Open and deserialize a shopping list JSON file from given path
     fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
         let reader = read(path)?;
 
@@ -376,6 +394,7 @@ mod list {
         Ok(shopping_list)
     }
 
+    // Adds recipe ingredients to a shopping list
     fn add_recipes_to_list(
         mut shopping_list: ShoppingList,
     ) -> Result<ShoppingList, Box<dyn Error>> {
@@ -395,7 +414,7 @@ mod list {
                 )
             })?;
 
-            for recipe in recipes.library {
+            for recipe in recipes.recipes_library {
                 eprintln!(
                     "Shall we add ...\n\
 		     {}?\n\
@@ -420,6 +439,7 @@ mod list {
         Ok(shopping_list)
     }
 
+    // Adds ingredients of an individual recipe to a shopping list
     fn add_recipe_to_list(
         mut shopping_list: ShoppingList,
         recipe: Recipe,
@@ -452,6 +472,7 @@ mod list {
         Ok(shopping_list)
     }
 
+    // Adds individual ingredients to a shopping list
     fn add_ingredient_to_list(
         mut shopping_list: ShoppingList,
         ingredient: &str,
@@ -462,11 +483,13 @@ mod list {
         Ok(shopping_list)
     }
 
+    // Adds all ingredients in a single recipe to list
     fn add_all_ingredients_to_list(
         mut shopping_list: ShoppingList,
         recipe_items: Vec<String>,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         for ingredient in recipe_items {
+	    // Avoid adding repeat items to list
             if !shopping_list.items.contains(&ingredient.to_lowercase()) {
                 shopping_list.items.push(ingredient);
             }
@@ -474,6 +497,7 @@ mod list {
         Ok(shopping_list)
     }
 
+    // Adds ingredients to checklist on shopping list
     fn add_ingredient_to_checklist(
         mut shopping_list: ShoppingList,
         ingredient: &str,
@@ -483,6 +507,7 @@ mod list {
         Ok(shopping_list)
     }
 
+    // Adds groceries to list
     fn add_groceries_to_list(
         mut shopping_list: ShoppingList,
     ) -> Result<ShoppingList, Box<dyn Error>> {
@@ -518,7 +543,7 @@ mod list {
         mut shopping_list: ShoppingList,
         groceries: Groceries,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        let groceries_sections = groceries.sections;
+        let groceries_sections = groceries.groceries_sections;
 
         for groceries_section in groceries_sections {
             eprintln!(
@@ -569,6 +594,7 @@ mod list {
         Ok(shopping_list)
     }
 
+    // Prints list
     fn print_list() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Print out shopping list?\n\
@@ -579,6 +605,7 @@ mod list {
         if prompt_for_y()? {
             let path = "list.json";
 
+	    // Open shopping list
             let shopping_list = read_list(path).map_err(|e| {
                 format!(
                     "Failed to read list file '{}':\n\
@@ -587,27 +614,28 @@ mod list {
                 )
             })?;
 
+	    // Avoid printing things if they're empty
             if !shopping_list.checklist.is_empty()
                 && !shopping_list.recipes.is_empty()
                 && !shopping_list.items.is_empty()
             {
                 println!("Here's what we have:\n");
             }
-            if !shopping_list.checklist.is_empty() {
+	    if !shopping_list.checklist.is_empty() {
                 println!("{}", shopping_list.checklist_msg);
 
                 shopping_list.checklist.iter().for_each(|item| {
                     println!("\t{}", item.to_lowercase());
                 });
             }
-            if !shopping_list.recipes.is_empty() {
+	    if !shopping_list.recipes.is_empty() {
                 println!("{}", shopping_list.recipes_msg);
 
                 shopping_list.recipes.iter().for_each(|recipe| {
                     println!("\t{}", recipe);
                 });
             }
-            if !shopping_list.items.is_empty() {
+	    if !shopping_list.items.is_empty() {
                 println!("{}", shopping_list.items_msg);
 
                 shopping_list.items.iter().for_each(|item| {
@@ -619,6 +647,7 @@ mod list {
         Ok(())
     }
 
+    // Saves shopping list
     pub fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Save current list?\n\
@@ -639,7 +668,7 @@ use crate::helpers::*;
 mod helpers {
     use super::*;
 
-    // get user input when it's 'y' or anything else
+    // Gets user input when it's 'y' or anything else
     pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
         Ok("y" == input()?.trim())
     }
@@ -677,6 +706,7 @@ mod helpers {
         Ok(items_list)
     }
 
+    // Reads from a path into a buffer-reader
     pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
         // Open the file in read-only mode with buffer.
         let file = File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
@@ -686,6 +716,7 @@ mod helpers {
         Ok(reader)
     }
 
+    // Writes a String to a path
     pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), Box<dyn Error>> {
         let _ = fs::write(path, &object)?;
         Ok(())
