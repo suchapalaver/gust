@@ -115,7 +115,7 @@ pub struct Recipe {
 }
 
 // used to serialize and deserialize the
-// grocery list on record or to create a
+// most recently saved list or to create a
 // new grocery list that can be saved as JSON
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
@@ -127,6 +127,8 @@ pub struct ShoppingList {
     items: Vec<String>,
 }
 
+// This is what we want to happen each time we create
+// a new shopping list
 impl ShoppingList {
     pub fn new() -> Result<ShoppingList, Box<dyn Error>> {
         Ok(ShoppingList {
