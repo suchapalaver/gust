@@ -28,22 +28,20 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	     EXAMPLE:\n    \
 	     cargo run -- l",
         )
-	.arg(Arg::new("subcommands")
-	     .required(true)
-	     .max_values(1)
-	)
-	.get_matches();
-    
+        .arg(Arg::new("subcommands").required(true).max_values(1))
+        .get_matches();
+
     match matches.value_of("subcommands").unwrap() {
-	"l" => Ok(make_list()?),
-	"g" => Ok(update_groceries()?),
-	"r" => Ok(new_recipes()?),
-	&_ => Err("Invalid command.\n\
+        "l" => Ok(make_list()?),
+        "g" => Ok(update_groceries()?),
+        "r" => Ok(new_recipes()?),
+        &_ => Err("Invalid command.\n\
 		   For help, try:\n\
-		   cargo run -- -h".into()),
+		   cargo run -- -h"
+            .into()),
     }
 }
-
+    
 // Customized handling of file reading errors
 #[derive(Debug)]
 pub enum ReadError {
@@ -87,79 +85,133 @@ impl Error for ReadError {
     }
 }
 
-// used to serialize and deserialize a
-// database of groceries we buy organized
-// by kind of by kitchen section
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Groceries {
-    sections: Vec<GroceriesSection>,
-}
+use crate::data::*;
+pub mod data {
+    use super::*;
 
-// works with structure of Groceries struct
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GroceriesSection {
-    name: GroceriesSectionName,
-    items: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GroceriesSectionName(String);
-/*
-impl GroceriesSectionName {
-    pub fn to_lowercase(Self(name): GroceriesSectionName) -> Self {
-	let lc_name: String = name;
-	GroceriesSectionName(lc_name.to_lowercase())
+    // used to serialize and deserialize a
+    // database of groceries we buy
+    // organized by kitchen storage section
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Groceries {
+	pub sections: Vec<GroceriesSection>,
     }
-}
-*/
-impl fmt::Display for GroceriesSectionName {
-    // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-	// Write strictly the first element into the supplied output
-	// stream: `f`. Returns `fmt::Result` which indicates whether the
-	// operation succeeded or failed. Note that `write!` uses syntax which
-	// is very similar to `println!`.
-	write!(f, "{}", self.0)
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct GroceriesSection {
+	pub name: GroceriesSectionName,
+	pub items: Vec<GroceriesItem>,
     }
-}
 
-// to serialize and deserialize a database of recipes
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Recipes {
-    recipes_library: Vec<Recipe>,
-}
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct GroceriesSectionName(String);
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Recipe {
-    name: String,
-    items: Vec<String>,
-}
+    impl fmt::Display for GroceriesSectionName {
+	// This trait requires `fmt` with this exact signature.
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            // Write strictly the first element into the supplied output
+            // stream: `f`. Returns `fmt::Result` which indicates whether the
+            // operation succeeded or failed. Note that `write!` uses syntax which
+            // is very similar to `println!`.
+            write!(f, "{}", self.0)
+	}
+    }
 
-// used to serialize and deserialize the
-// most recently saved list or to create a
-// new grocery list that can be saved as JSON
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ShoppingList {
-    recipes_msg: String,
-    recipes: Vec<String>,
-    checklist_msg: String,
-    checklist: Vec<String>,
-    items_msg: String,
-    items: Vec<String>,
-}
+    #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+    pub struct GroceriesItem(pub String);
 
-// This is what we want to happen each time we create
-// a new shopping list
-impl ShoppingList {
-    pub fn new() -> Result<ShoppingList, Box<dyn Error>> {
-        Ok(ShoppingList {
-            recipes_msg: "We're making ...".to_string(),
-            recipes: Vec::new(),
-            checklist_msg: "Check ...".to_string(),
-            checklist: Vec::new(),
-            items_msg: "We need ...".to_string(),
-            items: Vec::new(),
-        })
+    // to serialize and deserialize a database of recipes
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Recipes {
+	pub recipes_library: Vec<Recipe>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Recipe {
+	pub name: RecipeName,
+	pub items: Vec<GroceriesItem>,
+    }
+
+    // used to serialize and deserialize the
+    // most recently saved list or to create a
+    // new grocery list that can be saved as JSON
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    pub struct ShoppingList {
+	pub recipes_msg: RecipesOnList,
+	pub recipes: Vec<RecipeName>,
+	pub checklist_msg: CheckListMsg,
+	pub checklist: Vec<GroceriesItem>,
+	pub items_msg: ItemsOnListMsg,
+	pub items: Vec<GroceriesItem>,
+    }
+
+    // This is what we want to happen each time we create
+    // a new shopping list
+    impl ShoppingList {
+	pub fn new() -> Result<ShoppingList, Box<dyn Error>> {
+            Ok(ShoppingList {
+		recipes_msg: RecipesOnList::new()?,
+		recipes: Vec::new(),
+		checklist_msg: CheckListMsg::new()?,
+		checklist: Vec::new(),
+		items_msg: ItemsOnListMsg::new()?,
+		items: Vec::new(),
+            })
+	}
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct RecipesOnList(pub String);
+
+    impl RecipesOnList {
+	fn new() -> Result<RecipesOnList, Box<dyn Error>> {
+            Ok(RecipesOnList("We're making ...".to_string()))
+	}
+    }
+
+    impl fmt::Display for RecipesOnList {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}", self.0)
+	}
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct RecipeName(pub String);
+
+    impl fmt::Display for RecipeName {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}", self.0)
+	}
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct CheckListMsg(pub String);
+
+    impl CheckListMsg {
+	fn new() -> Result<CheckListMsg, Box<dyn Error>> {
+            Ok(CheckListMsg("We're making ...".to_string()))
+	}
+    }
+
+    impl fmt::Display for CheckListMsg {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}", self.0)
+	}
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct ItemsOnListMsg(pub String);
+
+    impl ItemsOnListMsg {
+	fn new() -> Result<ItemsOnListMsg, Box<dyn Error>> {
+            Ok(ItemsOnListMsg("We need ...".to_string()))
+	}
+    }
+
+    impl fmt::Display for ItemsOnListMsg {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}", self.0)
+	}
     }
 }
 
@@ -170,8 +222,7 @@ mod groceries {
     pub fn read_groceries<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader = read(path)?;
 
-        let groceries = serde_json::from_reader(reader)
-            .map_err(ReadError::DeserializingError)?;
+        let groceries = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
 
         Ok(groceries)
     }
@@ -216,8 +267,8 @@ mod groceries {
     ) -> Result<Vec<GroceriesSection>, Box<dyn Error>> {
         let mut updated_groceries_sections = Vec::new();
 
-	let groceries_sections = groceries.sections;
-	
+        let groceries_sections = groceries.sections;
+
         for groceries_section in groceries_sections {
             eprintln!(
                 "Add to our {} section?\n\
@@ -251,15 +302,14 @@ mod recipes {
     pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
         let reader = read(path)?;
 
-        let recipes = serde_json::from_reader(reader)
-            .map_err(ReadError::DeserializingError)?;
+        let recipes = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
 
         Ok(recipes)
     }
 
     pub fn new_recipes() -> Result<(), Box<dyn Error>> {
-	let _ = view_recipes()?;
-	
+        let _ = view_recipes()?;
+
         eprintln!(
             "Add recipes to our library?\n\
 	     --y\n\
@@ -283,7 +333,9 @@ mod recipes {
 
             updated.push(new_recipe);
 
-            let recipes = Recipes { recipes_library: updated };
+            let recipes = Recipes {
+                recipes_library: updated,
+            };
 
             save_recipes(recipes)?;
 
@@ -297,7 +349,7 @@ mod recipes {
     }
 
     fn view_recipes() -> Result<(), Box<dyn Error>> {
-    eprintln!(
+        eprintln!(
             "View the recipes we have \
 	     in our library?\n\
 	     --y\n\
@@ -307,7 +359,7 @@ mod recipes {
         if prompt_for_y()? {
             print_recipes()?;
         }
-	Ok(())
+        Ok(())
     }
 
     fn print_recipes() -> Result<(), Box<dyn Error>> {
@@ -344,7 +396,10 @@ mod recipes {
 
         let items = list_input(items_list)?;
 
-	Ok(Recipe { name, items })
+        Ok(Recipe {
+            name: RecipeName(name),
+            items,
+        })
     }
 
     fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
@@ -362,24 +417,24 @@ mod list {
 
     // Like run() for the shopping-list-making function in grusterylist
     pub fn make_list() -> Result<(), Box<dyn Error>> {
-	// Open a saved or new list
+        // Open a saved or new list
         let mut shopping_list = get_saved_or_new_list()?;
 
-	// view list if using saved list
-	if !shopping_list.items.is_empty() {
-	    print_list()?;
-	}
+        // view list if using saved list
+        if !shopping_list.items.is_empty() {
+            print_list()?;
+        }
 
-	// add recipes
+        // add recipes
         shopping_list = add_recipes_to_list(shopping_list)?;
 
-	// add individual groceries
+        // add individual groceries
         shopping_list = add_groceries_to_list(shopping_list)?;
 
-	// overwrite saved list with current list
+        // overwrite saved list with current list
         save_list(shopping_list)?;
 
-	// view list
+        // view list
         print_list()?;
 
         Ok(())
@@ -411,8 +466,8 @@ mod list {
     fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
         let reader = read(path)?;
 
-        let shopping_list = serde_json::from_reader(reader)
-            .map_err(ReadError::DeserializingError)?;
+        let shopping_list =
+            serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
 
         Ok(shopping_list)
     }
@@ -480,7 +535,7 @@ mod list {
         let recipe_items = recipe.items;
 
         for ingredient in &recipe_items {
-            eprintln!("{}?", ingredient.to_lowercase());
+            eprintln!("{}?", ingredient.0.to_lowercase());
 
             match input()?.trim() {
                 "y" => shopping_list = add_ingredient_to_list(shopping_list, ingredient)?,
@@ -498,10 +553,15 @@ mod list {
     // Adds individual ingredients to a shopping list
     fn add_ingredient_to_list(
         mut shopping_list: ShoppingList,
-        ingredient: &str,
+        ingredient: &GroceriesItem,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        if !shopping_list.items.contains(&ingredient.to_lowercase()) {
-            shopping_list.items.push(ingredient.to_lowercase());
+        if !shopping_list
+            .items
+            .contains(&GroceriesItem(ingredient.0.to_lowercase()))
+        {
+            shopping_list
+                .items
+                .push(GroceriesItem(ingredient.0.to_lowercase()));
         }
         Ok(shopping_list)
     }
@@ -509,11 +569,14 @@ mod list {
     // Adds all ingredients in a single recipe to list
     fn add_all_ingredients_to_list(
         mut shopping_list: ShoppingList,
-        recipe_items: Vec<String>,
+        recipe_items: Vec<GroceriesItem>,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         for ingredient in recipe_items {
-	    // Avoid adding repeat items to list
-            if !shopping_list.items.contains(&ingredient.to_lowercase()) {
+            // Avoid adding repeat items to list
+            if !shopping_list
+                .items
+                .contains(&GroceriesItem(ingredient.0.to_lowercase()))
+            {
                 shopping_list.items.push(ingredient);
             }
         }
@@ -523,9 +586,11 @@ mod list {
     // Adds ingredients to checklist on shopping list
     fn add_ingredient_to_checklist(
         mut shopping_list: ShoppingList,
-        ingredient: &str,
+        ingredient: &GroceriesItem,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        shopping_list.checklist.push(ingredient.to_lowercase());
+        shopping_list
+            .checklist
+            .push(GroceriesItem(ingredient.0.to_lowercase()));
 
         Ok(shopping_list)
     }
@@ -569,7 +634,7 @@ mod list {
         let groceries_sections = groceries.sections;
 
         for groceries_section in groceries_sections {
-	    //let GroceriesSectionName(name) = &groceries_section.name;
+            //let GroceriesSectionName(name) = &groceries_section.name;
             eprintln!(
                 "Do we need {}?\n\
 		 --y\n\
@@ -602,14 +667,19 @@ mod list {
         );
 
         for item in groceries_section.items {
-            if !shopping_list.items.contains(&item.to_lowercase()) {
-                eprintln!("{}?", item.to_lowercase());
+            if !shopping_list
+                .items
+                .contains(&GroceriesItem(item.0.to_lowercase()))
+            {
+                eprintln!("{}?", item.0.to_lowercase());
 
                 match input()?.trim() {
-                    "y" => shopping_list.items.push(item.to_lowercase().to_string()),
+                    "y" => shopping_list
+                        .items
+                        .push(GroceriesItem(item.0.to_lowercase())),
                     "c" => shopping_list
                         .checklist
-                        .push(item.to_lowercase().to_string()),
+                        .push(GroceriesItem(item.0.to_lowercase())),
                     "s" => break,
                     &_ => {}
                 }
@@ -629,7 +699,7 @@ mod list {
         if prompt_for_y()? {
             let path = "list.json";
 
-	    // Open shopping list
+            // Open shopping list
             let shopping_list = read_list(path).map_err(|e| {
                 format!(
                     "Failed to read list file '{}':\n\
@@ -638,32 +708,32 @@ mod list {
                 )
             })?;
 
-	    // Avoid printing things if they're empty
+            // Avoid printing things if they're empty
             if !shopping_list.checklist.is_empty()
                 && !shopping_list.recipes.is_empty()
                 && !shopping_list.items.is_empty()
             {
                 println!("Here's what we have:\n");
             }
-	    if !shopping_list.checklist.is_empty() {
+            if !shopping_list.checklist.is_empty() {
                 println!("{}", shopping_list.checklist_msg);
 
                 shopping_list.checklist.iter().for_each(|item| {
-                    println!("\t{}", item.to_lowercase());
+                    println!("\t{}", item.0.to_lowercase());
                 });
             }
-	    if !shopping_list.recipes.is_empty() {
+            if !shopping_list.recipes.is_empty() {
                 println!("{}", shopping_list.recipes_msg);
 
                 shopping_list.recipes.iter().for_each(|recipe| {
                     println!("\t{}", recipe);
                 });
             }
-	    if !shopping_list.items.is_empty() {
+            if !shopping_list.items.is_empty() {
                 println!("{}", shopping_list.items_msg);
 
                 shopping_list.items.iter().for_each(|item| {
-                    println!("\t{}", item);
+                    println!("\t{}", item.0.to_lowercase());
                 });
             }
             println!();
@@ -708,8 +778,10 @@ mod helpers {
         Ok(input)
     }
 
-    // Input a list and return it having added a list of user input strings 
-    pub fn list_input(mut items_list: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
+    // Input a list and return it having added a list of user input strings
+    pub fn list_input(
+        mut items_list: Vec<GroceriesItem>,
+    ) -> Result<Vec<GroceriesItem>, Box<dyn Error>> {
         eprintln!(
             "Enter the items, \
 	     separated by commas"
@@ -722,8 +794,8 @@ mod helpers {
         let input_list: Vec<&str> = input_string.split(',').collect();
 
         input_list.iter().for_each(|i| {
-            if !items_list.contains(&i.to_string()) {
-                items_list.push(i.to_string());
+            if !items_list.contains(&GroceriesItem(i.to_string())) {
+                items_list.push(GroceriesItem(i.to_string()));
             }
         });
 
