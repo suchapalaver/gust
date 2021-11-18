@@ -92,14 +92,35 @@ impl Error for ReadError {
 // by kind of by kitchen section
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Groceries {
-    groceries_sections: Vec<GroceriesSection>,
+    sections: Vec<GroceriesSection>,
 }
 
 // works with structure of Groceries struct
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GroceriesSection {
-    name: String,
+    name: GroceriesSectionName,
     items: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GroceriesSectionName(String);
+/*
+impl GroceriesSectionName {
+    pub fn to_lowercase(Self(name): GroceriesSectionName) -> Self {
+	let lc_name: String = name;
+	GroceriesSectionName(lc_name.to_lowercase())
+    }
+}
+*/
+impl fmt::Display for GroceriesSectionName {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	// Write strictly the first element into the supplied output
+	// stream: `f`. Returns `fmt::Result` which indicates whether the
+	// operation succeeded or failed. Note that `write!` uses syntax which
+	// is very similar to `println!`.
+	write!(f, "{}", self.0)
+    }
 }
 
 // to serialize and deserialize a database of recipes
@@ -195,7 +216,7 @@ mod groceries {
     ) -> Result<Vec<GroceriesSection>, Box<dyn Error>> {
         let mut updated_groceries_sections = Vec::new();
 
-	let groceries_sections = groceries.groceries_sections;
+	let groceries_sections = groceries.sections;
 	
         for groceries_section in groceries_sections {
             eprintln!(
@@ -545,15 +566,16 @@ mod list {
         mut shopping_list: ShoppingList,
         groceries: Groceries,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        let groceries_sections = groceries.groceries_sections;
+        let groceries_sections = groceries.sections;
 
         for groceries_section in groceries_sections {
+	    //let GroceriesSectionName(name) = &groceries_section.name;
             eprintln!(
                 "Do we need {}?\n\
 		 --y\n\
 		 --s to skip remaining sections\n\
 		 --any other key to continue",
-                groceries_section.name.to_lowercase()
+                &groceries_section.name.to_string().to_lowercase()
             );
 
             match input()?.trim() {
