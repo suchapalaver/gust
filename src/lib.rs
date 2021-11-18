@@ -41,47 +41,51 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             .into()),
     }
 }
-    
-// Customized handling of file reading errors
-#[derive(Debug)]
-pub enum ReadError {
-    DeserializingError(serde_json::Error),
-    PathError(Box<dyn Error>),
-}
 
-// Yup, you can't just return some string as an error message
-impl fmt::Display for ReadError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ReadError::DeserializingError(e) => write!(
-                f,
-                "Error deserializing from JSON file:\n\
-                 '{}'!\n\
-		 Something's wrong with the JSON file?\n\
-		 See the example json files in the \
-		 grusterylist repository to see \
-		 how things should look.\n",
-                e
-            ),
-            ReadError::PathError(e) => write!(
-                f,
-                "Error: '{}'!\n\
-		 Make sure file with that path \
-		 can be accessed by the \
-		 present working directory",
-                e
-            ),
-        }
+use crate::errors::*;
+pub mod errors {
+    use super::*;
+    // Customized handling of file reading errors
+    #[derive(Debug)]
+    pub enum ReadError {
+	DeserializingError(serde_json::Error),
+	PathError(Box<dyn Error>),
     }
-}
 
-// This is to make compatibility with the chain of Box<dyn Error> messaging
-impl Error for ReadError {
-    fn description(&self) -> &str {
-        match *self {
-            ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
-            ReadError::PathError(_) => "File does not exist!",
-        }
+    // Yup, you can't just return some string as an error message
+    impl fmt::Display for ReadError {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+		ReadError::DeserializingError(e) => write!(
+                    f,
+                    "Error deserializing from JSON file:\n\
+                     '{}'!\n\
+		     Something's wrong with the JSON file?\n\
+		     See the example json files in the \
+		     grusterylist repository to see \
+		     how things should look.\n",
+                    e
+		),
+		ReadError::PathError(e) => write!(
+                    f,
+                    "Error: '{}'!\n\
+		     Make sure file with that path \
+		     can be accessed by the \
+		     present working directory",
+                    e
+		),
+            }
+	}
+    }
+
+    // This is to make compatibility with the chain of Box<dyn Error> messaging
+    impl Error for ReadError {
+	fn description(&self) -> &str {
+            match *self {
+		ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
+		ReadError::PathError(_) => "File does not exist!",
+            }
+	}
     }
 }
 
@@ -669,6 +673,7 @@ mod list {
         for item in groceries_section.items {
             if !shopping_list
                 .items
+		// https://stackoverflow.com/questions/45624813/how-can-i-unpack-a-tuple-struct-like-i-would-a-classic-tuple/45624862
                 .contains(&GroceriesItem(item.0.to_lowercase()))
             {
                 eprintln!("{}?", item.0.to_lowercase());
