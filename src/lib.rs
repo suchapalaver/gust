@@ -47,18 +47,18 @@ use crate::errors::*;
 // Customized handling of file reading errors
 pub mod errors {
     use super::*;
-    
+
     #[derive(Debug)]
     pub enum ReadError {
-	DeserializingError(serde_json::Error),
-	PathError(Box<dyn Error>),
+        DeserializingError(serde_json::Error),
+        PathError(Box<dyn Error>),
     }
 
     // Yup, you can't just return some string as an error message
     impl fmt::Display for ReadError {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
-		ReadError::DeserializingError(e) => write!(
+                ReadError::DeserializingError(e) => write!(
                     f,
                     "Error deserializing from JSON file:\n\
                      '{}'!\n\
@@ -67,27 +67,27 @@ pub mod errors {
 		     grusterylist repository to see \
 		     how things should look.\n",
                     e
-		),
-		ReadError::PathError(e) => write!(
+                ),
+                ReadError::PathError(e) => write!(
                     f,
                     "Error: '{}'!\n\
 		     Make sure file with that path \
 		     can be accessed by the \
 		     present working directory",
                     e
-		),
+                ),
             }
-	}
+        }
     }
 
     // This is to make compatibility with the chain of Box<dyn Error> messaging
     impl Error for ReadError {
-	fn description(&self) -> &str {
+        fn description(&self) -> &str {
             match *self {
-		ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
-		ReadError::PathError(_) => "File does not exist!",
+                ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
+                ReadError::PathError(_) => "File does not exist!",
             }
-	}
+        }
     }
 }
 
@@ -98,30 +98,30 @@ use crate::data::*;
 // organized by kitchen storage section
 pub mod data {
     use super::*;
-    
+
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Groceries {
-	pub sections: Vec<GroceriesSection>,
+        pub sections: Vec<GroceriesSection>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct GroceriesSection {
-	pub name: GroceriesSectionName,
-	pub items: Vec<GroceriesItem>,
+        pub name: GroceriesSectionName,
+        pub items: Vec<GroceriesItem>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct GroceriesSectionName(String);
 
     impl fmt::Display for GroceriesSectionName {
-	// This trait requires `fmt` with this exact signature.
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // This trait requires `fmt` with this exact signature.
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             // Write strictly the first element into the supplied output
             // stream: `f`. Returns `fmt::Result` which indicates whether the
             // operation succeeded or failed. Note that `write!` uses syntax which
             // is very similar to `println!`.
             write!(f, "{}", self.0)
-	}
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -130,13 +130,13 @@ pub mod data {
     // to serialize and deserialize a database of recipes
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Recipes {
-	pub library: Vec<Recipe>,
+        pub library: Vec<Recipe>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Recipe {
-	pub name: RecipeName,
-	pub items: Vec<GroceriesItem>,
+        pub name: RecipeName,
+        pub items: Vec<GroceriesItem>,
     }
 
     // used to serialize and deserialize the
@@ -144,81 +144,81 @@ pub mod data {
     // new grocery list that can be saved as JSON
     #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct ShoppingList {
-	pub recipes_msg: RecipesOnList,
-	pub recipes: Vec<RecipeName>,
-	pub checklist_msg: CheckListMsg,
-	pub checklist: Vec<GroceriesItem>,
-	pub items_msg: ItemsOnListMsg,
-	pub items: Vec<GroceriesItem>,
+        pub recipes_msg: RecipesOnList,
+        pub recipes: Vec<RecipeName>,
+        pub checklist_msg: CheckListMsg,
+        pub checklist: Vec<GroceriesItem>,
+        pub items_msg: ItemsOnListMsg,
+        pub items: Vec<GroceriesItem>,
     }
 
     // This is what we want to happen each time we create
     // a new shopping list
     impl ShoppingList {
-	pub fn new() -> Result<ShoppingList, Box<dyn Error>> {
+        pub fn new() -> Result<ShoppingList, Box<dyn Error>> {
             Ok(ShoppingList {
-		recipes_msg: RecipesOnList::new()?,
-		recipes: Vec::new(),
-		checklist_msg: CheckListMsg::new()?,
-		checklist: Vec::new(),
-		items_msg: ItemsOnListMsg::new()?,
-		items: Vec::new(),
+                recipes_msg: RecipesOnList::new()?,
+                recipes: Vec::new(),
+                checklist_msg: CheckListMsg::new()?,
+                checklist: Vec::new(),
+                items_msg: ItemsOnListMsg::new()?,
+                items: Vec::new(),
             })
-	}
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct RecipesOnList(pub String);
 
     impl RecipesOnList {
-	fn new() -> Result<RecipesOnList, Box<dyn Error>> {
+        fn new() -> Result<RecipesOnList, Box<dyn Error>> {
             Ok(RecipesOnList("We're making ...".to_string()))
-	}
+        }
     }
 
     impl fmt::Display for RecipesOnList {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{}", self.0)
-	}
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct RecipeName(pub String);
 
     impl fmt::Display for RecipeName {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{}", self.0)
-	}
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct CheckListMsg(pub String);
 
     impl CheckListMsg {
-	fn new() -> Result<CheckListMsg, Box<dyn Error>> {
+        fn new() -> Result<CheckListMsg, Box<dyn Error>> {
             Ok(CheckListMsg("We're making ...".to_string()))
-	}
+        }
     }
 
     impl fmt::Display for CheckListMsg {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{}", self.0)
-	}
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct ItemsOnListMsg(pub String);
 
     impl ItemsOnListMsg {
-	fn new() -> Result<ItemsOnListMsg, Box<dyn Error>> {
+        fn new() -> Result<ItemsOnListMsg, Box<dyn Error>> {
             Ok(ItemsOnListMsg("We need ...".to_string()))
-	}
+        }
     }
 
     impl fmt::Display for ItemsOnListMsg {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{}", self.0)
-	}
+        }
     }
 }
 
@@ -340,9 +340,7 @@ mod recipes {
 
             updated.push(new_recipe);
 
-            let recipes = Recipes {
-                library: updated,
-            };
+            let recipes = Recipes { library: updated };
 
             save_recipes(recipes)?;
 
@@ -395,14 +393,14 @@ mod recipes {
     fn get_new_recipe() -> Result<Recipe, Box<dyn Error>> {
         eprintln!("What's the recipe?");
 
-	let input = input()?;
+        let name = input()?;
 
-	let items_list = Vec::new();
-	
-        let items = list_input(items_list)?;
-	
+        let mut items = Vec::new();
+
+        items = list_input(items)?;
+
         Ok(Recipe {
-            name: RecipeName(input),
+            name: RecipeName(name),
             items,
         })
     }
@@ -454,8 +452,10 @@ mod list {
 	     --y\n\
 	     --any other key for new list"
         );
+
         if prompt_for_y()? {
             let path = "list.json";
+
             shopping_list = read_list(path).map_err(|e| {
                 format!(
                     "Failed to read list file '{}':\n\
@@ -510,7 +510,7 @@ mod list {
                 match input()?.as_str() {
                     "y" => shopping_list = add_recipe_to_list(shopping_list, recipe)?,
                     "s" => break,
-                    &_ => {}
+                    &_ => continue,
                 }
             }
             eprintln!(
@@ -549,7 +549,7 @@ mod list {
                     shopping_list = add_all_ingredients_to_list(shopping_list, recipe_items)?;
                     break;
                 }
-                &_ => {}
+                &_ => continue,
             }
         }
         Ok(shopping_list)
@@ -652,7 +652,7 @@ mod list {
                     shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?
                 }
                 "s" => break,
-                &_ => {}
+                &_ => continue,
             }
         }
         Ok(shopping_list)
@@ -673,7 +673,7 @@ mod list {
         for item in groceries_section.items {
             if !shopping_list
                 .items
-		// https://stackoverflow.com/questions/45624813/how-can-i-unpack-a-tuple-struct-like-i-would-a-classic-tuple/45624862
+                // https://stackoverflow.com/questions/45624813/how-can-i-unpack-a-tuple-struct-like-i-would-a-classic-tuple/45624862
                 .contains(&GroceriesItem(item.0.to_lowercase()))
             {
                 eprintln!("{}?", item.0.to_lowercase());
@@ -681,12 +681,14 @@ mod list {
                 match input()?.as_str() {
                     "y" => shopping_list
                         .items
+                        // the .0. is indexing the String wrapped in the tuple struct--
+                        // unpack the tuple, mutate the contents, rewrap the changes
                         .push(GroceriesItem(item.0.to_lowercase())),
                     "c" => shopping_list
                         .checklist
                         .push(GroceriesItem(item.0.to_lowercase())),
                     "s" => break,
-                    &_ => {}
+                    &_ => continue,
                 }
             }
         }
@@ -705,6 +707,7 @@ mod list {
             let path = "list.json";
 
             // Open shopping list
+            // Put trace here
             let shopping_list = read_list(path).map_err(|e| {
                 format!(
                     "Failed to read list file '{}':\n\
@@ -756,7 +759,7 @@ mod list {
 
         if prompt_for_y()? {
             let json = serde_json::to_string(&shopping_list)?;
-
+            // Put trace here
             write("list.json", json)?;
         }
         Ok(())
@@ -777,26 +780,26 @@ mod helpers {
         let _ = Write::flush(&mut stdout())?;
 
         let mut input = String::new();
-	
+
         stdin().read_line(&mut input)?;
 
-	let output = input.trim().to_string();
+        let output = input.trim().to_string();
 
-	// I was using the below to debug
-	// the input function's behavior,
-	// so left it in as a reminder;
-	// got this from Rust in Action, btw
-	/*
-	if cfg!(debug_assertions) {
-	    eprintln!("debug:\n\
-		       UNTRIMMED:\n\
-		       {:?}\n\
-		       TRIMMED:\n\
-		       {:?}",
-		      input, output);
-	}
-	 */
-	
+        // I was using the below to debug
+        // the input function's behavior,
+        // so left it in as a reminder;
+        // got this from Rust in Action
+        /*
+            if cfg!(debug_assertions) {
+            eprintln!("debug:\n\
+            UNTRIMMED:\n\
+            {:?}\n\
+            TRIMMED:\n\
+            {:?}",
+            input, output);
+        }
+             */
+
         Ok(output)
     }
 
@@ -811,7 +814,10 @@ mod helpers {
 
         let input = input()?;
 
-        let input_list: Vec<_> = input.split(',').map(|item| item.trim().to_lowercase()).collect();
+        let input_list: Vec<_> = input
+            .split(',')
+            .map(|item| item.trim().to_lowercase())
+            .collect();
 
         input_list.iter().for_each(|item| {
             if !items_list.contains(&GroceriesItem(item.to_string())) {
