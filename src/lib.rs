@@ -43,9 +43,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 }
 
 use crate::errors::*;
+
+// Customized handling of file reading errors
 pub mod errors {
     use super::*;
-    // Customized handling of file reading errors
+    
     #[derive(Debug)]
     pub enum ReadError {
 	DeserializingError(serde_json::Error),
@@ -90,12 +92,13 @@ pub mod errors {
 }
 
 use crate::data::*;
+
+// used to serialize and deserialize a
+// database of groceries we buy
+// organized by kitchen storage section
 pub mod data {
     use super::*;
-
-    // used to serialize and deserialize a
-    // database of groceries we buy
-    // organized by kitchen storage section
+    
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Groceries {
 	pub sections: Vec<GroceriesSection>,
@@ -127,7 +130,7 @@ pub mod data {
     // to serialize and deserialize a database of recipes
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Recipes {
-	pub recipes_library: Vec<Recipe>,
+	pub library: Vec<Recipe>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -244,7 +247,7 @@ mod groceries {
             let groceries = read_groceries(path).map_err(|e| {
                 format!(
                     "Failed to read groceries file '{}':\n\
-		     {}\n",
+		     '{}'\n",
                     path, e
                 )
             })?;
@@ -326,19 +329,19 @@ mod recipes {
             let recipes = read_recipes(path).map_err(|e| {
                 format!(
                     "Failed to read recipes file '{}':\n\
-		     {}",
+		     '{}'",
                     path, e
                 )
             })?;
 
-            let mut updated = recipes.recipes_library;
+            let mut updated = recipes.library;
 
             let new_recipe = get_new_recipe()?;
 
             updated.push(new_recipe);
 
             let recipes = Recipes {
-                recipes_library: updated,
+                library: updated,
             };
 
             save_recipes(recipes)?;
@@ -372,14 +375,14 @@ mod recipes {
         let recipes = read_recipes(path).map_err(|e| {
             format!(
                 "Failed to read recipes file '{}':\n\
-		 {}",
+		 '{}'",
                 path, e
             )
         })?;
 
         eprintln!("Here are our recipes:");
 
-        for recipe in recipes.recipes_library {
+        for recipe in recipes.library {
             eprintln!("- {}", recipe.name.to_string());
         }
         eprintln!();
@@ -392,16 +395,14 @@ mod recipes {
     fn get_new_recipe() -> Result<Recipe, Box<dyn Error>> {
         eprintln!("What's the recipe?");
 
-        let mut name = input()?;
+	let input = input()?;
 
-        name.pop();
-
-        let items_list = Vec::new();
-
+	let items_list = Vec::new();
+	
         let items = list_input(items_list)?;
-
+	
         Ok(Recipe {
-            name: RecipeName(name),
+            name: RecipeName(input),
             items,
         })
     }
@@ -458,7 +459,7 @@ mod list {
             shopping_list = read_list(path).map_err(|e| {
                 format!(
                     "Failed to read list file '{}':\n\
-		     {}",
+		     '{}'",
                     path, e
                 )
             })?;
@@ -491,12 +492,12 @@ mod list {
             let recipes = read_recipes(path).map_err(|e| {
                 format!(
                     "Failed to read recipes file '{}':\n\
-		     {}",
+		     '{}'",
                     path, e
                 )
             })?;
 
-            for recipe in recipes.recipes_library {
+            for recipe in recipes.library {
                 eprintln!(
                     "Shall we add ...\n\
 		     {}?\n\
@@ -506,7 +507,7 @@ mod list {
                     recipe.name
                 );
 
-                match input()?.trim() {
+                match input()?.as_str() {
                     "y" => shopping_list = add_recipe_to_list(shopping_list, recipe)?,
                     "s" => break,
                     &_ => {}
@@ -541,7 +542,7 @@ mod list {
         for ingredient in &recipe_items {
             eprintln!("{}?", ingredient.0.to_lowercase());
 
-            match input()?.trim() {
+            match input()?.as_str() {
                 "y" => shopping_list = add_ingredient_to_list(shopping_list, ingredient)?,
                 "c" => shopping_list = add_ingredient_to_checklist(shopping_list, ingredient)?,
                 "a" => {
@@ -615,7 +616,7 @@ mod list {
             let groceries = read_groceries(path).map_err(|e| {
                 format!(
                     "Failed to read groceries file '{}':\n\
-		     {}",
+		     '{}'",
                     path, e
                 )
             })?;
@@ -638,7 +639,6 @@ mod list {
         let groceries_sections = groceries.sections;
 
         for groceries_section in groceries_sections {
-            //let GroceriesSectionName(name) = &groceries_section.name;
             eprintln!(
                 "Do we need {}?\n\
 		 --y\n\
@@ -647,7 +647,7 @@ mod list {
                 &groceries_section.name.to_string().to_lowercase()
             );
 
-            match input()?.trim() {
+            match input()?.as_str() {
                 "y" => {
                     shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?
                 }
@@ -678,7 +678,7 @@ mod list {
             {
                 eprintln!("{}?", item.0.to_lowercase());
 
-                match input()?.trim() {
+                match input()?.as_str() {
                     "y" => shopping_list
                         .items
                         .push(GroceriesItem(item.0.to_lowercase())),
@@ -769,7 +769,7 @@ mod helpers {
 
     // Gets user input when it's 'y' or anything else
     pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
-        Ok("y" == input()?.trim())
+        Ok("y" == input()?)
     }
 
     // Function for getting user input
@@ -777,10 +777,27 @@ mod helpers {
         let _ = Write::flush(&mut stdout())?;
 
         let mut input = String::new();
-
+	
         stdin().read_line(&mut input)?;
 
-        Ok(input)
+	let output = input.trim().to_string();
+
+	// I was using the below to debug
+	// the input function's behavior,
+	// so left it in as a reminder;
+	// got this from Rust in Action, btw
+	/*
+	if cfg!(debug_assertions) {
+	    eprintln!("debug:\n\
+		       UNTRIMMED:\n\
+		       {:?}\n\
+		       TRIMMED:\n\
+		       {:?}",
+		      input, output);
+	}
+	 */
+	
+        Ok(output)
     }
 
     // Input a list and return it having added a list of user input strings
@@ -792,15 +809,13 @@ mod helpers {
 	     separated by commas"
         );
 
-        let mut input_string = input()?;
+        let input = input()?;
 
-        input_string.pop();
+        let input_list: Vec<_> = input.split(',').map(|item| item.trim().to_lowercase()).collect();
 
-        let input_list: Vec<&str> = input_string.split(',').collect();
-
-        input_list.iter().for_each(|i| {
-            if !items_list.contains(&GroceriesItem(i.to_string())) {
-                items_list.push(GroceriesItem(i.to_string()));
+        input_list.iter().for_each(|item| {
+            if !items_list.contains(&GroceriesItem(item.to_string())) {
+                items_list.push(GroceriesItem(item.to_string()));
             }
         });
 
