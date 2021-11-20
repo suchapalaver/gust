@@ -42,56 +42,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     }
 }
 
-use crate::errors::*;
-
-// Customized handling of
-// file reading errors
-pub mod errors {
-    use super::*;
-
-    #[derive(Debug)]
-    pub enum ReadError {
-        DeserializingError(serde_json::Error),
-        PathError(Box<dyn Error>),
-    }
-
-    // Yup, you can't just return some string as an error message
-    impl fmt::Display for ReadError {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            match self {
-                ReadError::DeserializingError(e) => write!(
-                    f,
-                    "Error deserializing from JSON file:\n\
-                     '{}'!\n\
-		     Something's wrong with the JSON file?\n\
-		     See the example json files in the \
-		     grusterylist repository to see \
-		     how things should look.\n",
-                    e
-                ),
-                ReadError::PathError(e) => write!(
-                    f,
-                    "Error: '{}'!\n\
-		     Make sure file with that path \
-		     can be accessed by the \
-		     present working directory",
-                    e
-                ),
-            }
-        }
-    }
-
-    // This is to make compatibility with the chain of Box<dyn Error> messaging
-    impl Error for ReadError {
-        fn description(&self) -> &str {
-            match *self {
-                ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
-                ReadError::PathError(_) => "File does not exist!",
-            }
-        }
-    }
-}
-
 use crate::data::*;
 
 // used to serialize and deserialize a
@@ -156,6 +106,15 @@ pub mod data {
         pub items: RecipeItems,
     }
 
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct RecipeName(pub String);
+
+    impl fmt::Display for RecipeName {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
     #[derive(Serialize, Deserialize, Debug)]
     pub struct RecipeItems(pub Vec<GroceriesItem>);
 
@@ -212,15 +171,6 @@ pub mod data {
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct RecipeName(pub String);
-
-    impl fmt::Display for RecipeName {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "{}", self.0)
-        }
-    }
-
-    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct ChecklistMsg(pub String);
 
     impl ChecklistMsg {
@@ -269,14 +219,59 @@ pub mod data {
     }
 }
 
-use crate::groceries::*;
-mod groceries {
+use crate::errors::*;
+
+// Customized handling of
+// file reading errors
+pub mod errors {
     use super::*;
 
-    pub fn run_groceries() -> Result<(), Box<dyn Error>> {
-        let _ = update_groceries()?;
-        Ok(())
+    #[derive(Debug)]
+    pub enum ReadError {
+        DeserializingError(serde_json::Error),
+        PathError(Box<dyn Error>),
     }
+
+    // Yup, you can't just return some string as an error message
+    impl fmt::Display for ReadError {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+                ReadError::DeserializingError(e) => write!(
+                    f,
+                    "Error deserializing from JSON file:\n\
+                     '{}'!\n\
+		     Something's wrong with the JSON file?\n\
+		     See the example json files in the \
+		     grusterylist repository to see \
+		     how things should look.\n",
+                    e
+                ),
+                ReadError::PathError(e) => write!(
+                    f,
+                    "Error: '{}'!\n\
+		     Make sure file with that path \
+		     can be accessed by the \
+		     present working directory",
+                    e
+                ),
+            }
+        }
+    }
+
+    // This is to make compatibility with the chain of Box<dyn Error> messaging
+    impl Error for ReadError {
+        fn description(&self) -> &str {
+            match *self {
+                ReadError::DeserializingError(_) => "Error deserializing from JSON file!",
+                ReadError::PathError(_) => "File does not exist!",
+            }
+        }
+    }
+}
+
+use crate::helpers::*;
+mod helpers {
+    use super::*;
 
     pub fn read_groceries<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader = read(path)?;
@@ -284,6 +279,98 @@ mod groceries {
         let groceries = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
 
         Ok(groceries)
+    }
+
+    pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
+        let reader = read(path)?;
+
+        let recipes = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
+
+        Ok(recipes)
+    }
+
+    // Gets user input when it's 'y' or anything else
+    pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
+        Ok("y" == input()?)
+    }
+
+    // Function for getting user input
+    pub fn input() -> Result<String, Box<dyn Error>> {
+        let _ = Write::flush(&mut stdout())?;
+
+        let mut input = String::new();
+
+        stdin().read_line(&mut input)?;
+
+        let output = input.trim().to_string();
+
+        // I was using the below to debug
+        // the input function's behavior,
+        // so left it in as a reminder;
+        // got this from Rust in Action
+        /*
+            if cfg!(debug_assertions) {
+            eprintln!("debug:\n\
+            UNTRIMMED:\n\
+            {:?}\n\
+            TRIMMED:\n\
+            {:?}",
+            input, output);
+        }
+             */
+
+        Ok(output)
+    }
+
+    // Input a list and return it having added a list of user input strings
+    pub fn list_input(
+        mut items_list: Vec<GroceriesItem>,
+    ) -> Result<Vec<GroceriesItem>, Box<dyn Error>> {
+        eprintln!(
+            "Enter the items, \
+	     separated by commas"
+        );
+
+        let input = input()?;
+
+        let input_list: Vec<_> = input
+            .split(',')
+            .map(|item| item.trim().to_lowercase())
+            .collect();
+
+        input_list.iter().for_each(|item| {
+            if !items_list.contains(&GroceriesItem(item.to_string())) {
+                items_list.push(GroceriesItem(item.to_string()));
+            }
+        });
+
+        Ok(items_list)
+    }
+
+    // Reads from a path into a buffer-reader
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
+        // Open the file in read-only mode with buffer.
+        let file = File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
+
+        let reader = BufReader::new(file);
+
+        Ok(reader)
+    }
+
+    // Writes a String to a path
+    pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), Box<dyn Error>> {
+        let _ = fs::write(path, &object)?;
+        Ok(())
+    }
+}
+
+use crate::groceries::*;
+mod groceries {
+    use super::*;
+
+    pub fn run_groceries() -> Result<(), Box<dyn Error>> {
+        let _ = update_groceries()?;
+        Ok(())
     }
 
     fn update_groceries() -> Result<(), Box<dyn Error>> {
@@ -360,16 +447,10 @@ mod recipes {
 
     pub fn run_recipes() -> Result<(), Box<dyn Error>> {
         let _ = view_recipes()?;
+
         let _ = new_recipes()?;
+
         Ok(())
-    }
-
-    pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
-        let reader = read(path)?;
-
-        let recipes = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
-
-        Ok(recipes)
     }
 
     fn view_recipes() -> Result<(), Box<dyn Error>> {
@@ -425,27 +506,6 @@ mod recipes {
         Ok(())
     }
 
-    fn print_recipes() -> Result<(), Box<dyn Error>> {
-        let path = "recipes.json";
-
-        let recipes = read_recipes(path).map_err(|e| {
-            format!(
-                "Failed to read recipes file '{}':\n\
-		 '{}'",
-                path, e
-            )
-        })?;
-
-        eprintln!("Here are our recipes:");
-
-        for recipe in recipes.library.0 {
-            eprintln!("- {}", recipe.name.to_string());
-        }
-        eprintln!();
-
-        Ok(())
-    }
-
     // Gets a new recipe from user
     // and returns it as a Recipe
     fn get_new_recipe() -> Result<Recipe, Box<dyn Error>> {
@@ -467,6 +527,27 @@ mod recipes {
         let json = serde_json::to_string(&recipes)?;
 
         write("recipes.json", json)?;
+
+        Ok(())
+    }
+
+    fn print_recipes() -> Result<(), Box<dyn Error>> {
+        let path = "recipes.json";
+
+        let recipes = read_recipes(path).map_err(|e| {
+            format!(
+                "Failed to read recipes file '{}':\n\
+		 '{}'",
+                path, e
+            )
+        })?;
+
+        eprintln!("Here are our recipes:");
+
+        for recipe in recipes.library.0 {
+            eprintln!("- {}", recipe.name.to_string());
+        }
+        eprintln!();
 
         Ok(())
     }
@@ -733,25 +814,27 @@ mod list {
         );
 
         for item in groceries_section.items.0 {
+            // https://stackoverflow.com/questions/45624813/how-can-i-unpack-a-tuple-struct-like-i-would-a-classic-tuple/45624862
+            // the .0. is indexing the String wrapped in the tuple struct
             if !shopping_list
                 .items
                 .0
-                // https://stackoverflow.com/questions/45624813/how-can-i-unpack-a-tuple-struct-like-i-would-a-classic-tuple/45624862
                 .contains(&GroceriesItem(item.0.to_lowercase()))
             {
                 eprintln!("{}?", item.0.to_lowercase());
 
                 match input()?.as_str() {
+                    // unpack the tuple, mutate the contents,
+                    // rewrap the changes in the tuple struct
                     "y" => shopping_list
                         .items
                         .0
-                        // the .0. is indexing the String wrapped in the tuple struct--
-                        // unpack the tuple, mutate the contents, rewrap the changes
                         .push(GroceriesItem(item.0.to_lowercase())),
                     "c" => shopping_list
                         .checklist
                         .0
                         .push(GroceriesItem(item.0.to_lowercase())),
+                    // skip remaining sections
                     "s" => break,
                     &_ => continue,
                 }
@@ -771,8 +854,6 @@ mod list {
         if prompt_for_y()? {
             let path = "list.json";
 
-            // Open shopping list
-            // Put trace here
             let shopping_list = read_list(path).map_err(|e| {
                 format!(
                     "Failed to read list file '{}':\n\
@@ -781,7 +862,7 @@ mod list {
                 )
             })?;
 
-            // Avoid printing things if they're empty
+            // Avoid printing empty lists
             if !shopping_list.checklist.0.is_empty()
                 && !shopping_list.recipes.0.is_empty()
                 && !shopping_list.items.0.is_empty()
@@ -809,6 +890,7 @@ mod list {
                     println!("\t{}", item.0.to_lowercase());
                 });
             }
+            // Print a new line at end of output
             println!();
         }
         Ok(())
@@ -827,85 +909,6 @@ mod list {
             // Put trace here
             write("list.json", json)?;
         }
-        Ok(())
-    }
-}
-
-use crate::helpers::*;
-mod helpers {
-    use super::*;
-
-    // Gets user input when it's 'y' or anything else
-    pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
-        Ok("y" == input()?)
-    }
-
-    // Function for getting user input
-    pub fn input() -> Result<String, Box<dyn Error>> {
-        let _ = Write::flush(&mut stdout())?;
-
-        let mut input = String::new();
-
-        stdin().read_line(&mut input)?;
-
-        let output = input.trim().to_string();
-
-        // I was using the below to debug
-        // the input function's behavior,
-        // so left it in as a reminder;
-        // got this from Rust in Action
-        /*
-            if cfg!(debug_assertions) {
-            eprintln!("debug:\n\
-            UNTRIMMED:\n\
-            {:?}\n\
-            TRIMMED:\n\
-            {:?}",
-            input, output);
-        }
-             */
-
-        Ok(output)
-    }
-
-    // Input a list and return it having added a list of user input strings
-    pub fn list_input(
-        mut items_list: Vec<GroceriesItem>,
-    ) -> Result<Vec<GroceriesItem>, Box<dyn Error>> {
-        eprintln!(
-            "Enter the items, \
-	     separated by commas"
-        );
-
-        let input = input()?;
-
-        let input_list: Vec<_> = input
-            .split(',')
-            .map(|item| item.trim().to_lowercase())
-            .collect();
-
-        input_list.iter().for_each(|item| {
-            if !items_list.contains(&GroceriesItem(item.to_string())) {
-                items_list.push(GroceriesItem(item.to_string()));
-            }
-        });
-
-        Ok(items_list)
-    }
-
-    // Reads from a path into a buffer-reader
-    pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
-        // Open the file in read-only mode with buffer.
-        let file = File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
-
-        let reader = BufReader::new(file);
-
-        Ok(reader)
-    }
-
-    // Writes a String to a path
-    pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), Box<dyn Error>> {
-        let _ = fs::write(path, &object)?;
         Ok(())
     }
 }
