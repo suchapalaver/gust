@@ -169,7 +169,7 @@ pub mod data {
         pub checklist_msg: ChecklistMsg,
         pub checklist: ChecklistItems,
         pub items_msg: ItemsOnListMsg,
-        pub items: Vec<GroceriesItem>,
+        pub items: ShoppingListItems,
     }
 
     // This is what we want to happen each time we create
@@ -182,7 +182,7 @@ pub mod data {
                 checklist_msg: ChecklistMsg::new()?,
                 checklist: ChecklistItems::new()?,
                 items_msg: ItemsOnListMsg::new()?,
-                items: Vec::new(),
+                items: ShoppingListItems::new()?,
             })
         }
     }
@@ -206,7 +206,7 @@ pub mod data {
     pub struct RecipeNameList(pub Vec<RecipeName>);
 
     impl RecipeNameList {
-	fn new() -> Result<RecipeNameList, Box<dyn Error>> {
+        fn new() -> Result<RecipeNameList, Box<dyn Error>> {
             Ok(RecipeNameList(Vec::new()))
         }
     }
@@ -256,6 +256,15 @@ pub mod data {
     impl fmt::Display for ItemsOnListMsg {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{}", self.0)
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct ShoppingListItems(pub Vec<GroceriesItem>);
+
+    impl ShoppingListItems {
+        fn new() -> Result<ShoppingListItems, Box<dyn Error>> {
+            Ok(ShoppingListItems(Vec::new()))
         }
     }
 }
@@ -464,7 +473,7 @@ mod list {
         let mut shopping_list = get_saved_or_new_list()?;
 
         // view list if using saved list
-        if !shopping_list.items.is_empty() {
+        if !shopping_list.items.0.is_empty() {
             print_list()?;
         }
 
@@ -602,10 +611,12 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         if !shopping_list
             .items
+            .0
             .contains(&GroceriesItem(ingredient.0.to_lowercase()))
         {
             shopping_list
                 .items
+                .0
                 .push(GroceriesItem(ingredient.0.to_lowercase()));
         }
         Ok(shopping_list)
@@ -620,9 +631,10 @@ mod list {
             // Avoid adding repeat items to list
             if !shopping_list
                 .items
+                .0
                 .contains(&GroceriesItem(ingredient.0.to_lowercase()))
             {
-                shopping_list.items.push(ingredient);
+                shopping_list.items.0.push(ingredient);
             }
         }
         Ok(shopping_list)
@@ -634,7 +646,8 @@ mod list {
         ingredient: &GroceriesItem,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         shopping_list
-            .checklist.0
+            .checklist
+            .0
             .push(GroceriesItem(ingredient.0.to_lowercase()));
 
         Ok(shopping_list)
@@ -713,6 +726,7 @@ mod list {
         for item in groceries_section.items.0 {
             if !shopping_list
                 .items
+                .0
                 // https://stackoverflow.com/questions/45624813/how-can-i-unpack-a-tuple-struct-like-i-would-a-classic-tuple/45624862
                 .contains(&GroceriesItem(item.0.to_lowercase()))
             {
@@ -721,11 +735,13 @@ mod list {
                 match input()?.as_str() {
                     "y" => shopping_list
                         .items
+                        .0
                         // the .0. is indexing the String wrapped in the tuple struct--
                         // unpack the tuple, mutate the contents, rewrap the changes
                         .push(GroceriesItem(item.0.to_lowercase())),
                     "c" => shopping_list
-                        .checklist.0
+                        .checklist
+                        .0
                         .push(GroceriesItem(item.0.to_lowercase())),
                     "s" => break,
                     &_ => continue,
@@ -759,7 +775,7 @@ mod list {
             // Avoid printing things if they're empty
             if !shopping_list.checklist.0.is_empty()
                 && !shopping_list.recipes.0.is_empty()
-                && !shopping_list.items.is_empty()
+                && !shopping_list.items.0.is_empty()
             {
                 println!("Here's what we have:\n");
             }
@@ -777,10 +793,10 @@ mod list {
                     println!("\t{}", recipe);
                 });
             }
-            if !shopping_list.items.is_empty() {
+            if !shopping_list.items.0.is_empty() {
                 println!("{}", shopping_list.items_msg);
 
-                shopping_list.items.iter().for_each(|item| {
+                shopping_list.items.0.iter().for_each(|item| {
                     println!("\t{}", item.0.to_lowercase());
                 });
             }
