@@ -8,7 +8,14 @@ use std::{
     path::Path,
 };
 
-pub fn run() -> Result<(), Box<dyn Error>> {
+use crate::{data::*, errors::*, groceries::*, helpers::*, list::*, recipes::*};
+
+// Saved some typing most common Return types
+type ReturnList = Result<ShoppingList, Box<dyn Error>>;
+type Void = Result<(), Box<dyn Error>>;
+
+pub fn run() -> Void {
+    // Using `clap` to parse command line arguments
     let matches = App::new("grusterylist")
         .override_help(
             "\n\
@@ -30,7 +37,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         )
         .arg(Arg::new("subcommands").required(true).max_values(1))
         .get_matches();
-
+    // Run application with one of three subcommands:
+    // cargo run -- l
+    //   "    "  -- g
+    //   "    "  -- r
     match matches.value_of("subcommands").unwrap() {
         "l" => Ok(make_list()?),
         "g" => Ok(run_groceries()?),
@@ -38,11 +48,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &_ => Err("Invalid command.\n\
 		   For help, try:\n\
 		   cargo run -- -h"
-            .into()),
+		  .into()),
     }
 }
-
-use crate::data::*;
 
 // used to serialize and deserialize a
 // database of groceries we buy
@@ -134,7 +142,7 @@ pub mod data {
     // This is what we want to happen each time we create
     // a new shopping list
     impl ShoppingList {
-        pub fn new() -> Result<ShoppingList, Box<dyn Error>> {
+        pub fn new() -> ReturnList {
             Ok(ShoppingList {
                 recipes_msg: RecipesOnListMsg::new()?,
                 recipes: RecipeNameList::new()?,
@@ -151,8 +159,11 @@ pub mod data {
 
     impl RecipesOnListMsg {
         fn new() -> Result<RecipesOnListMsg, Box<dyn Error>> {
-            Ok(RecipesOnListMsg("\n\
-				 We're making ...".to_string()))
+            Ok(RecipesOnListMsg(
+                "\n\
+		 We're making ..."
+                    .to_string(),
+            ))
         }
     }
 
@@ -176,8 +187,11 @@ pub mod data {
 
     impl ChecklistMsg {
         fn new() -> Result<ChecklistMsg, Box<dyn Error>> {
-            Ok(ChecklistMsg("\n\
-			     Check if we need ...".to_string()))
+            Ok(ChecklistMsg(
+                "\n\
+		 Check if we need ..."
+                    .to_string(),
+            ))
         }
     }
 
@@ -201,8 +215,11 @@ pub mod data {
 
     impl ItemsOnListMsg {
         fn new() -> Result<ItemsOnListMsg, Box<dyn Error>> {
-            Ok(ItemsOnListMsg("\n\
-			       We need ...".to_string()))
+            Ok(ItemsOnListMsg(
+                "\n\
+		 We need ..."
+                    .to_string(),
+            ))
         }
     }
 
@@ -221,8 +238,6 @@ pub mod data {
         }
     }
 }
-
-use crate::errors::*;
 
 // Customized handling of
 // file reading errors
@@ -261,7 +276,8 @@ pub mod errors {
         }
     }
 
-    // This is to make compatibility with the chain of Box<dyn Error> messaging
+    // This is to make compatibility with
+    // the chain of Box<dyn Error> messaging
     impl Error for ReadError {
         fn description(&self) -> &str {
             match *self {
@@ -272,7 +288,6 @@ pub mod errors {
     }
 }
 
-use crate::helpers::*;
 mod helpers {
     use super::*;
 
@@ -312,15 +327,15 @@ mod helpers {
         // so left it in as a reminder;
         // got this from Rust in Action
         /*
-            if cfg!(debug_assertions) {
-            eprintln!("debug:\n\
-            UNTRIMMED:\n\
-            {:?}\n\
-            TRIMMED:\n\
-            {:?}",
-            input, output);
-        }
-             */
+        if cfg!(debug_assertions) {
+        eprintln!("debug:\n\
+        UNTRIMMED:\n\
+        {:?}\n\
+        TRIMMED:\n\
+        {:?}",
+        input, output);
+    }
+         */
 
         Ok(output)
     }
@@ -361,22 +376,21 @@ mod helpers {
     }
 
     // Writes a String to a path
-    pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), Box<dyn Error>> {
+    pub fn write<P: AsRef<Path>>(path: P, object: String) -> Void {
         let _ = fs::write(path, &object)?;
         Ok(())
     }
 }
 
-use crate::groceries::*;
 mod groceries {
     use super::*;
 
-    pub fn run_groceries() -> Result<(), Box<dyn Error>> {
+    pub fn run_groceries() -> Void {
         let _ = update_groceries()?;
         Ok(())
     }
 
-    fn update_groceries() -> Result<(), Box<dyn Error>> {
+    fn update_groceries() -> Void {
         eprintln!(
             "Add groceries to our library?\n\
 	     --y\n\
@@ -444,11 +458,10 @@ mod groceries {
     }
 }
 
-use crate::recipes::*;
 mod recipes {
     use super::*;
 
-    pub fn run_recipes() -> Result<(), Box<dyn Error>> {
+    pub fn run_recipes() -> Void {
         let _ = view_recipes()?;
 
         let _ = new_recipes()?;
@@ -456,7 +469,7 @@ mod recipes {
         Ok(())
     }
 
-    fn view_recipes() -> Result<(), Box<dyn Error>> {
+    fn view_recipes() -> Void {
         eprintln!(
             "View the recipes we have \
 	     in our library?\n\
@@ -470,7 +483,7 @@ mod recipes {
         Ok(())
     }
 
-    fn new_recipes() -> Result<(), Box<dyn Error>> {
+    fn new_recipes() -> Void {
         eprintln!(
             "Add recipes to our library?\n\
 	     --y\n\
@@ -526,7 +539,7 @@ mod recipes {
         })
     }
 
-    fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
+    fn save_recipes(recipes: Recipes) -> Void {
         let json = serde_json::to_string(&recipes)?;
 
         write("recipes.json", json)?;
@@ -534,7 +547,7 @@ mod recipes {
         Ok(())
     }
 
-    fn print_recipes() -> Result<(), Box<dyn Error>> {
+    fn print_recipes() -> Void {
         let path = "recipes.json";
 
         let recipes = read_recipes(path).map_err(|e| {
@@ -556,12 +569,11 @@ mod recipes {
     }
 }
 
-use crate::list::*;
 mod list {
     use super::*;
 
     // Like run() for the shopping-list-making function in grusterylist
-    pub fn make_list() -> Result<(), Box<dyn Error>> {
+    pub fn make_list() -> Void {
         // Open a saved or new list
         let mut shopping_list = get_saved_or_new_list()?;
 
@@ -586,7 +598,7 @@ mod list {
     }
 
     // Prompt user whether to use a saved or new list and return their choice
-    fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
+    fn get_saved_or_new_list() -> ReturnList {
         let mut shopping_list = ShoppingList::new()?;
 
         eprintln!(
@@ -611,7 +623,7 @@ mod list {
     }
 
     // Prints list
-    fn print_list() -> Result<(), Box<dyn Error>> {
+    fn print_list() -> Void {
         eprintln!(
             "\n\
 	     Print out shopping list?\n\
@@ -665,7 +677,7 @@ mod list {
     }
 
     // Open and deserialize a shopping list JSON file from given path
-    fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
+    fn read_list<P: AsRef<Path> + Copy>(path: P) -> ReturnList {
         let reader = read(path)?;
 
         let shopping_list =
@@ -675,9 +687,7 @@ mod list {
     }
 
     // Adds recipe ingredients to a shopping list
-    fn add_recipes_to_list(
-        mut shopping_list: ShoppingList,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    fn add_recipes_to_list(mut shopping_list: ShoppingList) -> ReturnList {
         eprintln!(
             "Add recipe ingredients to our list?\n\
 	     --y\n\
@@ -720,10 +730,7 @@ mod list {
     }
 
     // Adds ingredients of an individual recipe to a shopping list
-    fn add_recipe_to_list(
-        mut shopping_list: ShoppingList,
-        recipe: Recipe,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    fn add_recipe_to_list(mut shopping_list: ShoppingList, recipe: Recipe) -> ReturnList {
         shopping_list.recipes.0.push(recipe.name);
 
         eprintln!(
@@ -756,7 +763,7 @@ mod list {
     fn add_ingredient_to_list(
         mut shopping_list: ShoppingList,
         ingredient: &GroceriesItem,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    ) -> ReturnList {
         if !shopping_list
             .items
             .0
@@ -774,7 +781,7 @@ mod list {
     fn add_all_ingredients_to_list(
         mut shopping_list: ShoppingList,
         recipe_items: Vec<GroceriesItem>,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    ) -> ReturnList {
         for ingredient in recipe_items {
             // Avoid adding repeat items to list
             if !shopping_list
@@ -792,7 +799,7 @@ mod list {
     fn add_ingredient_to_checklist(
         mut shopping_list: ShoppingList,
         ingredient: &GroceriesItem,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    ) -> ReturnList {
         shopping_list
             .checklist
             .0
@@ -802,9 +809,7 @@ mod list {
     }
 
     // Adds groceries to list
-    fn add_groceries_to_list(
-        mut shopping_list: ShoppingList,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    fn add_groceries_to_list(mut shopping_list: ShoppingList) -> ReturnList {
         eprintln!(
             "Add groceries to shopping list?\n\
 	     --y\n\
@@ -836,7 +841,7 @@ mod list {
     fn add_grocery_sections_to_list(
         mut shopping_list: ShoppingList,
         groceries: Groceries,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    ) -> ReturnList {
         let groceries_sections = groceries.sections;
 
         for groceries_section in groceries_sections.0 {
@@ -862,7 +867,7 @@ mod list {
     fn add_grocery_section_to_list(
         mut shopping_list: ShoppingList,
         groceries_section: GroceriesSection,
-    ) -> Result<ShoppingList, Box<dyn Error>> {
+    ) -> ReturnList {
         eprintln!(
             "Do we need ...?\n\
 	     --y\n\
@@ -902,7 +907,7 @@ mod list {
     }
 
     // Saves shopping list
-    fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
+    fn save_list(shopping_list: ShoppingList) -> Void {
         eprintln!(
             "Save current list?\n\
 	     --y\n\
