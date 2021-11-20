@@ -33,8 +33,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     match matches.value_of("subcommands").unwrap() {
         "l" => Ok(make_list()?),
-        "g" => Ok(update_groceries()?),
-        "r" => Ok(new_recipes()?),
+        "g" => Ok(run_groceries()?),
+        "r" => Ok(run_recipes()?),
         &_ => Err("Invalid command.\n\
 		   For help, try:\n\
 		   cargo run -- -h"
@@ -273,6 +273,11 @@ use crate::groceries::*;
 mod groceries {
     use super::*;
 
+    pub fn run_groceries() -> Result<(), Box<dyn Error>> {
+        let _ = update_groceries()?;
+        Ok(())
+    }
+
     pub fn read_groceries<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader = read(path)?;
 
@@ -281,7 +286,7 @@ mod groceries {
         Ok(groceries)
     }
 
-    pub fn update_groceries() -> Result<(), Box<dyn Error>> {
+    fn update_groceries() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add groceries to our library?\n\
 	     --y\n\
@@ -353,6 +358,12 @@ use crate::recipes::*;
 mod recipes {
     use super::*;
 
+    pub fn run_recipes() -> Result<(), Box<dyn Error>> {
+        let _ = view_recipes()?;
+        let _ = new_recipes()?;
+        Ok(())
+    }
+
     pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
         let reader = read(path)?;
 
@@ -361,9 +372,21 @@ mod recipes {
         Ok(recipes)
     }
 
-    pub fn new_recipes() -> Result<(), Box<dyn Error>> {
-        let _ = view_recipes()?;
+    fn view_recipes() -> Result<(), Box<dyn Error>> {
+        eprintln!(
+            "View the recipes we have \
+	     in our library?\n\
+	     --y\n\
+	     --any other key to continue"
+        );
 
+        if prompt_for_y()? {
+            print_recipes()?;
+        }
+        Ok(())
+    }
+
+    fn new_recipes() -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Add recipes to our library?\n\
 	     --y\n\
@@ -398,20 +421,6 @@ mod recipes {
 		 --y\n\
 		 --any other key to exit"
             );
-        }
-        Ok(())
-    }
-
-    fn view_recipes() -> Result<(), Box<dyn Error>> {
-        eprintln!(
-            "View the recipes we have \
-	     in our library?\n\
-	     --y\n\
-	     --any other key to continue"
-        );
-
-        if prompt_for_y()? {
-            print_recipes()?;
         }
         Ok(())
     }
