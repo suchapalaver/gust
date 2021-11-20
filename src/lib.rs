@@ -12,9 +12,9 @@ use crate::{data::*, errors::*, groceries::*, helpers::*, list::*, recipes::*};
 
 // Saved some typing most common Return types
 type ReturnList = Result<ShoppingList, Box<dyn Error>>;
-type Void = Result<(), Box<dyn Error>>;
+type NonValue = Result<(), Box<dyn Error>>;
 
-pub fn run() -> Void {
+pub fn run() -> NonValue {
     // Using `clap` to parse command line arguments
     let matches = App::new("grusterylist")
         .override_help(
@@ -376,7 +376,7 @@ mod helpers {
     }
 
     // Writes a String to a path
-    pub fn write<P: AsRef<Path>>(path: P, object: String) -> Void {
+    pub fn write<P: AsRef<Path>>(path: P, object: String) -> NonValue {
         let _ = fs::write(path, &object)?;
         Ok(())
     }
@@ -385,12 +385,12 @@ mod helpers {
 mod groceries {
     use super::*;
 
-    pub fn run_groceries() -> Void {
+    pub fn run_groceries() -> NonValue {
         let _ = update_groceries()?;
         Ok(())
     }
 
-    fn update_groceries() -> Void {
+    fn update_groceries() -> NonValue {
         eprintln!(
             "Add groceries to our library?\n\
 	     --y\n\
@@ -461,7 +461,7 @@ mod groceries {
 mod recipes {
     use super::*;
 
-    pub fn run_recipes() -> Void {
+    pub fn run_recipes() -> NonValue {
         let _ = view_recipes()?;
 
         let _ = new_recipes()?;
@@ -469,7 +469,7 @@ mod recipes {
         Ok(())
     }
 
-    fn view_recipes() -> Void {
+    fn view_recipes() -> NonValue {
         eprintln!(
             "View the recipes we have \
 	     in our library?\n\
@@ -483,7 +483,7 @@ mod recipes {
         Ok(())
     }
 
-    fn new_recipes() -> Void {
+    fn new_recipes() -> NonValue {
         eprintln!(
             "Add recipes to our library?\n\
 	     --y\n\
@@ -539,7 +539,7 @@ mod recipes {
         })
     }
 
-    fn save_recipes(recipes: Recipes) -> Void {
+    fn save_recipes(recipes: Recipes) -> NonValue {
         let json = serde_json::to_string(&recipes)?;
 
         write("recipes.json", json)?;
@@ -547,7 +547,7 @@ mod recipes {
         Ok(())
     }
 
-    fn print_recipes() -> Void {
+    fn print_recipes() -> NonValue {
         let path = "recipes.json";
 
         let recipes = read_recipes(path).map_err(|e| {
@@ -573,7 +573,7 @@ mod list {
     use super::*;
 
     // Like run() for the shopping-list-making function in grusterylist
-    pub fn make_list() -> Void {
+    pub fn make_list() -> NonValue {
         // Open a saved or new list
         let mut shopping_list = get_saved_or_new_list()?;
 
@@ -623,7 +623,7 @@ mod list {
     }
 
     // Prints list
-    fn print_list() -> Void {
+    fn print_list() -> NonValue {
         eprintln!(
             "\n\
 	     Print out shopping list?\n\
@@ -907,7 +907,7 @@ mod list {
     }
 
     // Saves shopping list
-    fn save_list(shopping_list: ShoppingList) -> Void {
+    fn save_list(shopping_list: ShoppingList) -> NonValue {
         eprintln!(
             "Save current list?\n\
 	     --y\n\
