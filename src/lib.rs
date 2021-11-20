@@ -151,7 +151,8 @@ pub mod data {
 
     impl RecipesOnListMsg {
         fn new() -> Result<RecipesOnListMsg, Box<dyn Error>> {
-            Ok(RecipesOnListMsg("We're making ...".to_string()))
+            Ok(RecipesOnListMsg("\n\
+				 We're making ...".to_string()))
         }
     }
 
@@ -175,7 +176,8 @@ pub mod data {
 
     impl ChecklistMsg {
         fn new() -> Result<ChecklistMsg, Box<dyn Error>> {
-            Ok(ChecklistMsg("We're making ...".to_string()))
+            Ok(ChecklistMsg("\n\
+			     Check if we need ...".to_string()))
         }
     }
 
@@ -199,7 +201,8 @@ pub mod data {
 
     impl ItemsOnListMsg {
         fn new() -> Result<ItemsOnListMsg, Box<dyn Error>> {
-            Ok(ItemsOnListMsg("We need ...".to_string()))
+            Ok(ItemsOnListMsg("\n\
+			       We need ...".to_string()))
         }
     }
 
@@ -587,7 +590,8 @@ mod list {
         let mut shopping_list = ShoppingList::new()?;
 
         eprintln!(
-            "Use saved list?\n\
+            "\n\
+	     Use saved list?\n\
 	     --y\n\
 	     --any other key for new list"
         );
@@ -604,6 +608,60 @@ mod list {
             })?;
         }
         Ok(shopping_list)
+    }
+
+    // Prints list
+    fn print_list() -> Result<(), Box<dyn Error>> {
+        eprintln!(
+            "\n\
+	     Print out shopping list?\n\
+	     --y\n\
+	     --any other key to continue"
+        );
+
+        if prompt_for_y()? {
+            let path = "list.json";
+
+            let shopping_list = read_list(path).map_err(|e| {
+                format!(
+                    "Failed to read list file '{}':\n\
+		     {}",
+                    path, e
+                )
+            })?;
+
+            // Avoid printing empty lists
+            if !shopping_list.checklist.0.is_empty()
+                && !shopping_list.recipes.0.is_empty()
+                && !shopping_list.items.0.is_empty()
+            {
+                println!("Here's what we have:\n");
+            }
+            if !shopping_list.checklist.0.is_empty() {
+                println!("{}", shopping_list.checklist_msg);
+
+                shopping_list.checklist.0.iter().for_each(|item| {
+                    println!("\t{}", item.0.to_lowercase());
+                });
+            }
+            if !shopping_list.recipes.0.is_empty() {
+                println!("{}", shopping_list.recipes_msg);
+
+                shopping_list.recipes.0.iter().for_each(|recipe| {
+                    println!("\t{}", recipe);
+                });
+            }
+            if !shopping_list.items.0.is_empty() {
+                println!("{}", shopping_list.items_msg);
+
+                shopping_list.items.0.iter().for_each(|item| {
+                    println!("\t{}", item.0.to_lowercase());
+                });
+            }
+            // Print a new line at end of output
+            println!();
+        }
+        Ok(())
     }
 
     // Open and deserialize a shopping list JSON file from given path
@@ -843,61 +901,8 @@ mod list {
         Ok(shopping_list)
     }
 
-    // Prints list
-    fn print_list() -> Result<(), Box<dyn Error>> {
-        eprintln!(
-            "Print out shopping list?\n\
-	     --y\n\
-	     --any other key to continue"
-        );
-
-        if prompt_for_y()? {
-            let path = "list.json";
-
-            let shopping_list = read_list(path).map_err(|e| {
-                format!(
-                    "Failed to read list file '{}':\n\
-		     {}",
-                    path, e
-                )
-            })?;
-
-            // Avoid printing empty lists
-            if !shopping_list.checklist.0.is_empty()
-                && !shopping_list.recipes.0.is_empty()
-                && !shopping_list.items.0.is_empty()
-            {
-                println!("Here's what we have:\n");
-            }
-            if !shopping_list.checklist.0.is_empty() {
-                println!("{}", shopping_list.checklist_msg);
-
-                shopping_list.checklist.0.iter().for_each(|item| {
-                    println!("\t{}", item.0.to_lowercase());
-                });
-            }
-            if !shopping_list.recipes.0.is_empty() {
-                println!("{}", shopping_list.recipes_msg);
-
-                shopping_list.recipes.0.iter().for_each(|recipe| {
-                    println!("\t{}", recipe);
-                });
-            }
-            if !shopping_list.items.0.is_empty() {
-                println!("{}", shopping_list.items_msg);
-
-                shopping_list.items.0.iter().for_each(|item| {
-                    println!("\t{}", item.0.to_lowercase());
-                });
-            }
-            // Print a new line at end of output
-            println!();
-        }
-        Ok(())
-    }
-
     // Saves shopping list
-    pub fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
+    fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
         eprintln!(
             "Save current list?\n\
 	     --y\n\
