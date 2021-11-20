@@ -107,7 +107,6 @@ pub mod data {
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct GroceriesSections(pub Vec<GroceriesSection>);
-    
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct GroceriesSection {
@@ -141,22 +140,25 @@ pub mod data {
         pub library: RecipeLib,
     }
 
-     #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug)]
     pub struct RecipeLib(pub Vec<Recipe>);
 
     impl RecipeLib {
-	pub fn new() -> Result<RecipeLib, Box<dyn Error>> {
-	    let library: Vec<Recipe> = Vec::new();
-	    Ok(RecipeLib(library))
-	}
+        pub fn new() -> Result<RecipeLib, Box<dyn Error>> {
+            let library: Vec<Recipe> = Vec::new();
+            Ok(RecipeLib(library))
+        }
     }
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Recipe {
         pub name: RecipeName,
-        pub items: Vec<GroceriesItem>,
+        pub items: RecipeItems,
     }
-    
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct RecipeItems(pub Vec<GroceriesItem>);
+
     // used to serialize and deserialize the
     // most recently saved list or to create a
     // new grocery list that can be saved as JSON
@@ -358,7 +360,9 @@ mod recipes {
 
             updated.push(new_recipe);
 
-            let recipes = Recipes { library: RecipeLib(updated) };
+            let recipes = Recipes {
+                library: RecipeLib(updated),
+            };
 
             save_recipes(recipes)?;
 
@@ -419,7 +423,7 @@ mod recipes {
 
         Ok(Recipe {
             name: RecipeName(name),
-            items,
+            items: RecipeItems(items),
         })
     }
 
@@ -557,14 +561,14 @@ mod list {
 
         let recipe_items = recipe.items;
 
-        for ingredient in &recipe_items {
+        for ingredient in &recipe_items.0 {
             eprintln!("{}?", ingredient.0.to_lowercase());
 
             match input()?.as_str() {
                 "y" => shopping_list = add_ingredient_to_list(shopping_list, ingredient)?,
                 "c" => shopping_list = add_ingredient_to_checklist(shopping_list, ingredient)?,
                 "a" => {
-                    shopping_list = add_all_ingredients_to_list(shopping_list, recipe_items)?;
+                    shopping_list = add_all_ingredients_to_list(shopping_list, recipe_items.0)?;
                     break;
                 }
                 &_ => continue,
