@@ -164,10 +164,10 @@ pub mod data {
     // new grocery list that can be saved as JSON
     #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct ShoppingList {
-        pub recipes_msg: RecipesOnList,
-        pub recipes: Vec<RecipeName>,
-        pub checklist_msg: CheckListMsg,
-        pub checklist: Vec<GroceriesItem>,
+        pub recipes_msg: RecipesOnListMsg,
+        pub recipes: RecipeNameList,
+        pub checklist_msg: ChecklistMsg,
+        pub checklist: ChecklistItems,
         pub items_msg: ItemsOnListMsg,
         pub items: Vec<GroceriesItem>,
     }
@@ -177,10 +177,10 @@ pub mod data {
     impl ShoppingList {
         pub fn new() -> Result<ShoppingList, Box<dyn Error>> {
             Ok(ShoppingList {
-                recipes_msg: RecipesOnList::new()?,
-                recipes: Vec::new(),
-                checklist_msg: CheckListMsg::new()?,
-                checklist: Vec::new(),
+                recipes_msg: RecipesOnListMsg::new()?,
+                recipes: RecipeNameList::new()?,
+                checklist_msg: ChecklistMsg::new()?,
+                checklist: ChecklistItems::new()?,
                 items_msg: ItemsOnListMsg::new()?,
                 items: Vec::new(),
             })
@@ -188,17 +188,26 @@ pub mod data {
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct RecipesOnList(pub String);
+    pub struct RecipesOnListMsg(pub String);
 
-    impl RecipesOnList {
-        fn new() -> Result<RecipesOnList, Box<dyn Error>> {
-            Ok(RecipesOnList("We're making ...".to_string()))
+    impl RecipesOnListMsg {
+        fn new() -> Result<RecipesOnListMsg, Box<dyn Error>> {
+            Ok(RecipesOnListMsg("We're making ...".to_string()))
         }
     }
 
-    impl fmt::Display for RecipesOnList {
+    impl fmt::Display for RecipesOnListMsg {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{}", self.0)
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct RecipeNameList(pub Vec<RecipeName>);
+
+    impl RecipeNameList {
+	fn new() -> Result<RecipeNameList, Box<dyn Error>> {
+            Ok(RecipeNameList(Vec::new()))
         }
     }
 
@@ -212,17 +221,26 @@ pub mod data {
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct CheckListMsg(pub String);
+    pub struct ChecklistMsg(pub String);
 
-    impl CheckListMsg {
-        fn new() -> Result<CheckListMsg, Box<dyn Error>> {
-            Ok(CheckListMsg("We're making ...".to_string()))
+    impl ChecklistMsg {
+        fn new() -> Result<ChecklistMsg, Box<dyn Error>> {
+            Ok(ChecklistMsg("We're making ...".to_string()))
         }
     }
 
-    impl fmt::Display for CheckListMsg {
+    impl fmt::Display for ChecklistMsg {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{}", self.0)
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct ChecklistItems(pub Vec<GroceriesItem>);
+
+    impl ChecklistItems {
+        fn new() -> Result<ChecklistItems, Box<dyn Error>> {
+            Ok(ChecklistItems(Vec::new()))
         }
     }
 
@@ -549,7 +567,7 @@ mod list {
         mut shopping_list: ShoppingList,
         recipe: Recipe,
     ) -> Result<ShoppingList, Box<dyn Error>> {
-        shopping_list.recipes.push(recipe.name);
+        shopping_list.recipes.0.push(recipe.name);
 
         eprintln!(
             "Do we need ... ?\n\
@@ -616,7 +634,7 @@ mod list {
         ingredient: &GroceriesItem,
     ) -> Result<ShoppingList, Box<dyn Error>> {
         shopping_list
-            .checklist
+            .checklist.0
             .push(GroceriesItem(ingredient.0.to_lowercase()));
 
         Ok(shopping_list)
@@ -707,7 +725,7 @@ mod list {
                         // unpack the tuple, mutate the contents, rewrap the changes
                         .push(GroceriesItem(item.0.to_lowercase())),
                     "c" => shopping_list
-                        .checklist
+                        .checklist.0
                         .push(GroceriesItem(item.0.to_lowercase())),
                     "s" => break,
                     &_ => continue,
@@ -739,23 +757,23 @@ mod list {
             })?;
 
             // Avoid printing things if they're empty
-            if !shopping_list.checklist.is_empty()
-                && !shopping_list.recipes.is_empty()
+            if !shopping_list.checklist.0.is_empty()
+                && !shopping_list.recipes.0.is_empty()
                 && !shopping_list.items.is_empty()
             {
                 println!("Here's what we have:\n");
             }
-            if !shopping_list.checklist.is_empty() {
+            if !shopping_list.checklist.0.is_empty() {
                 println!("{}", shopping_list.checklist_msg);
 
-                shopping_list.checklist.iter().for_each(|item| {
+                shopping_list.checklist.0.iter().for_each(|item| {
                     println!("\t{}", item.0.to_lowercase());
                 });
             }
-            if !shopping_list.recipes.is_empty() {
+            if !shopping_list.recipes.0.is_empty() {
                 println!("{}", shopping_list.recipes_msg);
 
-                shopping_list.recipes.iter().for_each(|recipe| {
+                shopping_list.recipes.0.iter().for_each(|recipe| {
                     println!("\t{}", recipe);
                 });
             }
