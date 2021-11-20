@@ -108,7 +108,7 @@ pub mod data {
     #[derive(Serialize, Deserialize, Debug)]
     pub struct GroceriesSection {
         pub name: GroceriesSectionName,
-        pub items: Vec<GroceriesItem>,
+        pub items: GroceriesItems,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -124,6 +124,9 @@ pub mod data {
             write!(f, "{}", self.0)
         }
     }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+    pub struct GroceriesItems(pub Vec<GroceriesItem>);
 
     #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
     pub struct GroceriesItem(pub String);
@@ -296,11 +299,11 @@ mod groceries {
             );
 
             if prompt_for_y()? {
-                let items = list_input(groceries_section.items)?;
+                let items = list_input(groceries_section.items.0)?;
 
                 updated_groceries_sections.push(GroceriesSection {
                     name: groceries_section.name,
-                    items,
+                    items: GroceriesItems(items),
                 });
             } else {
                 updated_groceries_sections.push(GroceriesSection {
@@ -681,7 +684,7 @@ mod list {
 	     --any other key to continue"
         );
 
-        for item in groceries_section.items {
+        for item in groceries_section.items.0 {
             if !shopping_list
                 .items
                 // https://stackoverflow.com/questions/45624813/how-can-i-unpack-a-tuple-struct-like-i-would-a-classic-tuple/45624862
