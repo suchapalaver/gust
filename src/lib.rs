@@ -44,7 +44,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
 use crate::errors::*;
 
-// Customized handling of file reading errors
+// Customized handling of
+// file reading errors
 pub mod errors {
     use super::*;
 
@@ -130,7 +131,17 @@ pub mod data {
     // to serialize and deserialize a database of recipes
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Recipes {
-        pub library: Vec<Recipe>,
+        pub library: RecipeLib,
+    }
+
+     #[derive(Serialize, Deserialize, Debug)]
+    pub struct RecipeLib(pub Vec<Recipe>);
+
+    impl RecipeLib {
+	pub fn new() -> Result<RecipeLib, Box<dyn Error>> {
+	    let library: Vec<Recipe> = Vec::new();
+	    Ok(RecipeLib(library))
+	}
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -138,7 +149,7 @@ pub mod data {
         pub name: RecipeName,
         pub items: Vec<GroceriesItem>,
     }
-
+    
     // used to serialize and deserialize the
     // most recently saved list or to create a
     // new grocery list that can be saved as JSON
@@ -334,13 +345,13 @@ mod recipes {
                 )
             })?;
 
-            let mut updated = recipes.library;
+            let RecipeLib(mut updated) = recipes.library;
 
             let new_recipe = get_new_recipe()?;
 
             updated.push(new_recipe);
 
-            let recipes = Recipes { library: updated };
+            let recipes = Recipes { library: RecipeLib(updated) };
 
             save_recipes(recipes)?;
 
@@ -380,7 +391,7 @@ mod recipes {
 
         eprintln!("Here are our recipes:");
 
-        for recipe in recipes.library {
+        for recipe in recipes.library.0 {
             eprintln!("- {}", recipe.name.to_string());
         }
         eprintln!();
@@ -497,7 +508,7 @@ mod list {
                 )
             })?;
 
-            for recipe in recipes.library {
+            for recipe in recipes.library.0 {
                 eprintln!(
                     "Shall we add ...\n\
 		     {}?\n\
