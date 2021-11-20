@@ -102,8 +102,12 @@ pub mod data {
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Groceries {
-        pub sections: Vec<GroceriesSection>,
+        pub sections: GroceriesSections,
     }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct GroceriesSections(pub Vec<GroceriesSection>);
+    
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct GroceriesSection {
@@ -290,7 +294,7 @@ mod groceries {
 
         let groceries_sections = groceries.sections;
 
-        for groceries_section in groceries_sections {
+        for groceries_section in groceries_sections.0 {
             eprintln!(
                 "Add to our {} section?\n\
 		 --y\n\
@@ -652,7 +656,7 @@ mod list {
     ) -> Result<ShoppingList, Box<dyn Error>> {
         let groceries_sections = groceries.sections;
 
-        for groceries_section in groceries_sections {
+        for groceries_section in groceries_sections.0 {
             eprintln!(
                 "Do we need {}?\n\
 		 --y\n\
