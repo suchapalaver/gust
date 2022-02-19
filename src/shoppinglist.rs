@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{GroceriesItem, Recipe};
 
@@ -28,6 +28,12 @@ impl ShoppingList {
     }
 }
 
+impl Default for ShoppingList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /*
 // You need a checklist on every shopping list
 // to check if we need certain items we're not sure about
@@ -36,15 +42,15 @@ pub struct Checklist(pub Vec<GroceriesItem>);
 
 impl Checklist {
 fn new() -> Self {
-	    Checklist::new_initialized()
-	}
+        Checklist::new_initialized()
+    }
 
-	pub fn new_initialized() -> Checklist {
-	    Checklist(Vec::new())
-	}
+    pub fn new_initialized() -> Checklist {
+        Checklist(Vec::new())
+    }
 
-	pub fn as_slice(&self) -> &[GroceriesItem] {
+    pub fn as_slice(&self) -> &[GroceriesItem] {
 &self.0
-	}
+    }
 }
 */

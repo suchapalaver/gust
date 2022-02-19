@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::{error::Error, fmt, ops::Deref, path::Path};
+
+use crate::errors::ReadError;
+use crate::helpers::read;
 
 /// let r1 = Recipe(String::from("eggs"));
 /// let r2 = Recipe(String::from("sandwiches"));
@@ -22,8 +25,6 @@ impl fmt::Display for Recipe {
     }
 }
 
-/*
-Saving this just in case
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Recipes {
     pub collection: Vec<Recipe>,
@@ -32,119 +33,124 @@ pub struct Recipes {
 // CHANGE THIS TO A TRAIT IMPLEMENTATION THAT CAN BE REPEATED
 impl Recipes {
     pub fn new() -> Self {
-	Recipes::new_initialized(Default::default())
+        Recipes::new_initialized(Default::default())
     }
-    
+
     pub fn new_initialized(initial_content: Recipe) -> Recipes {
-     	let mut collection: Vec<Recipe> = Vec::new();
-	
-    	collection.push(initial_content);
-	
-	Recipes { collection }
+        let collection: Vec<Recipe> = vec![initial_content];
+
+        Recipes { collection }
     }
-    
+
+    // Opens user's recipes library from the path provided
+    pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
+        let reader = read(path)?;
+
+        let recipes = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
+
+        Ok(recipes)
+    }
+    /*
     pub fn as_slice(&self) -> &[Recipe] {
-	&self.collection
+    &self.collection
+    }
+    */
+}
+
+impl Default for Recipes {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 impl Deref for Recipes {
     type Target = Vec<Recipe>;
-    
+
     fn deref(&self) -> &Self::Target {
-	&self.collection
+        &self.collection
     }
 }
-*/
+
 /*
-    Opens user's recipes library from the path provided
-    pub fn read_recipes<P: AsRef<Path> + Copy>(path: P) -> Result<Recipes, Box<dyn Error>> {
-    let reader = read(path)?;
+fn new_recipes() -> Result<(), Box<dyn Error>> {
+eprintln!(
+"Add recipes to our library?\n\
+         --y\n\
+         --any other key to continue"
+);
 
-    let recipes = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
+while prompt_for_y()? {
+let path = "recipes.json";
 
-    Ok(recipes)
-    }
-    fn new_recipes() -> Result<(), Box<dyn Error>> {
-    eprintln!(
-    "Add recipes to our library?\n\
-    	     --y\n\
-    	     --any other key to continue"
-    );
+let recipes = read_recipes(path).map_err(|e| {
+format!(
+"Failed to read recipes file '{}':\n\
+             '{}'",
+path, e
+)
+})?;
 
-    while prompt_for_y()? {
-    let path = "recipes.json";
+let RecipeLib(mut updated) = recipes.library;
 
-    let recipes = read_recipes(path).map_err(|e| {
-    format!(
-    "Failed to read recipes file '{}':\n\
-    		     '{}'",
-    path, e
-    )
-    })?;
+let new_recipe = get_new_recipe()?;
 
-    let RecipeLib(mut updated) = recipes.library;
+updated.push(new_recipe);
 
-    let new_recipe = get_new_recipe()?;
+let recipes = Recipes {
+library: RecipeLib(updated),
+};
 
-    updated.push(new_recipe);
+save_recipes(recipes)?;
 
-    let recipes = Recipes {
-    library: RecipeLib(updated),
-    };
+eprintln!(
+"Add more recipes to our library?\n\
+         --y\n\
+         --any other key to exit"
+);
+}
+Ok(())
+}
 
-    save_recipes(recipes)?;
+// Gets a new recipe from user
+// and returns it as a Recipe
+fn get_new_recipe() -> Result<Recipe, Box<dyn Error>> {
+eprintln!("What's the recipe?");
 
-    eprintln!(
-    "Add more recipes to our library?\n\
-    		 --y\n\
-    		 --any other key to exit"
-    );
-    }
-    Ok(())
-    }
+let name = input()?;
 
-    // Gets a new recipe from user
-    // and returns it as a Recipe
-    fn get_new_recipe() -> Result<Recipe, Box<dyn Error>> {
-    eprintln!("What's the recipe?");
+let mut items = Vec::new();
 
-    let name = input()?;
+items = list_input(items)?;
 
-    let mut items = Vec::new();
+Ok(Recipe(String::from(name)))
+}
 
-    items = list_input(items)?;
+fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
+let json = serde_json::to_string(&recipes)?;
 
-    Ok(Recipe(String::from(name)))
-    }
+write("recipes.json", json)?;
 
-    fn save_recipes(recipes: Recipes) -> Result<(), Box<dyn Error>> {
-    let json = serde_json::to_string(&recipes)?;
+Ok(())
+}
 
-    write("recipes.json", json)?;
+fn print_recipes() -> Result<(), Box<dyn Error>> {
+let path = "recipes.json";
 
-    Ok(())
-    }
+let recipes = read_recipes(path).map_err(|e| {
+format!(
+"Failed to read recipes file '{}':\n\
+         '{}'",
+path, e
+)
+})?;
 
-    fn print_recipes() -> Result<(), Box<dyn Error>> {
-    let path = "recipes.json";
+eprintln!("Here are our recipes:");
 
-    let recipes = read_recipes(path).map_err(|e| {
-    format!(
-    "Failed to read recipes file '{}':\n\
-    		 '{}'",
-    path, e
-    )
-    })?;
+for recipe in recipes {
+eprintln!("- {}", recipe);
+}
+eprintln!();
 
-    eprintln!("Here are our recipes:");
-
-    for recipe in recipes {
-    eprintln!("- {}", recipe);
-    }
-    eprintln!();
-
-    Ok(())
-    }
-    */
-
+Ok(())
+}
+*/

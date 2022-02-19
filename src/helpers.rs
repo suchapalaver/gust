@@ -1,4 +1,9 @@
-use std::{path::Path, io::{stdin, stdout, BufReader, Write}, fs::{self, File}, error::Error};
+use std::{
+    error::Error,
+    fs::{self, File},
+    io::{stdin, stdout, BufReader, Write},
+    path::Path,
+};
 
 use crate::ReadError;
 

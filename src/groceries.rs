@@ -1,8 +1,14 @@
-use std::{ops::Deref, io::BufReader, fs::File, path::Path, error::Error};
+use std::{
+    error::Error,
+    fs::File,
+    io::BufReader,
+    ops::{Deref, DerefMut},
+    path::Path,
+};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::{ReadError::DeserializingError, read, GroceriesItem};
+use crate::{read, GroceriesItem, ReadError::DeserializingError};
 
 ///  let apples = GroceriesItem {
 ///     name: GroceriesItemName("apples".to_string()),
@@ -72,6 +78,14 @@ impl Deref for Groceries {
     }
 }
 
+impl DerefMut for Groceries {
+    //type Target = Vec<GroceriesItem>;
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.collection
+    }
+}
+
 impl Groceries {
     pub fn new() -> Self {
         Self::new_initialized()
@@ -83,10 +97,10 @@ impl Groceries {
         Self { collection } // using Self, can I make this a generic trait?
     }
 
-    pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Self, Box<dyn Error>> {
+    pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader: BufReader<File> = read(path)?;
 
-        let data: Self = serde_json::from_reader(reader).map_err(DeserializingError)?;
+        let data: Groceries = serde_json::from_reader(reader).map_err(DeserializingError)?;
 
         Ok(data)
     }
