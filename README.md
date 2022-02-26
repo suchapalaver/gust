@@ -2,7 +2,7 @@
 `grusterylist` uses and can add to local libraries of user-added recipes and grocery items to put together shopping lists
 ## how to ... 
 - run `$ cargo run -- --help` for available options  
-- `cargo run -- --list` allows you to begin a new shopping list or use the most recently saved list.  
+- `cargo run -- l` allows you to begin a new shopping list or use the most recently saved list.  
 `recipes.json`, `groceries.json`, and `list.json` contain libraries of some recipes, groceries, and a saved list that could be emptied out manually to start from scratch.  
 ### example shopping list
 ```
