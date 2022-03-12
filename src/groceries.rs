@@ -3,7 +3,7 @@ use std::{error::Error, fmt, fs::File, io::BufReader, ops::Deref, path::Path};
 use serde::{Deserialize, Serialize};
 
 use crate::{input, prompt_for_y, read, ReadError::DeserializingError};
-
+/*
 ///  let apples = GroceriesItem {
 ///     name: GroceriesItemName("apples".to_string()),
 ///     section: GroceriesItemSection("fresh".to_string()),
@@ -59,6 +59,92 @@ use crate::{input, prompt_for_y, read, ReadError::DeserializingError};
 ///     let recipes_str = recipes.join(", ");
 ///     println!("ingredient: {}\trecipes: {}", ingredient, recipes_str);
 /// }
+ */
+
+pub fn run_groceries() -> Result<(), Box<dyn Error>> {
+    print_groceries()?;
+
+    add_groceries()?;
+
+    Ok(())
+}
+
+fn print_groceries() -> Result<(), Box<dyn Error>> {
+    eprintln!(
+        "View the groceries in our library?\n\
+         --y\n\
+         --any other key to continue"
+    );
+
+    while crate::prompt_for_y()? {
+        eprintln!();
+
+        let path = "groceries.json";
+
+        let groceries = Groceries::from_path(path).map_err(|e| {
+            format!(
+                "Failed to read groceries file '{}':\n\
+             '{}'\n",
+                path, e
+            )
+        })?;
+
+        for sec in groceries.sections {
+            let sec_items = groceries
+                .collection
+                .iter()
+                .filter(|x| x.section.0.contains(&sec.0))
+                .collect::<Vec<&GroceriesItem>>();
+            for item in sec_items {
+                eprintln!("{}", item);
+            }
+            eprintln!();
+        }
+
+        eprintln!();
+
+        eprintln!(
+            "View the groceries in our library?\n\
+             --y\n\
+             --any other key to continue"
+        );
+    }
+    Ok(())
+}
+
+fn add_groceries() -> Result<(), Box<dyn Error>> {
+    eprintln!(
+        "Add groceries to our library?\n\
+         --y\n\
+         --any other key to exit"
+    );
+
+    while prompt_for_y()? {
+        let path = "groceries.json";
+
+        let groceries = Groceries::from_path(path).map_err(|e| {
+            format!(
+                "Failed to read groceries file '{}':\n\
+		 '{}'\n",
+                path, e
+            )
+        })?;
+
+        let groceries = input_item(groceries)?;
+
+        let json = serde_json::to_string(&groceries)?;
+
+        crate::helpers::write(path, json)?;
+
+        eprintln!(
+            "Add more groceries to our library?\n\
+	     --y\n\
+	     --any other key to exit"
+        );
+    }
+    Ok(())
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Groceries {
     pub sections: Vec<GroceriesItemSection>,
@@ -120,82 +206,6 @@ impl Groceries {
         self.collection.push(item);
         Ok(self)
     }
-}
-
-pub fn print_groceries() -> Result<(), Box<dyn Error>> {
-    eprintln!(
-        "View the groceries in our library?\n\
-         --y\n\
-         --any other key to continue"
-    );
-
-    while crate::prompt_for_y()? {
-        eprintln!();
-
-        let path = "groceries.json";
-
-        let groceries = Groceries::from_path(path).map_err(|e| {
-            format!(
-                "Failed to read groceries file '{}':\n\
-             '{}'\n",
-                path, e
-            )
-        })?;
-
-        for sec in groceries.sections {
-            let sec_items = groceries
-                .collection
-                .iter()
-                .filter(|x| x.section.0.contains(&sec.0))
-                .collect::<Vec<&GroceriesItem>>();
-            for item in sec_items {
-                eprintln!("{}", item);
-            }
-            eprintln!();
-        }
-
-        eprintln!();
-
-        eprintln!(
-            "View the groceries in our library?\n\
-             --y\n\
-             --any other key to continue"
-        );
-    }
-    Ok(())
-}
-
-pub fn add_groceries() -> Result<(), Box<dyn Error>> {
-    eprintln!(
-        "Add groceries to our library?\n\
-         --y\n\
-         --any other key to exit"
-    );
-
-    while prompt_for_y()? {
-        let path = "groceries.json";
-
-        let groceries = Groceries::from_path(path).map_err(|e| {
-            format!(
-                "Failed to read groceries file '{}':\n\
-		 '{}'\n",
-                path, e
-            )
-        })?;
-
-        let groceries = input_item(groceries)?;
-
-        let json = serde_json::to_string(&groceries)?;
-
-        crate::helpers::write(path, json)?;
-
-        eprintln!(
-            "Add more groceries to our library?\n\
-	     --y\n\
-	     --any other key to exit"
-        );
-    }
-    Ok(())
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

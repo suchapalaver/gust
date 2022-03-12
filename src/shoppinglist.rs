@@ -41,6 +41,56 @@ use serde::{Deserialize, Serialize};
 
 use crate::{input, prompt_for_y, Groceries, GroceriesItem, ReadError, Recipe};
 
+// Like run() for the shopping-list-making function in grusterylist
+pub fn make_list() -> Result<(), Box<dyn Error>> {
+    // Open a saved or new list
+    let mut shopping_list = get_saved_or_new_list()?;
+
+    // view list if using saved list
+    if !shopping_list.groceries.is_empty() {
+        print_list()?;
+    }
+
+    // add recipes
+    shopping_list = add_recipes_to_list(shopping_list)?;
+
+    // add individual groceries
+    shopping_list = add_groceries_to_list(shopping_list)?;
+
+    // overwrite saved list with current list
+    save_list(shopping_list)?;
+
+    // view list
+    print_list()?;
+
+    Ok(())
+}
+
+// Prompt user whether to use a saved or new list and return their choice
+pub fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
+    let mut shopping_list = ShoppingList::new();
+
+    eprintln!(
+        "\n\
+	 Use most recently saved list?\n\
+	 *y*\n\
+	 *any other key* for fresh list"
+    );
+
+    if crate::prompt_for_y()? {
+        let path = "list.json";
+
+        shopping_list = read_list(path).map_err(|e| {
+            format!(
+                "Failed to read list file '{}':\n\
+		 '{}'",
+                path, e
+            )
+        })?;
+    }
+    Ok(shopping_list)
+}
+
 // used to serialize and deserialize the
 // most recently saved list or to create a
 // new grocery list that can be saved as JSON
@@ -76,28 +126,12 @@ impl Default for ShoppingList {
     }
 }
 
-// Prompt user whether to use a saved or new list and return their choice
-pub fn get_saved_or_new_list() -> Result<ShoppingList, Box<dyn Error>> {
-    let mut shopping_list = ShoppingList::new();
+// Open and deserialize a shopping list JSON file from given path
+pub fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
+    let reader = crate::helpers::read(path)?;
 
-    eprintln!(
-        "\n\
-	 Use most recently saved list?\n\
-	 *y*\n\
-	 *any other key* for fresh list"
-    );
+    let shopping_list = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
 
-    if crate::prompt_for_y()? {
-        let path = "list.json";
-
-        shopping_list = read_list(path).map_err(|e| {
-            format!(
-                "Failed to read list file '{}':\n\
-		 '{}'",
-                path, e
-            )
-        })?;
-    }
     Ok(shopping_list)
 }
 
@@ -172,7 +206,7 @@ pub fn add_recipes_to_list(
 
         let groceries = Groceries::from_path(path).map_err(|e| {
             format!(
-                "Failed to read recipes file '{}':\n\
+                "Failed to read recipes from '{}':\n\
 		 '{}'",
                 path, e
             )
@@ -203,58 +237,27 @@ pub fn add_recipes_to_list(
     }
     Ok(shopping_list)
 }
-/*
-// Adds ingredients of an individual recipe to a shopping list
-// AGAIN, TOTAL RESTRUCTURING NEEDED
-pub fn add_recipe_to_list(
-    mut shopping_list: ShoppingList,
-    recipe: Recipe,
-) -> Result<ShoppingList, Box<dyn Error>> {
-    shopping_list.recipes.push(recipe);
-    /*
-       eprintln!(
-           "Do we need ... ?\n\
-        --y\n\
-        --c to remind to check\n\
-        --a to add this and all remaining ingredients\n\
-        --any other key for next ingredient"
-       );
-    */
 
-    //let recipe_items = recipe.items;
-    /*
-        for ingredient in &recipe_items.0 {
-            eprintln!("{}?", ingredient.0.to_lowercase());
-
-            match input()?.as_str() {
-                "y" => shopping_list = add_ingredient_to_list(shopping_list, ingredient)?,
-                "c" => shopping_list = add_ingredient_to_checklist(shopping_list, ingredient)?,
-                "a" => {
-                    shopping_list = add_all_ingredients_to_list(shopping_list, recipe_items.0)?;
-                    break;
-                }
-                &_ => continue,
-            }
-        }
-    */
-    Ok(shopping_list)
-}
-*/
-// Adds groceries to list
-// NEEDS TO ADD *ALL* RECIPE INGREDIENTS FIRST
+// go through all items in groceries library
+// check for items that are recipe ingredients and not already on list
+// check if item is ingredient of any recipes on list
+// add relevant items to list
 pub fn add_groceries_to_list(
     mut shopping_list: ShoppingList,
 ) -> Result<ShoppingList, Box<dyn Error>> {
-    // BEST TO COMPILE THE LIST AT THE END
     let path = "groceries.json";
 
     let groceries = Groceries::from_path(path)?;
 
     for groceriesitem in groceries.collection.iter() {
-        if !shopping_list.groceries.contains(groceriesitem) && groceriesitem.is_recipe_ingredient {
-            for recipe in &groceriesitem.recipes {
-                if shopping_list.recipes.contains(recipe) {
-                    shopping_list.groceries.push(groceriesitem.clone());
+	
+	if groceriesitem.is_recipe_ingredient && !shopping_list.groceries.contains(groceriesitem) {
+	    
+	    for recipe in &groceriesitem.recipes {
+		
+		if shopping_list.recipes.contains(recipe) {
+		    
+		    shopping_list.groceries.push(groceriesitem.clone());
                 }
             }
         }
@@ -267,16 +270,7 @@ pub fn add_groceries_to_list(
     );
 
     while prompt_for_y()? {
-        /*
-            let groceries = Groceries::from_path(path).map_err(|e| {
-                format!(
-                    "Failed to read groceries file '{}':\n\
-             '{}'",
-                    path, e
-                )
-            })?;
-        */
-        shopping_list = add_grocery_sections_to_list(shopping_list, &groceries)?;
+	shopping_list = add_grocery_sections_to_list(shopping_list, &groceries)?;
 
         eprintln!(
             "Add more groceries to shopping list?\n\
@@ -284,15 +278,7 @@ pub fn add_groceries_to_list(
 	     --any other key to skip"
         );
     }
-    Ok(shopping_list)
-}
-
-// Open and deserialize a shopping list JSON file from given path
-pub fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
-    let reader = crate::helpers::read(path)?;
-
-    let shopping_list = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
-
+    
     Ok(shopping_list)
 }
 
@@ -312,6 +298,7 @@ pub fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// 
 pub fn add_grocery_sections_to_list(
     shopping_list: ShoppingList,
     groceries: &Groceries,
@@ -321,37 +308,42 @@ pub fn add_grocery_sections_to_list(
     let groceries_by_section: Vec<Vec<GroceriesItem>> = {
         sections
             .into_iter()
-            .map(|x| fum(groceries, &shopping_list, x))
+            .map(|section| get_section_items_not_on_list(groceries, &shopping_list, section))
             .collect()
     };
 
-    let shopping_list = foo(groceries_by_section, shopping_list)?;
+    let shopping_list = add_sections(groceries_by_section, shopping_list)?;
 
     Ok(shopping_list)
 }
 
-fn fum(groceries: &Groceries, shopping_list: &ShoppingList, section: &str) -> Vec<GroceriesItem> {
+// returns vector of groceries items belonging to a given section that are not already on list 
+fn get_section_items_not_on_list(groceries: &Groceries, shopping_list: &ShoppingList, section: &str) -> Vec<GroceriesItem> {
     groceries
         .collection
         .iter()
-        .cloned() // ...
-        .filter(|x| !shopping_list.groceries.contains(x) && x.section.0 == section)
+        .filter(|groceriesitem| groceriesitem.section.0 == section && !shopping_list.groceries.contains(groceriesitem))
+        .cloned()
         .collect()
 }
 
-fn foo(
-    groceries_sections: Vec<Vec<GroceriesItem>>,
+// calls fn add_section_items on non-empty sections 
+fn add_sections(
+    groceries_by_section: Vec<Vec<GroceriesItem>>,
     mut shopping_list: ShoppingList,
 ) -> Result<ShoppingList, Box<dyn Error>> {
-    for groceries_section in groceries_sections {
-        if !groceries_section.is_empty() {
-            shopping_list = far(&groceries_section, shopping_list)?;
+    for section in groceries_by_section {
+        if !section.is_empty() {
+            shopping_list = add_section_items(&section, shopping_list)?;
         }
     }
     Ok(shopping_list)
 }
 
-fn far(
+// takes groceries section as a slice of groceries items
+// iterates through items
+// clones and adds to list items based on user input
+fn add_section_items(
     groceries_section: &[GroceriesItem],
     mut shopping_list: ShoppingList,
 ) -> Result<ShoppingList, Box<dyn Error>> {
@@ -366,7 +358,6 @@ fn far(
 
         match input()?.as_str() {
             "y" => {
-                //shopping_list = add_grocery_section_to_list(shopping_list, groceries_section)?
                 shopping_list.groceries.push(groceriesitem.clone());
             }
             "n" => break,
@@ -375,7 +366,7 @@ fn far(
     }
     Ok(shopping_list)
 }
-
+////////////////////////////////////////////////////////////////////
 /*
 // Adds individual ingredients to a shopping list
     fn add_ingredient_to_list(

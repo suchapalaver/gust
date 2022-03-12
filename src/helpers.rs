@@ -7,9 +7,9 @@ use std::{
 
 use crate::ReadError;
 
-// Reads from a path into a buffer-reader
+// Reads file from path into a read-only buffer-reader
 pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
-    // Open the file in read-only mode with buffer.
+    
     let file: File =
         File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
 
