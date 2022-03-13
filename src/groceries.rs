@@ -405,7 +405,11 @@ fn input_item(mut groceries: Groceries) -> Result<Groceries, Box<dyn Error>> {
     );
     let section = input()?;
     // check if there are no matches
-    if groceries.collection.iter().all(|x| no_match(&name, x)) {
+    if groceries
+        .collection
+        .iter()
+        .all(|item| no_match(&name, item))
+    {
         // if no matches add the item to groceries
         groceries.collection.push(GroceriesItem::new(
             GroceriesItemName(name),
@@ -418,7 +422,12 @@ fn input_item(mut groceries: Groceries) -> Result<Groceries, Box<dyn Error>> {
         let mut found_no_matches = true;
         for item in groceries.collection.iter() {
             if !no_match(&name, item) {
-                eprintln!("is *{}* a match?", item);
+                eprintln!(
+                    "is *{}* a match?\n\
+			   *y* for yes
+			   *any other key* for no",
+                    item
+                );
                 if prompt_for_y()? {
                     found_no_matches = false;
                     break;
@@ -434,8 +443,8 @@ fn input_item(mut groceries: Groceries) -> Result<Groceries, Box<dyn Error>> {
     Ok(groceries)
 }
 
-fn no_match(name: &str, x: &GroceriesItem) -> bool {
-    name.split(' ').all(|w| !x.name.0.contains(w))
+fn no_match(name: &str, item: &GroceriesItem) -> bool {
+    name.split(' ').all(|word| !item.name.0.contains(word))
 }
 
 /*

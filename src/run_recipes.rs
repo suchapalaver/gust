@@ -1,4 +1,4 @@
-use crate::{prompt_for_y, input, add_recipe, print_recipes};
+use crate::{add_recipe, input, print_recipes, prompt_for_y};
 
 use std::error::Error;
 
@@ -33,6 +33,6 @@ pub fn run_recipes() -> Result<(), Box<dyn Error>> {
 
         add_recipe(recipe_name, ingredients)?;
     }
-    
+
     Ok(())
 }

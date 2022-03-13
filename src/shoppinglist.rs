@@ -57,7 +57,6 @@ pub fn make_list() -> Result<(), Box<dyn Error>> {
     // move everything off list to temp list
     let list_items: Vec<GroceriesItem> = shopping_list.groceries.drain(..).collect();
     assert!(shopping_list.groceries.is_empty());
-    eprintln!("ITEMS ALREADY ON LIST: {:?}", list_items);
 
     // add individual groceries
     shopping_list.groceries = add_groceries_to_list(list_items, &shopping_list.recipes)?;
@@ -221,7 +220,11 @@ pub fn add_recipes_to_list(
             );
 
             match input()?.as_str() {
-                "y" => if !shopping_list.recipes.contains(&recipe) {shopping_list.recipes.push(recipe)},
+                "y" => {
+                    if !shopping_list.recipes.contains(&recipe) {
+                        shopping_list.recipes.push(recipe)
+                    }
+                }
                 //"y" => shopping_list = add_recipe_to_list(shopping_list, recipe)?,
                 "s" => break,
                 &_ => continue,
@@ -243,7 +246,7 @@ pub fn add_recipes_to_list(
 fn add_groceries_to_list(
     mut items_list: Vec<GroceriesItem>,
     //mut shopping_list: ShoppingList,
-    recipes: &Vec<Recipe>,
+    recipes: &[Recipe],
 ) -> Result<Vec<GroceriesItem>, Box<dyn Error>> {
     let path = "groceries.json";
 
@@ -251,14 +254,14 @@ fn add_groceries_to_list(
     /*
     for groceriesitem in groceries.collection.iter() {
 
-	if groceriesitem.is_recipe_ingredient && !items_list.contains(groceriesitem) {
-	//if groceriesitem.is_recipe_ingredient && !shopping_list.groceries.contains(groceriesitem) {
-	 
-	    for recipe in &groceriesitem.recipes {
-		
-		if recipes.contains(recipe) && !items_list.contains(groceriesitem) {
-		    
-		    items_list.push(groceriesitem.clone());
+    if groceriesitem.is_recipe_ingredient && !items_list.contains(groceriesitem) {
+    //if groceriesitem.is_recipe_ingredient && !shopping_list.groceries.contains(groceriesitem) {
+
+        for recipe in &groceriesitem.recipes {
+
+        if recipes.contains(recipe) && !items_list.contains(groceriesitem) {
+
+            items_list.push(groceriesitem.clone());
                 }
             }
         }
@@ -272,7 +275,7 @@ fn add_groceries_to_list(
     );
 
     while prompt_for_y()? {
-	items_list = add_grocery_sections_to_list(items_list, recipes, &groceries)?;
+        items_list = add_grocery_sections_to_list(items_list, recipes, &groceries)?;
 
         eprintln!(
             "Add more groceries to shopping list?\n\
@@ -280,7 +283,7 @@ fn add_groceries_to_list(
 	     *any other key* to skip"
         );
     }
-    
+
     Ok(items_list)
 }
 
@@ -300,10 +303,10 @@ fn save_list(shopping_list: ShoppingList) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// 
+//
 fn add_grocery_sections_to_list(
     shopping_list: Vec<GroceriesItem>, // items_list not in any order with all ingredients from recipes
-    recipes: &Vec<Recipe>, 
+    recipes: &[Recipe],
     groceries: &Groceries,
 ) -> Result<Vec<GroceriesItem>, Box<dyn Error>> {
     let sections = vec!["fresh", "pantry", "dairy", "protein", "freezer"];
@@ -320,17 +323,21 @@ fn add_grocery_sections_to_list(
     Ok(shopping_list)
 }
 
-// returns vector of groceries items belonging to a given section that are not already on list 
-fn get_section_items_not_on_list(groceries: &Groceries, shopping_list: &Vec<GroceriesItem>, section: &str) -> Vec<GroceriesItem> {
-
+// returns vector of groceries items belonging to a given section that are not already on list
+fn get_section_items_not_on_list(
+    groceries: &Groceries,
+    shopping_list: &[GroceriesItem],
+    section: &str,
+) -> Vec<GroceriesItem> {
     let mut a: Vec<GroceriesItem> = shopping_list
-	.iter()
-	.filter(|groceriesitem| groceriesitem.section.0 == section)
-	.cloned()
-	.collect();
+        .iter()
+        .filter(|groceriesitem| groceriesitem.section.0 == section)
+        .cloned()
+        .collect();
     //eprintln!("get_section_items_not_on_list variable a: {:?}", a);
-    
-    let b: Vec<GroceriesItem> = groceries.collection
+
+    let b: Vec<GroceriesItem> = groceries
+        .collection
         .iter()
         .filter(|groceriesitem| groceriesitem.section.0 == section && !a.contains(groceriesitem))
         .cloned()
@@ -339,15 +346,15 @@ fn get_section_items_not_on_list(groceries: &Groceries, shopping_list: &Vec<Groc
     //eprintln!("get_section_items_not_on_list variable b: {:?}", a);
 
     a.extend(b);
-    
+
     //eprintln!("get_section_items_not_on_list variable a extend(b): {:?}", a);
     a
 }
 
-// calls fn add_section_items on non-empty sections 
+// calls fn add_section_items on non-empty sections
 fn add_sections(
     groceries_by_section: Vec<Vec<GroceriesItem>>,
-    recipes: &Vec<Recipe>,
+    recipes: &[Recipe],
     mut shopping_list: Vec<GroceriesItem>,
 ) -> Result<Vec<GroceriesItem>, Box<dyn Error>> {
     for section in groceries_by_section {
@@ -363,48 +370,46 @@ fn add_sections(
 // clones and adds to list items based on user input
 fn add_section_items(
     groceries_section: &[GroceriesItem],
-    recipes: &Vec<Recipe>,
+    recipes: &[Recipe],
     mut shopping_list: Vec<GroceriesItem>,
 ) -> Result<Vec<GroceriesItem>, Box<dyn Error>> {
-    
     for groceriesitem in groceries_section {
-	
-	//eprintln!("groceriesitem: {}", groceriesitem);
-	
-	if !shopping_list.contains(groceriesitem) {
-	    
-	    if groceriesitem.recipes.iter().any(|recipe| recipes.contains(&*recipe)) {
-		
-		//eprintln!("automatically adding recipe ingredient {}", groceriesitem.name);
-		
-		shopping_list.push(groceriesitem.clone());
+        //eprintln!("groceriesitem: {}", groceriesitem);
 
-	    }
-	}
+        if !shopping_list.contains(groceriesitem)
+            && groceriesitem
+                .recipes
+                .iter()
+                .any(|recipe| recipes.contains(&*recipe))
+        {
+            //eprintln!("automatically adding recipe ingredient {}", groceriesitem.name);
+
+            shopping_list.push(groceriesitem.clone());
+        }
     }
-    
+
     for groceriesitem in groceries_section {
-	
-	if !shopping_list.contains(groceriesitem) {
-	    
-	    eprintln!(
-		"Do we need {}?\n\
+        if !shopping_list.contains(groceriesitem) {
+            eprintln!(
+                "Do we need {}?\n\
 		 *y*\n\
 		 *any other key* for next item\n\
 		 *s* for next section",
-		groceriesitem.name.0.to_lowercase()
-	    );
+                groceriesitem.name.0.to_lowercase()
+            );
 
-	    match input()?.as_str() {
-		"y" => if !shopping_list.contains(groceriesitem){
-		    shopping_list.push(groceriesitem.clone());
-		}
-		"s" => break,
-		&_ => continue,
-	    }
-	}
+            match input()?.as_str() {
+                "y" => {
+                    if !shopping_list.contains(groceriesitem) {
+                        shopping_list.push(groceriesitem.clone());
+                    }
+                }
+                "s" => break,
+                &_ => continue,
+            }
+        }
     }
-    
+
     Ok(shopping_list)
 }
 ////////////////////////////////////////////////////////////////////
