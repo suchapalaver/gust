@@ -1,34 +1,32 @@
 # `grusterylist`: makes grocery lists, written in Rust  
-`grusterylist` uses and adds to a local library of user-added recipes and grocery items to put together and save a shopping list
-## getting started 
-- `$ cargo run -- --help` for available options  
-- `$ cargo run -- l` allows you to begin a new shopping list or use the most recently saved list.  
-- `groceries.json` contains a library of grocery items and recipes, while `list.json` is a saved list that could be emptied out manually to start from scratch.  
-### example shopping list
+use 'grusterylist' to add recipes and grocery items to a local library that makes putting together shopping lists super quick.    
+## getting started     
+- `$ cargo run -- --help` for available options      
+- `$ cargo run -- l` allows you to begin a new shopping list or use the most recently saved list.      
+- `groceries.json` contains a library of grocery items and recipes.    
+- `list.json` is a saved list that could be emptied out manually to start from scratch.          
+### example shopping list    
 ```
-Print out shopping list?  
---y  
---any other key to continue  
-y  
-We're making ...
-	crispy tofu with cashews and blistered snap peas
-We need ...
-	extra firm tofu
-	vegetable oil
-	snap peas
-	ginger
+Print shopping list?
+*y*
+*any other key* to continue
+y
+recipes:
+	tomato pasta
+groceries:
 	garlic
-	13 oz can of unsweetened coconut milk
-	soy sauce
-	honey
-	cashews
-	rice vinegar
-	scallions
-	red pepper flakes
-	mint
-	milk
+	tomatoes
+	basil
+	lemons
+	pasta
+	olive oil
+	short grain brown rice
+	parmigiana
+	eggs
+	sausages
+	dumplings
 ```
-## in order to clone the repository and run the program using Rust ...
+## in order to clone the repository and run the program using Rust ...    
 - [clone the `grusterylist` repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 - to set up git for the first time [The Odin Project](https://www.theodinproject.com/paths/foundations/courses/foundations/lessons/setting-up-git) has a useful tutorial
 - see [The Rust Programming Language's installation chapter](https://doc.rust-lang.org/book/ch01-01-installation.html) if you want help installing Rust
