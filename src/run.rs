@@ -20,8 +20,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 	     -V, --version    Print version information\n    \
 	     \n\
 	     SUBCOMMANDS:\n    \
-	     g     Add groceries to groceries library\n    \
-	     r     Add recipes to recipes library\n    \
+	     g     Add groceries to library\n    \
+	     r     Add recipes to library\n    \
 	     l     Make a shopping list\n\
 	     \n\
 	     EXAMPLE:\n    \
