@@ -134,7 +134,8 @@ impl Default for ShoppingList {
 pub fn read_list<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, Box<dyn Error>> {
     let reader = crate::helpers::read(path)?;
 
-    let shopping_list = serde_json::from_reader(reader).map_err(ReadError::DeserializingError)?;
+    let shopping_list =
+        serde_json::from_reader(reader).map_err(|e| ReadError::DeserializingError { source: e })?;
 
     Ok(shopping_list)
 }

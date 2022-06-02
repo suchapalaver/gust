@@ -194,7 +194,8 @@ impl Groceries {
     pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader: BufReader<File> = read(path)?;
 
-        let data: Groceries = serde_json::from_reader(reader).map_err(DeserializingError)?;
+        let data: Groceries =
+            serde_json::from_reader(reader).map_err(|e| DeserializingError { source: e })?;
 
         Ok(data)
     }
@@ -327,10 +328,10 @@ pub fn add_recipe(name: String, ingredients: String) -> Result<(), Box<dyn Error
     // 1st add new items to groceries
     for ingredient in recipe_ingredients.iter() {
         if groceries.collection.iter().all(|g| &g.name != ingredient) {
-	    let mut section_input_ok = false;
-	    let mut section_input = String::new();
-	    while !section_input_ok {
-		eprintln!(
+            let mut section_input_ok = false;
+            let mut section_input = String::new();
+            while !section_input_ok {
+                eprintln!(
                     "which section is {} in?\n\
 		     *1* fresh
 *2* pantry 
@@ -338,25 +339,43 @@ pub fn add_recipe(name: String, ingredients: String) -> Result<(), Box<dyn Error
 *4* dairy 
 *5* freezer",
                     ingredient
-		);
+                );
 
-		let input = input()?;
+                let input = input()?;
 
-		section_input = match input {
-		    _ if input == "1".to_string() => {section_input_ok = true; "fresh".to_string()},
-		    _ if input == "2".to_string() => {section_input_ok = true; "pantry".to_string()},
-		    _ if input == "3".to_string() => {section_input_ok = true; "protein".to_string()},
-		    _ if input == "4".to_string() => {section_input_ok = true; "dairy".to_string()},
-		    _ if input == "5".to_string() => {section_input_ok = true; "freezer".to_string()},
-		    _                             => {eprintln!("re-enter section information"); continue},
-		};
-	    }
-	    let section = GroceriesItemSection(section_input);
-	    
-	    let new_item = GroceriesItem::new(ingredient.clone(), section)?;
-	    
-	    groceries.collection.push(new_item);       
-	}
+                section_input = match &input {
+                    _ if input == "1" => {
+                        section_input_ok = true;
+                        "fresh".to_string()
+                    }
+                    _ if input == "2" => {
+                        section_input_ok = true;
+                        "pantry".to_string()
+                    }
+                    _ if input == "3" => {
+                        section_input_ok = true;
+                        "protein".to_string()
+                    }
+                    _ if input == "4" => {
+                        section_input_ok = true;
+                        "dairy".to_string()
+                    }
+                    _ if input == "5" => {
+                        section_input_ok = true;
+                        "freezer".to_string()
+                    }
+                    _ => {
+                        eprintln!("re-enter section information");
+                        continue;
+                    }
+                };
+            }
+            let section = GroceriesItemSection(section_input);
+
+            let new_item = GroceriesItem::new(ingredient.clone(), section)?;
+
+            groceries.collection.push(new_item);
+        }
     }
     // 2nd update recipe info for groceriesitems
     groceries
