@@ -194,7 +194,7 @@ impl Groceries {
     pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
         let reader: BufReader<File> = read(path)?;
 
-        let data: Groceries = serde_json::from_reader(reader).map_err(ReadError::Deserializing)?;
+        let data: Groceries = serde_json::from_reader(reader).map_err(|e|ReadError::DeserializingError {source: e})?;
 
         Ok(data)
     }
