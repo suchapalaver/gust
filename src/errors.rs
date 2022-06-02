@@ -1,4 +1,3 @@
-use serde::de::Error;
 use std::error::Error as StdError;
 
 custom_error::custom_error! {pub ReadError
