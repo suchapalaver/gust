@@ -38,4 +38,5 @@ This is a learning project that uses:
 - [clap](https://docs.rs/clap/2.33.3/clap/) for command line argument parsing  
 - [serde](https://docs.serde.rs/serde/index.html) to deserialize and serialize JSON files  
 - Rust's [`Result`](https://doc.rust-lang.org/std/result/) type and [`?` operator](https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator) to handle errors.
-- custom error types (`ReadError`) in Rust
+- [`custom_error`](https://docs.rs/custom_error/latest/custom_error/)    
+---
