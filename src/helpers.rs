@@ -10,7 +10,7 @@ use crate::ReadError;
 // Reads file from path into a read-only buffer-reader
 pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
     let file: File =
-        File::open(path).map_err(|err_msg| ReadError::PathError(Box::from(err_msg)))?;
+        File::open(path).map_err(|err_msg| ReadError::PathError{ source: Box::from(err_msg) })?;
 
     let reader = BufReader::new(file);
 
