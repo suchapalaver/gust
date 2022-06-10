@@ -1,8 +1,14 @@
-use std::{error::Error, fmt, fs::File, io::BufReader, ops::Deref, path::Path};
+use std::{
+    fmt,
+    fs::{self},
+    ops::Deref,
+    path::Path,
+    str::FromStr,
+};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{input, prompt_for_y, read, ReadError::DeserializingError};
+use crate::ReadError;
 /*
 ///  let apples = GroceriesItem {
 ///     name: GroceriesItemName("apples".to_string()),
@@ -61,90 +67,6 @@ use crate::{input, prompt_for_y, read, ReadError::DeserializingError};
 /// }
  */
 
-pub fn run_groceries() -> Result<(), Box<dyn Error>> {
-    print_groceries()?;
-
-    add_groceries()?;
-
-    Ok(())
-}
-
-fn print_groceries() -> Result<(), Box<dyn Error>> {
-    eprintln!(
-        "View the groceries in our library?\n\
-         --y\n\
-         --any other key to continue"
-    );
-
-    while crate::prompt_for_y()? {
-        eprintln!();
-
-        let path = "groceries.json";
-
-        let groceries = Groceries::from_path(path).map_err(|e| {
-            format!(
-                "Failed to read groceries file '{}':\n\
-             '{}'\n",
-                path, e
-            )
-        })?;
-
-        for sec in groceries.sections {
-            let sec_items = groceries
-                .collection
-                .iter()
-                .filter(|x| x.section.0.contains(&sec.0))
-                .collect::<Vec<&GroceriesItem>>();
-            for item in sec_items {
-                eprintln!("{}", item);
-            }
-            eprintln!();
-        }
-
-        eprintln!();
-
-        eprintln!(
-            "View the groceries in our library?\n\
-             --y\n\
-             --any other key to continue"
-        );
-    }
-    Ok(())
-}
-
-fn add_groceries() -> Result<(), Box<dyn Error>> {
-    eprintln!(
-        "Add groceries to our library?\n\
-         --y\n\
-         --any other key to exit"
-    );
-
-    while prompt_for_y()? {
-        let path = "groceries.json";
-
-        let groceries = Groceries::from_path(path).map_err(|e| {
-            format!(
-                "Failed to read groceries file '{}':\n\
-		 '{}'\n",
-                path, e
-            )
-        })?;
-
-        let groceries = input_item(groceries)?;
-
-        let json = serde_json::to_string(&groceries)?;
-
-        crate::helpers::write(path, json)?;
-
-        eprintln!(
-            "Add more groceries to our library?\n\
-	     --y\n\
-	     --any other key to exit"
-        );
-    }
-    Ok(())
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Groceries {
     pub sections: Vec<GroceriesItemSection>,
@@ -170,42 +92,118 @@ impl DerefMut for Groceries {
 }
 */
 impl Groceries {
-    pub fn new() -> Self {
-        Self::new_initialized()
+    pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, ReadError> {
+        Ok(serde_json::from_reader(crate::read(path)?)?)
     }
 
-    pub fn new_initialized() -> Self {
-        let collection: Vec<GroceriesItem> = Vec::new();
-
-        let recipes: Vec<Recipe> = Vec::new();
-
-        let sections: Vec<GroceriesItemSection> = Vec::new();
-
-        //let list_recipes: Vec<Recipe> = Vec::new();
-
-        Self {
-            sections,
-            collection,
-            recipes,
-            //list_recipes,
-        } // using Self, can I make this a generic trait?
-    }
-
-    pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, Box<dyn Error>> {
-        let reader: BufReader<File> = read(path)?;
-
-        let data: Groceries =
-            serde_json::from_reader(reader).map_err(|e| DeserializingError { source: e })?;
-
-        Ok(data)
-    }
-
-    pub fn add_item(mut self, name: String, section: String) -> Result<Groceries, Box<dyn Error>> {
-        let name = GroceriesItemName(name);
-        let section = GroceriesItemSection(section);
-        let item = GroceriesItem::new(name, section)?;
+    pub fn add_item(&mut self, item: GroceriesItem) {
         self.collection.push(item);
-        Ok(self)
+    }
+
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), ReadError> {
+        let s = serde_json::to_string(&self)?;
+        // let _ = fs::write(path, s)?;
+        Ok(fs::write(path, s)?)
+    }
+
+    pub fn print_groceries(&self) {
+        for sec in &self.sections {
+            let sec_items = self
+                .collection
+                .iter()
+                .filter(|x| x.section.0.contains(&sec.0))
+                .collect::<Vec<&GroceriesItem>>();
+            for item in sec_items {
+                eprintln!("{}", item);
+            }
+            eprintln!();
+        }
+    }
+
+    pub fn print_recipes(&self) {
+        for recipe in self.recipes.iter() {
+            eprintln!("- {}", recipe);
+        }
+    }
+
+    pub fn add_recipe(
+        &mut self,
+        recipe: Recipe,
+        ingredients: Ingredients,
+    ) -> Result<(), ReadError> {
+        let recipe_name = recipe.clone();
+
+        // 1st add new items to groceries
+        for ingredient in ingredients.iter() {
+            if self.collection.iter().all(|g| &g.name != ingredient) {
+                let mut section_input_ok = false;
+                let mut section_input = String::new();
+                while !section_input_ok {
+                    eprintln!(
+                        "which section is {} in?\n\
+                        *1* fresh
+                        *2* pantry 
+                        *3* protein 
+                        *4* dairy 
+                        *5* freezer",
+                        ingredient
+                    );
+
+                    let input = crate::get_user_input()?;
+
+                    section_input = match &input {
+                        _ if input == "1" => {
+                            section_input_ok = true;
+                            "fresh".to_string()
+                        }
+                        _ if input == "2" => {
+                            section_input_ok = true;
+                            "pantry".to_string()
+                        }
+                        _ if input == "3" => {
+                            section_input_ok = true;
+                            "protein".to_string()
+                        }
+                        _ if input == "4" => {
+                            section_input_ok = true;
+                            "dairy".to_string()
+                        }
+                        _ if input == "5" => {
+                            section_input_ok = true;
+                            "freezer".to_string()
+                        }
+                        _ => {
+                            eprintln!("re-enter section information");
+                            continue;
+                        }
+                    };
+                }
+                let section = GroceriesItemSection(section_input);
+
+                let new_item = GroceriesItem::new_initialized(ingredient.clone(), section);
+
+                self.collection.push(new_item);
+            }
+        }
+        // 2nd update recipe info for groceriesitems
+        self.update_recipe_info(recipe, ingredients);
+
+        // 3rd add recipe to
+        self.recipes.push(recipe_name);
+
+        Ok(())
+    }
+
+    fn update_recipe_info(&mut self, recipe: Recipe, ingredients: Ingredients) {
+        self.collection
+            .iter_mut()
+            .filter(|x| ingredients.contains(&x.name))
+            .for_each(|mut x| {
+                if !x.is_recipe_ingredient {
+                    x.is_recipe_ingredient = true;
+                }
+                x.recipes.push(recipe.clone());
+            })
     }
 }
 
@@ -220,28 +218,75 @@ pub struct GroceriesItem {
 }
 
 impl GroceriesItem {
-    pub fn new(
-        name: GroceriesItemName,
-        section: GroceriesItemSection,
-    ) -> Result<Self, Box<dyn Error>> {
-        // this fn def is duplicate
-        Self::new_initialized(name, section)
+    pub fn new() -> Result<Option<Self>, ReadError> {
+        // get item info
+        eprintln!(
+            "Enter the item\n\
+            e.g. 'bread'"
+        );
+        let name = crate::get_user_input()?;
+        eprintln!(
+            "Enter the section (fresh, pantry, protein, dairy, freezer)\n\
+            e.g. 'fresh'"
+        );
+        let section = crate::get_user_input()?;
+
+        let groceries = Groceries::from_path("groceries.json")?;
+
+        // check if there are no matches
+        if groceries.collection.iter().all(|item| !item.matches(&name)) {
+            // if no matches add the item to groceries
+            Ok(Some(Self::new_initialized(
+                GroceriesItemName(name),
+                GroceriesItemSection(section),
+            )))
+        } else {
+            // check any matches for a genuine match,
+            // e.g. 'instant ramen noodles' is a genuine match for 'ramen noodles'
+            // (in our case, at least)
+            let mut found_no_matches = true;
+            for item in groceries.collection.iter() {
+                if item.matches(&name) {
+                    eprintln!(
+                        "is *{}* a match?\n\
+			                *y* for yes
+			                *any other key* for no",
+                        item
+                    );
+                    if crate::prompt_for_y()? {
+                        found_no_matches = false;
+                        break;
+                    }
+                }
+            }
+            if found_no_matches {
+                // means we need to add the item to groceries afterall
+                // after we had to check for any fake matches above
+                Ok(Some(Self::new_initialized(
+                    GroceriesItemName(name),
+                    GroceriesItemSection(section),
+                )))
+            } else {
+                Ok(None)
+            }
+        }
     }
 
-    pub fn new_initialized(
-        name: GroceriesItemName,
-        section: GroceriesItemSection,
-    ) -> Result<Self, Box<dyn Error>> {
+    fn new_initialized(name: GroceriesItemName, section: GroceriesItemSection) -> Self {
         //let name = name_and_section.get(0).expect("no grocery name found!");
         //let section = name_and_section.get(1).expect("no grocery section found");
-        Ok(GroceriesItem {
+        GroceriesItem {
             name,
             section,
             is_recipe_ingredient: false,
             recipes: vec![],
             //on_list: false,
             //on_checklist: false,
-        })
+        }
+    }
+
+    fn matches(&self, s: &str) -> bool {
+        s.split(' ').all(|word| !self.name.0.contains(word))
     }
 }
 /*
@@ -288,16 +333,38 @@ impl fmt::Display for GroceriesItemSection {
 pub struct Ingredients(pub Vec<GroceriesItemName>);
 
 impl Ingredients {
-    // Input a list of ingredients and return it ...
-    pub fn new(input: String) -> Result<Ingredients, Box<dyn Error>> {
-        let ingredients_list: Ingredients = Ingredients(
-            input
-                .split(',')
-                .map(|item| GroceriesItemName(item.trim().to_lowercase()))
-                .collect(),
-        );
+    fn new() -> Ingredients {
+        Ingredients(Vec::new())
+    }
 
-        Ok(ingredients_list)
+    fn add(&mut self, elem: GroceriesItemName) {
+        self.0.push(elem);
+    }
+
+    pub fn from_input_string(s: String) -> Result<Self, ReadError> {
+        Ingredients::from_str(&s)
+    }
+}
+
+impl FromIterator<GroceriesItemName> for Ingredients {
+    fn from_iter<I: IntoIterator<Item = GroceriesItemName>>(iter: I) -> Self {
+        let mut c = Ingredients::new();
+
+        for i in iter {
+            c.add(i);
+        }
+        c
+    }
+}
+
+impl FromStr for Ingredients {
+    type Err = crate::errors::ReadError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Input a list of ingredients and return it ...
+        Ok(s.split(',')
+            .map(|item| GroceriesItemName(item.trim().to_lowercase()))
+            .collect())
     }
 }
 
@@ -318,169 +385,18 @@ impl fmt::Display for Recipe {
     }
 }
 
-pub fn add_recipe(name: String, ingredients: String) -> Result<(), Box<dyn Error>> {
-    let recipe_name = Recipe(name);
-
-    let recipe_ingredients: Ingredients = Ingredients::new(ingredients)?;
-
-    let mut groceries = Groceries::from_path("groceries.json")?;
-
-    // 1st add new items to groceries
-    for ingredient in recipe_ingredients.iter() {
-        if groceries.collection.iter().all(|g| &g.name != ingredient) {
-            let mut section_input_ok = false;
-            let mut section_input = String::new();
-            while !section_input_ok {
-                eprintln!(
-                    "which section is {} in?\n\
-		     *1* fresh
-*2* pantry 
-*3* protein 
-*4* dairy 
-*5* freezer",
-                    ingredient
-                );
-
-                let input = input()?;
-
-                section_input = match &input {
-                    _ if input == "1" => {
-                        section_input_ok = true;
-                        "fresh".to_string()
-                    }
-                    _ if input == "2" => {
-                        section_input_ok = true;
-                        "pantry".to_string()
-                    }
-                    _ if input == "3" => {
-                        section_input_ok = true;
-                        "protein".to_string()
-                    }
-                    _ if input == "4" => {
-                        section_input_ok = true;
-                        "dairy".to_string()
-                    }
-                    _ if input == "5" => {
-                        section_input_ok = true;
-                        "freezer".to_string()
-                    }
-                    _ => {
-                        eprintln!("re-enter section information");
-                        continue;
-                    }
-                };
-            }
-            let section = GroceriesItemSection(section_input);
-
-            let new_item = GroceriesItem::new(ingredient.clone(), section)?;
-
-            groceries.collection.push(new_item);
-        }
+impl Recipe {
+    pub fn new(s: String) -> Result<Self, ReadError> {
+        Recipe::from_str(&s)
     }
-    // 2nd update recipe info for groceriesitems
-    groceries
-        .collection
-        .iter_mut()
-        .filter(|x| recipe_ingredients.contains(&x.name))
-        .for_each(|x| {
-            if !x.is_recipe_ingredient {
-                x.is_recipe_ingredient = true;
-            }
-            x.recipes.push(recipe_name.clone());
-        });
-
-    // 3rd add recipe to
-    //let path = "recipes.json";
-    /*
-    let mut recipes = Recipes::from_path(path).map_err(|e| {
-    format!(
-        "Failed to read recipes file '{}':\n\
-         '{}'",
-        path, e
-    )
-    })?;
-    */
-    groceries.recipes.push(recipe_name);
-
-    let json = serde_json::to_string(&groceries)?;
-    // Put trace here
-    crate::helpers::write("groceries.json", json)?;
-
-    Ok(())
 }
 
-pub fn print_recipes() -> Result<(), Box<dyn Error>> {
-    let path = "groceries.json";
+impl FromStr for Recipe {
+    type Err = ReadError;
 
-    let groceries = Groceries::from_path(path).map_err(|e| {
-        format!(
-            "Failed to read recipes file '{}':\n\
-	     '{}'",
-            path, e
-        )
-    })?;
-
-    for recipe in groceries.recipes.iter() {
-        eprintln!("- {}", recipe);
+    fn from_str(s: &str) -> Result<Self, ReadError> {
+        Ok(Recipe(s.to_string()))
     }
-    eprintln!();
-
-    Ok(())
-}
-
-fn input_item(mut groceries: Groceries) -> Result<Groceries, Box<dyn Error>> {
-    // get item info
-    eprintln!(
-        "Enter the item\n\
-	 e.g. 'bread'"
-    );
-    let name = input()?;
-    eprintln!(
-        "Enter the section (fresh, pantry, protein, dairy, freezer)\n\
-	 e.g. 'fresh'"
-    );
-    let section = input()?;
-    // check if there are no matches
-    if groceries
-        .collection
-        .iter()
-        .all(|item| no_match(&name, item))
-    {
-        // if no matches add the item to groceries
-        groceries.collection.push(GroceriesItem::new(
-            GroceriesItemName(name),
-            GroceriesItemSection(section),
-        )?);
-    } else {
-        // check any matches for a genuine match,
-        // e.g. 'instant ramen noodles' is a genuine match for 'ramen noodles'
-        // (in our case, at least)
-        let mut found_no_matches = true;
-        for item in groceries.collection.iter() {
-            if !no_match(&name, item) {
-                eprintln!(
-                    "is *{}* a match?\n\
-			   *y* for yes
-			   *any other key* for no",
-                    item
-                );
-                if prompt_for_y()? {
-                    found_no_matches = false;
-                    break;
-                }
-            }
-        }
-        if found_no_matches {
-            // means we need to add the item to groceries afterall
-            // after we had to check for any fakse matches above
-            groceries = groceries.add_item(name, section)?;
-        }
-    }
-    Ok(groceries)
-}
-
-fn no_match(name: &str, item: &GroceriesItem) -> bool {
-    name.split(' ').all(|word| !item.name.0.contains(word))
 }
 
 /*
