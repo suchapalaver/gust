@@ -34,9 +34,62 @@ pub fn run() -> Result<(), crate::ReadError> {
 
         eprintln!("Enter each ingredient separated by a comma");
 
-        let ingredients = get_user_input()?;
+        let ingredients = Ingredients::from_input_string(get_user_input()?)?;
 
-        groceries.add_recipe(recipe, Ingredients::from_input_string(ingredients)?)?;
+        // 1st add new items to groceries
+        for ingredient in ingredients.iter() {
+            if groceries.collection.iter().all(|g| &g.name != ingredient) {
+                let mut section_input_ok = false;
+                let mut section_input = String::new();
+                while !section_input_ok {
+                    eprintln!(
+                        "which section is {} in?\n\
+                        *1* fresh
+                        *2* pantry 
+                        *3* protein 
+                        *4* dairy 
+                        *5* freezer",
+                        ingredient
+                    );
+
+                    let input = crate::get_user_input()?;
+
+                    section_input = match &input {
+                        _ if input == "1" => {
+                            section_input_ok = true;
+                            "fresh".to_string()
+                        }
+                        _ if input == "2" => {
+                            section_input_ok = true;
+                            "pantry".to_string()
+                        }
+                        _ if input == "3" => {
+                            section_input_ok = true;
+                            "protein".to_string()
+                        }
+                        _ if input == "4" => {
+                            section_input_ok = true;
+                            "dairy".to_string()
+                        }
+                        _ if input == "5" => {
+                            section_input_ok = true;
+                            "freezer".to_string()
+                        }
+                        _ => {
+                            eprintln!("re-enter section information");
+                            continue;
+                        }
+                    };
+                }
+                let section = crate::GroceriesItemSection(section_input);
+
+                let item = crate::GroceriesItem::new_initialized(ingredient.clone(), section);
+
+                groceries.add_item(item);
+            }
+        }
+
+        groceries.add_recipe(recipe, ingredients);
     }
     groceries.save("groceries.json")?;
     Ok(())

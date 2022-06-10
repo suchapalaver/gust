@@ -29,7 +29,18 @@ pub fn run() -> Result<(), ReadError> {
     );
 
     while crate::prompt_for_y()? {
-        let new_item = GroceriesItem::new()?;
+        eprintln!(
+            "Enter the item\n\
+            e.g. 'bread'"
+        );
+        let name = crate::get_user_input()?;
+        eprintln!(
+            "Enter the section (fresh, pantry, protein, dairy, freezer)\n\
+            e.g. 'fresh'"
+        );
+        let section = crate::get_user_input()?;
+
+        let new_item = GroceriesItem::new(&name, &section)?;
 
         if new_item != None {
             groceries.add_item(new_item.unwrap());

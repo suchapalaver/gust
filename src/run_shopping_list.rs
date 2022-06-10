@@ -68,11 +68,6 @@ pub fn run() -> Result<(), ReadError> {
         );
     }
 
-    // move everything off list to temp list
-    let list_items: Vec<GroceriesItem> = sl.groceries.drain(..).collect();
-    assert!(sl.groceries.is_empty());
-
-    // add individual groceries
     eprintln!(
         "Add groceries to shopping list?\n\
             *y*\n\
@@ -81,6 +76,9 @@ pub fn run() -> Result<(), ReadError> {
     let groceries = crate::Groceries::from_path("groceries.json")?;
 
     while crate::prompt_for_y()? {
+        // move everything off list to temp list
+        let list_items: Vec<GroceriesItem> = sl.groceries.drain(..).collect();
+        assert!(sl.groceries.is_empty());
         let sections = vec!["fresh", "pantry", "dairy", "protein", "freezer"];
         let groceries_by_section: Vec<Vec<GroceriesItem>> = {
             sections
@@ -158,7 +156,6 @@ pub fn run() -> Result<(), ReadError> {
         sl.save()?;
     }
 
-    // view list
     sl.print();
 
     Ok(())
