@@ -1,5 +1,4 @@
 use std::{
-    error::Error,
     fs::{self, File},
     io::{stdin, stdout, BufReader, Write},
     path::Path,
@@ -8,10 +7,8 @@ use std::{
 use crate::ReadError;
 
 // Reads file from path into a read-only buffer-reader
-pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> {
-    let file: File = File::open(path).map_err(|err_msg| ReadError::PathError {
-        source: Box::from(err_msg),
-    })?;
+pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, ReadError> {
+    let file: File = File::open(path).map_err(|source| ReadError::ReadWriteError { source })?;
 
     let reader = BufReader::new(file);
 
@@ -19,12 +16,12 @@ pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, Box<dyn Error>> 
 }
 
 // Gets user input when it's 'y' or anything else
-pub fn prompt_for_y() -> Result<bool, Box<dyn Error>> {
+pub fn prompt_for_y() -> Result<bool, ReadError> {
     Ok("y" == input()?)
 }
 
 // Function for getting user input
-pub fn input() -> Result<String, Box<dyn Error>> {
+pub fn input() -> Result<String, ReadError> {
     stdout().flush()?;
 
     let mut input = String::new();
@@ -37,7 +34,7 @@ pub fn input() -> Result<String, Box<dyn Error>> {
 }
 
 // Writes a String to a path
-pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), Box<dyn Error>> {
+pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), ReadError> {
     let _ = fs::write(path, &object)?;
     Ok(())
 }

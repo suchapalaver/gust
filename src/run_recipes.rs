@@ -1,8 +1,6 @@
-use crate::{add_recipe, input, print_recipes, prompt_for_y};
+use crate::{input, print_recipes, prompt_for_y};
 
-use std::error::Error;
-
-pub fn run_recipes() -> Result<(), Box<dyn Error>> {
+pub fn run_recipes() -> Result<(), crate::ReadError> {
     eprintln!(
         "View the recipes we have \
 	 in our library?\n\
@@ -31,7 +29,13 @@ pub fn run_recipes() -> Result<(), Box<dyn Error>> {
 
         let ingredients = input()?;
 
-        add_recipe(recipe_name, ingredients)?;
+        let mut groceries = crate::Groceries::from_path("groceries.json")?;
+
+        groceries.add_recipe(recipe_name, ingredients)?;
+
+        let s = serde_json::to_string(&groceries)?;
+
+        groceries.save("groceries.json", &s)?;
     }
 
     Ok(())
