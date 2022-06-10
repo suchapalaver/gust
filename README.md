@@ -2,9 +2,8 @@
 use 'grusterylist' to add recipes and grocery items to a local library that makes putting together shopping lists super quick.    
 ## getting started     
 - `$ cargo run -- --help` for available options      
-- `$ cargo run -- l` allows you to begin a new shopping list or use the most recently saved list.      
-- `groceries.json` contains a library of grocery items and recipes.    
-- `list.json` is a saved list that could be emptied out manually to start from scratch.          
+- `$ cargo run -- l` allows you to begin a new shopping list or use the most recently saved list. 
+          
 ### example shopping list    
 ```
 Print shopping list?
