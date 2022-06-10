@@ -1,13 +1,12 @@
-use std::error::Error;
+use crate::ReadError;
 
 use clap::{App, Arg};
 
-// Using `clap` to parse command line arguments
 // Run application with one of three subcommands:
 // cargo run -- l
 //   "    "  -- g
 //   "    "  -- r
-pub fn run() -> Result<(), Box<dyn Error>> {
+pub fn run() -> Result<(), ReadError> {
     let args = App::new("grusterylist")
         .override_help(
             "\n\
@@ -33,12 +32,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let subcommand = args.value_of("subcommands").unwrap_or("-");
 
     match subcommand {
-        "l" => Ok(crate::make_list()?),
-        "g" => Ok(crate::run_groceries()?),
-        "r" => Ok(crate::run_recipes()?),
-        &_ => Err("Invalid command.\n\
-		   For help, try:\n\
-		   cargo run -- -h"
-            .into()),
+        "l" => Ok(crate::run_shopping_list::run()?),
+        "g" => Ok(crate::run_groceries::run()?),
+        "r" => Ok(crate::run_recipes::run()?),
+        &_ => Err(ReadError::ParseInputError),
     }
 }
