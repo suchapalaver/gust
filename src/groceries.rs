@@ -25,6 +25,17 @@ impl Groceries {
         self.collection.push(item);
     }
 
+    // pub fn delete_item(&mut self, name: GroceriesItemName) -> Result<(), LookupError> {
+    //     if let Ok(i) = self.collection.iter().position(|x| x.name == name).ok_or(LookupError::ItemNotFound) {
+    //     //   Some(i) => Ok(self.collection.remove(i)),
+    //     //   None => Err(LookupError::ItemNotFound),
+    //     // }
+    //     self.collection.remove(i);
+        
+    //     }
+    //     Ok(())
+    // }
+
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), ReadError> {
         let s = serde_json::to_string(&self)?;
         Ok(fs::write(path, s)?)

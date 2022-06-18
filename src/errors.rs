@@ -3,3 +3,7 @@ custom_error::custom_error! {pub ReadError
     ParseInputError = "Invalid input",
     ReadWriteError{ source: std::io::Error } = "Error reading/writing file",
 }
+
+// custom_error::custom_error! {pub LookupError
+//     ItemNotFound = "Item not found",
+//     }
