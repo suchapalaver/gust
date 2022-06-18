@@ -1,5 +1,6 @@
 use crate::ReadError;
 use crate::ShoppingList;
+use std::path::Path;
 
 pub fn run() -> Result<(), ReadError> {
     if let Err(e) = crate::Groceries::from_path("groceries.json") {
@@ -11,32 +12,33 @@ pub fn run() -> Result<(), ReadError> {
         )
     } else {
         let mut sl = ShoppingList::new();
-        eprintln!(
-            "\n\
+        if Path::new("list.json").exists() {
+            eprintln!(
+                "\n\
         Use most recently saved list?\n\
         *y*\n\
         *any other key* for fresh list"
-        );
-        if crate::prompt_for_y()? {
-            let path = "list.json";
-            sl = ShoppingList::from_path(path)?;
-        }
+            );
+            if crate::prompt_for_y()? {
+                let path = "list.json";
+                sl = ShoppingList::from_path(path)?;
+            }
 
-        // view list if using saved list
-        if !sl.groceries.is_empty() {
-            eprintln!(
-                "\n\
+            // view list if using saved list
+            if !sl.groceries.is_empty() {
+                eprintln!(
+                    "\n\
             Print shopping list?\n\
             *y*\n\
             *any other key* to continue"
-            );
+                );
 
-            if crate::prompt_for_y()? {
-                sl.print();
-                println!();
+                if crate::prompt_for_y()? {
+                    sl.print();
+                    println!();
+                }
             }
         }
-
         // add recipes to shoppinglist
         eprintln!(
             "Add recipe ingredients to our list?\n\
@@ -88,18 +90,20 @@ pub fn run() -> Result<(), ReadError> {
             );
         }
 
-        // overwrite saved list with current list
-        eprintln!(
-            "Save current list?\n\
+        if !sl.checklist.is_empty() && !sl.groceries.is_empty() && !sl.recipes.is_empty() {
+            // overwrite saved list with current list
+            eprintln!(
+                "Save current list?\n\
                 *y*\n\
                 *any other key* to continue"
-        );
+            );
 
-        if crate::prompt_for_y()? {
-            sl.save()?;
+            if crate::prompt_for_y()? {
+                sl.save()?;
+            }
+
+            sl.print();
         }
-
-        sl.print();
     }
     Ok(())
 }
