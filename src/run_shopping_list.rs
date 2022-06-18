@@ -25,105 +25,107 @@ pub fn run() -> Result<(), ReadError> {
             }
 
             // view list if using saved list
-            prompt_view_list(&sl)?;
+            sl.prompt_view_list()?;
         }
-        prompt_add_recipes(&mut sl)?;
+        sl.prompt_add_recipes()?;
 
-        prompt_add_groceries(&mut sl)?;
+        sl.prompt_add_groceries()?;
 
-        prompt_save_list(&mut sl)?;
+        sl.prompt_save_list()?;
     }
     Ok(())
 }
 
-fn prompt_view_list(sl: &ShoppingList) -> Result<(), ReadError> {
-    if !sl.groceries.is_empty() {
-        eprintln!(
-            "\n\
-    Print shopping list?\n\
-    *y*\n\
-    *any other key* to continue"
-        );
-
-        if crate::prompt_for_y()? {
-            sl.print();
-            println!();
-        }
-    }
-    Ok(())
-}
-
-fn prompt_add_recipes(sl: &mut ShoppingList) -> Result<(), ReadError> {
-    eprintln!(
-        "Add recipe ingredients to our list?\n\
-            *y*\n\
-            *any other key* to continue"
-    );
-
-    while crate::prompt_for_y()? {
-        let groceries = crate::Groceries::from_path("groceries.json")?;
-
-        for recipe in groceries.recipes.into_iter() {
+impl ShoppingList {
+    pub(crate) fn prompt_view_list(&self) -> Result<(), ReadError> {
+        if !self.groceries.is_empty() {
             eprintln!(
-                "Shall we add ...\n\
-                        {}?\n\
-                        *y*\n\
-                        *s* to skip to end of recipes\n\
-                        *any other key* for next recipe",
-                recipe
+                "\n\
+        Print shopping list?\n\
+        *y*\n\
+        *any other key* to continue"
             );
 
-            match crate::get_user_input()?.as_str() {
-                "y" => {
-                    if !sl.recipes.contains(&recipe) {
-                        sl.add_recipe(recipe);
-                    }
-                }
-                "s" => break,
-                &_ => continue,
+            if crate::prompt_for_y()? {
+                self.print();
+                println!();
             }
         }
+        Ok(())
+    }
+
+    pub(crate) fn prompt_add_recipes(&mut self) -> Result<(), ReadError> {
         eprintln!(
-            "Add any more recipe ingredients to our list?\n\
+            "Add recipe ingredients to our list?\n\
                 *y*\n\
                 *any other key* to continue"
         );
-    }
-    Ok(())
-}
 
-fn prompt_add_groceries(sl: &mut ShoppingList) -> Result<(), ReadError> {
-    eprintln!(
-        "Add groceries to shopping list?\n\
-        *y*\n\
-        *any other key* to skip"
-    );
+        while crate::prompt_for_y()? {
+            let groceries = crate::Groceries::from_path("groceries.json")?;
 
-    while crate::prompt_for_y()? {
-        sl.add_groceries()?;
-        eprintln!(
-            "Add more groceries to shopping list?\n\
-        *y*\n\
-        *any other key* to skip"
-        );
-    }
-    Ok(())
-}
+            for recipe in groceries.recipes.into_iter() {
+                eprintln!(
+                    "Shall we add ...\n\
+                            {}?\n\
+                            *y*\n\
+                            *s* to skip to end of recipes\n\
+                            *any other key* for next recipe",
+                    recipe
+                );
 
-fn prompt_save_list(sl: &mut ShoppingList) -> Result<(), ReadError> {
-    // don't save list if empty
-    if !sl.checklist.is_empty() && !sl.groceries.is_empty() && !sl.recipes.is_empty() {
-        eprintln!(
-            "Save current list?\n\
-            *y*\n\
-            *any other key* to continue"
-        );
-
-        if crate::prompt_for_y()? {
-            sl.save()?;
+                match crate::get_user_input()?.as_str() {
+                    "y" => {
+                        if !self.recipes.contains(&recipe) {
+                            self.add_recipe(recipe);
+                        }
+                    }
+                    "s" => break,
+                    &_ => continue,
+                }
+            }
+            eprintln!(
+                "Add any more recipe ingredients to our list?\n\
+                    *y*\n\
+                    *any other key* to continue"
+            );
         }
-
-        sl.print();
+        Ok(())
     }
-    Ok(())
+
+    pub(crate) fn prompt_add_groceries(&mut self) -> Result<(), ReadError> {
+        eprintln!(
+            "Add groceries to shopping list?\n\
+            *y*\n\
+            *any other key* to skip"
+        );
+
+        while crate::prompt_for_y()? {
+            self.add_groceries()?;
+            eprintln!(
+                "Add more groceries to shopping list?\n\
+            *y*\n\
+            *any other key* to skip"
+            );
+        }
+        Ok(())
+    }
+
+    pub(crate) fn prompt_save_list(&mut self) -> Result<(), ReadError> {
+        // don't save list if empty
+        if !self.checklist.is_empty() && !self.groceries.is_empty() && !self.recipes.is_empty() {
+            eprintln!(
+                "Save current list?\n\
+                *y*\n\
+                *any other key* to continue"
+            );
+
+            if crate::prompt_for_y()? {
+                self.save()?;
+            }
+
+            self.print();
+        }
+        Ok(())
+    }
 }
