@@ -4,6 +4,6 @@ custom_error::custom_error! {pub ReadError
     ReadWriteError{ source: std::io::Error } = "Error reading/writing file",
 }
 
-// custom_error::custom_error! {pub LookupError
-//     ItemNotFound = "Item not found",
-//     }
+custom_error::custom_error! {pub LookupError
+ItemNotFound = "Item not found",
+}

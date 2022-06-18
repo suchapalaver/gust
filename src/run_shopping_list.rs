@@ -8,7 +8,7 @@ pub fn run() -> Result<(), ReadError> {
             {e}\n\
             Run `grusterylist groceries` to create a groceries library
             "
-                )
+        )
     } else {
         let mut sl = ShoppingList::new();
         eprintln!(
@@ -48,21 +48,21 @@ pub fn run() -> Result<(), ReadError> {
 
             let groceries = crate::Groceries::from_path(path)?;
             for recipe in groceries.recipes.into_iter() {
-                    eprintln!(
-                        "Shall we add ...\n\
+                eprintln!(
+                    "Shall we add ...\n\
                             {}?\n\
                             *y*\n\
                             *s* to skip to end of recipes\n\
                             *any other key* for next recipe",
-                        recipe
-                    );
-        
+                    recipe
+                );
+
                 match crate::get_user_input()?.as_str() {
                     "y" => {
                         if !sl.recipes.contains(&recipe) {
-                        sl.add_recipe(recipe);
+                            sl.add_recipe(recipe);
+                        }
                     }
-                }
                     "s" => break,
                     &_ => continue,
                 }
@@ -72,13 +72,12 @@ pub fn run() -> Result<(), ReadError> {
                     *y*\n\
                     *any other key* to continue"
             );
-        } 
-    eprintln!(
-        "Add groceries to shopping list?\n\
+        }
+        eprintln!(
+            "Add groceries to shopping list?\n\
             *y*\n\
             *any other key* to skip"
-    );
-    
+        );
 
         while crate::prompt_for_y()? {
             sl.add_groceries()?;
@@ -100,7 +99,7 @@ pub fn run() -> Result<(), ReadError> {
             sl.save()?;
         }
 
-    sl.print();
+        sl.print();
     }
     Ok(())
 }
