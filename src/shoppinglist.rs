@@ -1,10 +1,7 @@
-use crate::{GroceriesItem, ReadError, Recipe};
+use crate::{GroceriesItem, GroceriesItemName, LookupError, ReadError, Recipe};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-// used to serialize and deserialize the
-// most recently saved list or to create a
-// new grocery list that can be saved as JSON
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
     pub checklist: Vec<GroceriesItem>,
@@ -132,8 +129,48 @@ impl ShoppingList {
         self.groceries.push(item)
     }
 
+    pub fn delete_groceries_item(&mut self, name: &str) -> Result<(), LookupError> {
+        if let Ok(i) = self
+            .groceries
+            .iter()
+            .position(|x| x.name == GroceriesItemName(name.to_string()))
+            .ok_or(LookupError::ItemNotFound)
+        {
+            self.groceries.remove(i);
+        }
+        Ok(())
+    }
+
+    pub fn add_checklist_item(&mut self, item: GroceriesItem) {
+        self.checklist.push(item)
+    }
+
+    pub fn delete_checklist_item(&mut self, name: &str) -> Result<(), LookupError> {
+        if let Ok(i) = self
+            .checklist
+            .iter()
+            .position(|x| x.name == GroceriesItemName(name.to_string()))
+            .ok_or(LookupError::ItemNotFound)
+        {
+            self.checklist.remove(i);
+        }
+        Ok(())
+    }
+
     pub fn add_recipe(&mut self, recipe: Recipe) {
         self.recipes.push(recipe)
+    }
+
+    pub fn delete_recipe(&mut self, name: &str) -> Result<(), LookupError> {
+        if let Ok(i) = self
+            .recipes
+            .iter()
+            .position(|x| x == &Recipe(name.to_string()))
+            .ok_or(LookupError::ItemNotFound)
+        {
+            self.recipes.remove(i);
+        }
+        Ok(())
     }
 
     pub fn to_json_string(&self) -> Result<String, ReadError> {
@@ -150,8 +187,10 @@ impl ShoppingList {
 pub mod test {
     use super::*;
 
+    use crate::GroceriesItemSection;
     use assert_fs::prelude::*;
 
+    // test suite helper function
     fn create_test_json_file() -> Result<assert_fs::NamedTempFile, Box<dyn std::error::Error>> {
         let file = assert_fs::NamedTempFile::new("test.json")?;
         file.write_str(
@@ -160,6 +199,287 @@ pub mod test {
             "#
         )?;
         Ok(file)
+    }
+
+    #[test]
+    fn test_delete_groceries_item() -> Result<(), Box<dyn std::error::Error>> {
+        let file = create_test_json_file()?;
+        let mut sl = ShoppingList::from_path(file.path())?;
+        let item = GroceriesItem {
+            name: GroceriesItemName("kumquats".to_string()),
+            section: GroceriesItemSection("fresh".to_string()),
+            is_recipe_ingredient: false,
+            recipes: vec![],
+        };
+        sl.add_groceries_item(item);
+        insta::assert_json_snapshot!(sl.groceries, @r###"
+        [
+          {
+            "name": "garlic",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "Sheet Pan Salmon with Broccoli",
+              "crispy tofu with cashews and blistered snap peas",
+              "chicken breasts with lemon",
+              "hummus",
+              "tomato pasta",
+              "crispy sheet-pan noodles",
+              "flue flighter chicken stew",
+              "sheet-pan chicken with jammy tomatoes",
+              "swordfish pasta"
+            ]
+          },
+          {
+            "name": "tomatoes",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta"
+            ]
+          },
+          {
+            "name": "basil",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta"
+            ]
+          },
+          {
+            "name": "lemons",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "chicken breasts with lemon",
+              "hummus",
+              "sheet-pan chicken with jammy tomatoes",
+              "flue flighter chicken stew"
+            ]
+          },
+          {
+            "name": "pasta",
+            "section": "pantry",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta",
+              "swordfish pasta"
+            ]
+          },
+          {
+            "name": "olive oil",
+            "section": "pantry",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "Sheet Pan Salmon with Broccoli",
+              "chicken breasts with lemon",
+              "hummus",
+              "tomato pasta",
+              "sheet-pan chicken with jammy tomatoes",
+              "turkey meatballs",
+              "swordfish pasta"
+            ]
+          },
+          {
+            "name": "short grain brown rice",
+            "section": "pantry",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "Sheet Pan Salmon with Broccoli",
+              "flue flighter chicken stew"
+            ]
+          },
+          {
+            "name": "parmigiana",
+            "section": "dairy",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta",
+              "turkey meatballs"
+            ]
+          },
+          {
+            "name": "eggs",
+            "section": "dairy",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "oatmeal chocolate chip cookies",
+              "fried eggs for breakfast",
+              "turkey meatballs"
+            ]
+          },
+          {
+            "name": "sausages",
+            "section": "protein",
+            "is_recipe_ingredient": true,
+            "recipes": []
+          },
+          {
+            "name": "dumplings",
+            "section": "freezer",
+            "is_recipe_ingredient": false,
+            "recipes": []
+          },
+          {
+            "name": "kumquats",
+            "section": "fresh",
+            "is_recipe_ingredient": false,
+            "recipes": []
+          }
+        ]
+        "###);
+        sl.delete_groceries_item("kumquats")?;
+        insta::assert_json_snapshot!(sl.groceries, @r###"
+        [
+          {
+            "name": "garlic",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "Sheet Pan Salmon with Broccoli",
+              "crispy tofu with cashews and blistered snap peas",
+              "chicken breasts with lemon",
+              "hummus",
+              "tomato pasta",
+              "crispy sheet-pan noodles",
+              "flue flighter chicken stew",
+              "sheet-pan chicken with jammy tomatoes",
+              "swordfish pasta"
+            ]
+          },
+          {
+            "name": "tomatoes",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta"
+            ]
+          },
+          {
+            "name": "basil",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta"
+            ]
+          },
+          {
+            "name": "lemons",
+            "section": "fresh",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "chicken breasts with lemon",
+              "hummus",
+              "sheet-pan chicken with jammy tomatoes",
+              "flue flighter chicken stew"
+            ]
+          },
+          {
+            "name": "pasta",
+            "section": "pantry",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta",
+              "swordfish pasta"
+            ]
+          },
+          {
+            "name": "olive oil",
+            "section": "pantry",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "Sheet Pan Salmon with Broccoli",
+              "chicken breasts with lemon",
+              "hummus",
+              "tomato pasta",
+              "sheet-pan chicken with jammy tomatoes",
+              "turkey meatballs",
+              "swordfish pasta"
+            ]
+          },
+          {
+            "name": "short grain brown rice",
+            "section": "pantry",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "Sheet Pan Salmon with Broccoli",
+              "flue flighter chicken stew"
+            ]
+          },
+          {
+            "name": "parmigiana",
+            "section": "dairy",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "tomato pasta",
+              "turkey meatballs"
+            ]
+          },
+          {
+            "name": "eggs",
+            "section": "dairy",
+            "is_recipe_ingredient": true,
+            "recipes": [
+              "oatmeal chocolate chip cookies",
+              "fried eggs for breakfast",
+              "turkey meatballs"
+            ]
+          },
+          {
+            "name": "sausages",
+            "section": "protein",
+            "is_recipe_ingredient": true,
+            "recipes": []
+          },
+          {
+            "name": "dumplings",
+            "section": "freezer",
+            "is_recipe_ingredient": false,
+            "recipes": []
+          }
+        ]
+        "###);
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_checklist_item() -> Result<(), Box<dyn std::error::Error>> {
+        let file = create_test_json_file()?;
+        let mut sl = ShoppingList::from_path(file.path())?;
+        let item = GroceriesItem {
+            name: GroceriesItemName("kumquats".to_string()),
+            section: GroceriesItemSection("fresh".to_string()),
+            is_recipe_ingredient: false,
+            recipes: vec![],
+        };
+        sl.add_checklist_item(item);
+        insta::assert_json_snapshot!(sl.checklist, @r###"
+        [
+          {
+            "name": "kumquats",
+            "section": "fresh",
+            "is_recipe_ingredient": false,
+            "recipes": []
+          }
+        ]
+        "###);
+        sl.delete_checklist_item("kumquats")?;
+        insta::assert_json_snapshot!(sl.checklist, @"[]");
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_recipe() -> Result<(), Box<dyn std::error::Error>> {
+        let file = create_test_json_file()?;
+        let mut sl = ShoppingList::from_path(file.path())?;
+        insta::assert_json_snapshot!(sl.recipes, @r###"
+        [
+          "tomato pasta"
+        ]
+        "###);
+        sl.delete_recipe("tomato pasta")?;
+        insta::assert_json_snapshot!(sl.recipes, @"[]");
+        Ok(())
     }
 
     #[test]
