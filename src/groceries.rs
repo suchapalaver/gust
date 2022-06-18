@@ -25,11 +25,11 @@ impl Groceries {
         self.collection.push(item);
     }
 
-    pub fn delete_item(&mut self, name: GroceriesItemName) -> Result<(), LookupError> {
+    pub fn delete_item(&mut self, name: &str) -> Result<(), LookupError> {
         if let Ok(i) = self
             .collection
             .iter()
-            .position(|x| x.name == name)
+            .position(|x| x.name == GroceriesItemName(name.to_string()))
             .ok_or(LookupError::ItemNotFound)
         {
             self.collection.remove(i);
@@ -74,6 +74,8 @@ impl Groceries {
             });
         self.recipes.push(recipe);
     }
+
+    // pub fn delete_recipe(&mut self, )
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
