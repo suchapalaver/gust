@@ -23,6 +23,26 @@ impl Groceries {
         Ok(g)
     }
 
+    pub fn get_item(&self, name: &str) -> Option<GroceriesItem> {
+        // check any matches for a genuine match,
+        // e.g. 'instant ramen noodles' is a genuine match for 'ramen noodles'
+        // (in our case, at least)
+        for item in self.collection.iter() {
+            if item.matches(name) {
+                eprintln!(
+                    "is *{}* a match?\n\
+                  *y* for yes
+                  *any other key* for no",
+                    item
+                );
+                if crate::prompt_for_y().ok()? {
+                    return Some(item.clone());
+                }
+            }
+        }
+        None
+    }
+
     pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, ReadError> {
         Ok(serde_json::from_reader(crate::read(path)?)?)
     }

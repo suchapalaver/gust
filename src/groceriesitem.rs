@@ -1,5 +1,3 @@
-use crate::Groceries;
-use crate::ReadError;
 use crate::Recipe;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -16,46 +14,11 @@ pub struct GroceriesItem {
 }
 
 impl GroceriesItem {
-    pub fn new(name: &str, section: &str) -> Result<Option<Self>, ReadError> {
-        let groceries = Groceries::from_path("groceries.json")?;
-
-        // check if there are no matches
-        if groceries.collection.iter().all(|item| !item.matches(name)) {
-            // if no matches add the item to groceries
-            Ok(Some(Self::new_initialized(
-                GroceriesItemName(name.to_owned()),
-                GroceriesItemSection(section.to_owned()),
-            )))
-        } else {
-            // check any matches for a genuine match,
-            // e.g. 'instant ramen noodles' is a genuine match for 'ramen noodles'
-            // (in our case, at least)
-            let mut found_no_matches = true;
-            for item in groceries.collection.iter() {
-                if item.matches(name) {
-                    eprintln!(
-                        "is *{}* a match?\n\
-			                *y* for yes
-			                *any other key* for no",
-                        item
-                    );
-                    if crate::prompt_for_y()? {
-                        found_no_matches = false;
-                        break;
-                    }
-                }
-            }
-            if found_no_matches {
-                // means we need to add the item to groceries afterall
-                // after we had to check for any fake matches above
-                Ok(Some(Self::new_initialized(
-                    GroceriesItemName(name.to_owned()),
-                    GroceriesItemSection(section.to_owned()),
-                )))
-            } else {
-                Ok(None)
-            }
-        }
+    pub fn new(name: &str, section: &str) -> Self {
+        Self::new_initialized(
+            GroceriesItemName(name.to_string()),
+            GroceriesItemSection(section.to_string()),
+        )
     }
 
     pub fn new_initialized(name: GroceriesItemName, section: GroceriesItemSection) -> Self {
@@ -71,17 +34,10 @@ impl GroceriesItem {
         }
     }
 
-    fn matches(&self, s: &str) -> bool {
+    pub fn matches(&self, s: &str) -> bool {
         s.split(' ').all(|word| !self.name.0.contains(word))
     }
 }
-/*
-impl Default for GroceriesItem {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-*/
 
 impl fmt::Display for GroceriesItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
