@@ -29,8 +29,8 @@ pub fn run() -> Result<(), crate::ReadError> {
         };
 
         eprintln!("Enter each ingredient separated by a comma");
-
-        let ingredients = Ingredients::from_input_string(get_user_input()?)?;
+        let ingredients_input = get_user_input()?;
+        let ingredients = Ingredients::from_input_string(&ingredients_input)?;
 
         // 1st add new items to groceries
         for ingredient in ingredients.iter() {
@@ -85,7 +85,7 @@ pub fn run() -> Result<(), crate::ReadError> {
             }
         }
 
-        groceries.add_recipe(recipe, ingredients);
+        groceries.add_recipe(&recipe.0, &ingredients_input)?;
     }
     groceries.save("groceries.json")?;
     Ok(())

@@ -88,7 +88,9 @@ impl Groceries {
         }
     }
 
-    pub fn add_recipe(&mut self, recipe: Recipe, ingredients: Ingredients) {
+    pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
+        let recipe = Recipe(name.to_string());
+        let ingredients = Ingredients::from_input_string(ingredients)?;
         self.collection
             .iter_mut()
             .filter(|x| ingredients.contains(&x.name))
@@ -99,6 +101,7 @@ impl Groceries {
                 x.recipes.push(recipe.clone());
             });
         self.recipes.push(recipe);
+        Ok(())
     }
 
     pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {

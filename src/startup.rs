@@ -1,4 +1,4 @@
-use crate::{Groceries, Ingredients, ReadError, Recipe};
+use crate::{Groceries, ReadError};
 use clap::Arg;
 use clap::Command;
 
@@ -71,11 +71,10 @@ pub fn run() -> Result<(), ReadError> {
                     .collect();
                 let i = ingredient_vec.join(", ");
                 eprintln!("Ingredients: {}", i);
-                let n = Recipe(n);
-                let i = Ingredients::from_input_string(i)?;
+                // let i = Ingredients::from_input_string(i)?;
                 let mut g = Groceries::from_path("groceries.json")?;
                 eprintln!("before adding: {:?}", g.recipes);
-                g.add_recipe(n, i);
+                g.add_recipe(&n, &i)?;
                 eprintln!("after adding: {:?}", g.recipes);
                 g.save("groceries.json")?;
                 Ok(())
