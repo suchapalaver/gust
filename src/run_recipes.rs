@@ -1,8 +1,4 @@
-use crate::{
-    get_user_input,
-    groceries::{Groceries, Ingredients, Recipe},
-    prompt_for_y,
-};
+use crate::{get_user_input, prompt_for_y, Groceries, Ingredients, Recipe};
 
 pub fn run() -> Result<(), crate::ReadError> {
     eprintln!(

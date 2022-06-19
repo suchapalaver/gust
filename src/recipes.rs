@@ -1,3 +1,10 @@
+use crate::GroceriesItemName;
+use crate::ReadError;
+use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::ops::Deref;
+use std::str::FromStr;
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Recipe(pub String);
 
@@ -60,7 +67,7 @@ impl FromStr for Ingredients {
 }
 
 impl Deref for Ingredients {
-    type Target = Vec<GroceriesItemName>;
+    type Target = Vec<crate::GroceriesItemName>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

@@ -1,4 +1,4 @@
-use crate::{GroceriesItem, GroceriesItemName, LookupError, ReadError, Recipe};
+use crate::{GroceriesItem, GroceriesItemName, ReadError, Recipe};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -129,12 +129,12 @@ impl ShoppingList {
         self.groceries.push(item)
     }
 
-    pub fn delete_groceries_item(&mut self, name: &str) -> Result<(), LookupError> {
+    pub fn delete_groceries_item(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
             .groceries
             .iter()
             .position(|x| x.name == GroceriesItemName(name.to_string()))
-            .ok_or(LookupError::ItemNotFound)
+            .ok_or(ReadError::ItemNotFound)
         {
             self.groceries.remove(i);
         }
@@ -145,12 +145,12 @@ impl ShoppingList {
         self.checklist.push(item)
     }
 
-    pub fn delete_checklist_item(&mut self, name: &str) -> Result<(), LookupError> {
+    pub fn delete_checklist_item(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
             .checklist
             .iter()
             .position(|x| x.name == GroceriesItemName(name.to_string()))
-            .ok_or(LookupError::ItemNotFound)
+            .ok_or(ReadError::ItemNotFound)
         {
             self.checklist.remove(i);
         }
@@ -161,12 +161,12 @@ impl ShoppingList {
         self.recipes.push(recipe)
     }
 
-    pub fn delete_recipe(&mut self, name: &str) -> Result<(), LookupError> {
+    pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
             .recipes
             .iter()
             .position(|x| x == &Recipe(name.to_string()))
-            .ok_or(LookupError::ItemNotFound)
+            .ok_or(ReadError::ItemNotFound)
         {
             self.recipes.remove(i);
         }

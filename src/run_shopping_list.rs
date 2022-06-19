@@ -4,12 +4,7 @@ use std::path::Path;
 
 pub fn run() -> Result<(), ReadError> {
     if crate::Groceries::from_path("groceries.json").is_err() {
-        eprintln!(
-            "
-            No groceries library found.\n\
-            Run grusterylist groceries to create a groceries library
-            "
-        )
+        return Err(ReadError::LibraryNotFound);
     } else {
         let mut sl = ShoppingList::new();
         if Path::new("list.json").exists() {
