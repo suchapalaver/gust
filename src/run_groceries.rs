@@ -19,7 +19,7 @@ impl Groceries {
 
         while crate::prompt_for_y()? {
             let path = "groceries.json";
-            
+
             #[allow(irrefutable_let_patterns)]
             if let groceries = Groceries::from_path(path)? {
                 eprintln!();

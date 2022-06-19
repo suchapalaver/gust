@@ -110,17 +110,13 @@ impl Groceries {
         {
             self.recipes.remove(i);
         }
-        for item in self.collection.iter() {
-          if let Some(i) = item
-            .recipes
-            .iter()
-            .position(|Recipe(x)| x.as_str() == name)
-        {
-            item.recipes.remove(i);
-            if item.recipes.is_empty() {
-              item.is_recipe_ingredient = false;
+        for item in self.collection.iter_mut() {
+            if let Some(i) = item.recipes.iter().position(|Recipe(x)| x.as_str() == name) {
+                item.recipes.remove(i);
+                if item.recipes.is_empty() {
+                    item.is_recipe_ingredient = false;
+                }
             }
-        }
         }
         Ok(())
     }
