@@ -40,7 +40,7 @@ impl Ingredients {
         self.0.push(elem);
     }
 
-    pub fn from_input_string(s: String) -> Result<Self, ReadError> {
+    pub fn from_input_string(s: &str) -> Result<Self, ReadError> {
         Ingredients::from_str(&s)
     }
 }
