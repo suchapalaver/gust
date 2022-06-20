@@ -15,8 +15,6 @@ repository = "https://github.com/suchapalaver/grusterylist"
 [dependencies]
 custom_error = "1.9.2"
 serde = { version = "*", features = ["derive"] }
-
-# serde_json is just for the example, not required in general
 serde_json = "*"
 serde_derive = "*"
 clap = "3.2.5"

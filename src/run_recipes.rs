@@ -1,4 +1,5 @@
 use crate::{get_user_input, prompt_for_y, Groceries, Ingredients, Recipe};
+use clap::ArgMatches;
 
 pub fn run() -> Result<(), crate::ReadError> {
     eprintln!(
@@ -89,4 +90,49 @@ pub fn run() -> Result<(), crate::ReadError> {
     }
     groceries.save("groceries.json")?;
     Ok(())
+}
+
+pub fn add_delete(sync_matches: &ArgMatches) -> Result<(), crate::ReadError> {
+    match sync_matches.subcommand() {
+        Some(("add", s_matches)) => {
+            let name_elems: Vec<_> = s_matches
+                .values_of("name")
+                .expect("name is required")
+                .collect();
+            let n = name_elems.join(" ");
+            eprintln!("Recipe: {}", n);
+
+            let ingredient_vec: Vec<_> = s_matches
+                .values_of("ingredients")
+                .expect("ingredients required")
+                .collect();
+            let i = ingredient_vec.join(", ");
+            eprintln!("Ingredients: {}", i);
+            // let i = Ingredients::from_input_string(i)?;
+            let mut g = Groceries::from_path("groceries.json")?;
+            eprintln!("before adding: {:?}", g.recipes);
+            g.add_recipe(&n, &i)?;
+            eprintln!("after adding: {:?}", g.recipes);
+            g.save("groceries.json")?;
+            Ok(())
+        }
+        Some(("delete", s_matches)) => {
+            let name_elems: Vec<_> = s_matches
+                .values_of("name")
+                .expect("name is required")
+                .collect();
+            let n = name_elems.join(" ");
+            eprintln!("Recipe: {}", n);
+            let mut g = Groceries::from_path("groceries.json")?;
+            eprintln!("before deleting: {:?}", g.recipes);
+            g.delete_recipe(&n)?;
+            eprintln!("after: {:?}", g.recipes);
+            g.save("groceries.json")?;
+            Ok(())
+        }
+        _ => {
+            crate::run_recipes::run()?;
+            Ok(())
+        }
+    }
 }

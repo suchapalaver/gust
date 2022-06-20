@@ -1,6 +1,5 @@
 use std::process;
 
-#[allow(irrefutable_let_patterns)]
 fn main() {
     if let Err(e) = grusterylist::startup::run() {
         eprintln!("Problem running application:\n{}", e);

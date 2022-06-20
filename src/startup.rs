@@ -1,6 +1,16 @@
-use crate::{Groceries, ReadError};
-use clap::Arg;
-use clap::Command;
+use crate::ReadError;
+use clap::{Arg, Command};
+
+pub fn run() -> Result<(), ReadError> {
+    let matches = cli().get_matches();
+
+    match matches.subcommand() {
+        Some(("recipes", sync_matches)) => Ok(crate::run_recipes::add_delete(sync_matches)?),
+        Some(("groceries", _sync_matches)) => Ok(crate::run_groceries::run()?),
+        Some(("list", _sync_matches)) => Ok(crate::run_shopping_list::run()?),
+        _ => unreachable!(),
+    }
+}
 
 fn cli() -> Command<'static> {
     Command::new("grusterylist")
@@ -44,12 +54,27 @@ fn cli() -> Command<'static> {
                                 .multiple_values(true)
                                 .help("Provides name of recipe to be deleted"),
                         ),
+                )
+                // --path groceries.json
+                .arg(
+                    Arg::with_name("path")
+                        .long("path")
+                        .takes_value(true)
+                        .default_value("groceries.json")
+                        .help("Provides path for groceries library"),
                 ),
         )
         .subcommand(
             Command::new("groceries")
                 .about("Manages groceries library")
-                .subcommand(Command::new("add").about("Adds grocery items to library")),
+                .subcommand(Command::new("add").about("Adds grocery items to library"))
+                .arg(
+                    Arg::with_name("path")
+                        .long("path")
+                        .takes_value(true)
+                        .default_value("groceries.json")
+                        .help("Provides path for groceries library"),
+                ),
         )
         .subcommand(
             Command::new("list")
@@ -57,70 +82,16 @@ fn cli() -> Command<'static> {
                 .arg(
                     Arg::with_name("path")
                         .long("path")
-                        .required(false)
                         .takes_value(true)
                         .default_value("list.json")
                         .help("Provides path for shopping list"),
                 )
                 .arg(
-                    Arg::with_name("library")
-                        .long("library")
-                        .required(false)
+                    Arg::with_name("library path")
+                        .long("lib-path")
                         .takes_value(true)
                         .default_value("groceries.json")
                         .help("Provides path for groceries library"),
                 ),
         )
-}
-
-pub fn run() -> Result<(), ReadError> {
-    let matches = cli().get_matches();
-
-    match matches.subcommand() {
-        Some(("recipes", sync_matches)) => match sync_matches.subcommand() {
-            Some(("add", s_matches)) => {
-                let name_elems: Vec<_> = s_matches
-                    .values_of("name")
-                    .expect("name is required")
-                    .collect();
-                let n = name_elems.join(" ");
-                eprintln!("Recipe: {}", n);
-
-                let ingredient_vec: Vec<_> = s_matches
-                    .values_of("ingredients")
-                    .expect("ingredients required")
-                    .collect();
-                let i = ingredient_vec.join(", ");
-                eprintln!("Ingredients: {}", i);
-                // let i = Ingredients::from_input_string(i)?;
-                let mut g = Groceries::from_path("groceries.json")?;
-                eprintln!("before adding: {:?}", g.recipes);
-                g.add_recipe(&n, &i)?;
-                eprintln!("after adding: {:?}", g.recipes);
-                g.save("groceries.json")?;
-                Ok(())
-            }
-            Some(("delete", s_matches)) => {
-                let name_elems: Vec<_> = s_matches
-                    .values_of("name")
-                    .expect("name is required")
-                    .collect();
-                let n = name_elems.join(" ");
-                eprintln!("Recipe: {}", n);
-                let mut g = Groceries::from_path("groceries.json")?;
-                eprintln!("before deleting: {:?}", g.recipes);
-                g.delete_recipe(&n)?;
-                eprintln!("after: {:?}", g.recipes);
-                g.save("groceries.json")?;
-                Ok(())
-            }
-            _ => {
-                crate::run_recipes::run()?;
-                Ok(())
-            }
-        },
-        Some(("groceries", _sync_matches)) => Ok(crate::run_groceries::run()?),
-        Some(("list", _sync_matches)) => Ok(crate::run_shopping_list::run()?),
-        _ => unreachable!(),
-    }
 }
