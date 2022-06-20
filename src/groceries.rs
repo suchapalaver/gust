@@ -2477,29 +2477,12 @@ pub mod test {
             is_recipe_ingredient: true,
             recipes: vec![Recipe("cumquat chutney".to_string())],
         };
-        let recipe = Recipe("cumquat chutney".to_string());
+        let recipe = "cumquat chutney";
 
-        let ingredients = Ingredients(vec![
-            GroceriesItemName("kumquats".to_string()),
-            GroceriesItemName("carrots".to_owned()),
-            GroceriesItemName("dried apricots".to_owned()),
-            GroceriesItemName("dried cranberries".to_owned()),
-            GroceriesItemName("chili".to_owned()),
-            GroceriesItemName("onion".to_owned()),
-            GroceriesItemName("garlic".to_owned()),
-            GroceriesItemName("cider vinegar".to_owned()),
-            GroceriesItemName("granulated sugar".to_owned()),
-            GroceriesItemName("honey".to_owned()),
-            GroceriesItemName("kosher salt".to_owned()),
-            GroceriesItemName("cardamom".to_owned()),
-            GroceriesItemName("cloves".to_owned()),
-            GroceriesItemName("coriander".to_owned()),
-            GroceriesItemName("ginger".to_owned()),
-            GroceriesItemName("black peppercorns".to_owned()),
-        ]);
+        let ingredients = "kumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
 
         g.add_item(item);
-        g.add_recipe(recipe, ingredients);
+        g.add_recipe(recipe, ingredients)?;
 
         insta::assert_json_snapshot!(g, @r###"
         {
