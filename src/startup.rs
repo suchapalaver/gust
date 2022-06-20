@@ -18,6 +18,7 @@ fn cli() -> Command<'static> {
                             Arg::with_name("name")
                                 .short('n')
                                 .long("name")
+                                .required(true)
                                 .takes_value(true)
                                 .multiple_values(true)
                                 .help("Provides name of recipe to be added"),
@@ -26,6 +27,7 @@ fn cli() -> Command<'static> {
                             Arg::with_name("ingredients")
                                 .short('i')
                                 .long("ingredients")
+                                .required(true)
                                 .takes_value(true)
                                 .multiple_values(true)
                                 .help("Provides name of recipe to be added"),
@@ -49,7 +51,26 @@ fn cli() -> Command<'static> {
                 .about("Manages groceries library")
                 .subcommand(Command::new("add").about("Adds grocery items to library")),
         )
-        .subcommand(Command::new("list").about("Makes shopping lists"))
+        .subcommand(
+            Command::new("list")
+                .about("Makes shopping lists")
+                .arg(
+                    Arg::with_name("path")
+                        .long("path")
+                        .required(false)
+                        .takes_value(true)
+                        .default_value("list.json")
+                        .help("Provides path for shopping list"),
+                )
+                .arg(
+                    Arg::with_name("library")
+                        .long("library")
+                        .required(false)
+                        .takes_value(true)
+                        .default_value("groceries.json")
+                        .help("Provides path for groceries library"),
+                ),
+        )
 }
 
 pub fn run() -> Result<(), ReadError> {
