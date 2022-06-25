@@ -88,9 +88,69 @@ impl Groceries {
         }
     }
 
+    // check if ingredients already in lib or add them if not
+    pub fn check_recipe_ingredients(&mut self, ingredients: &str) -> Result<(), ReadError> {
+        let ingredients = Ingredients::from_input_string(ingredients)?;
+        // add new items to groceries
+        for ingredient in ingredients.iter() {
+            if self.collection.iter().all(|g| &g.name != ingredient) {
+                let mut section_input_ok = false;
+                let mut section_input = String::new();
+                while !section_input_ok {
+                    eprintln!(
+                        "which section is {} in?\n\
+                    *1* fresh
+                    *2* pantry 
+                    *3* protein 
+                    *4* dairy 
+                    *5* freezer",
+                        ingredient
+                    );
+
+                    let input = crate::get_user_input()?;
+
+                    section_input = match &input {
+                        _ if input == "1" => {
+                            section_input_ok = true;
+                            "fresh".to_string()
+                        }
+                        _ if input == "2" => {
+                            section_input_ok = true;
+                            "pantry".to_string()
+                        }
+                        _ if input == "3" => {
+                            section_input_ok = true;
+                            "protein".to_string()
+                        }
+                        _ if input == "4" => {
+                            section_input_ok = true;
+                            "dairy".to_string()
+                        }
+                        _ if input == "5" => {
+                            section_input_ok = true;
+                            "freezer".to_string()
+                        }
+                        _ => {
+                            eprintln!("re-enter section information");
+                            continue;
+                        }
+                    };
+                }
+                let section = crate::GroceriesItemSection(section_input);
+
+                let item = crate::GroceriesItem::new_initialized(ingredient.clone(), section);
+
+                self.add_item(item);
+            }
+        }
+        Ok(())
+    }
+
     pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
         let recipe = Recipe(name.to_string());
+
         let ingredients = Ingredients::from_input_string(ingredients)?;
+
         self.collection
             .iter_mut()
             .filter(|x| ingredients.contains(&x.name))
@@ -100,7 +160,9 @@ impl Groceries {
                 }
                 x.recipes.push(recipe.clone());
             });
+
         self.recipes.push(recipe);
+
         Ok(())
     }
 
@@ -121,6 +183,21 @@ impl Groceries {
                 }
             }
         }
+        Ok(())
+    }
+
+    pub fn print_recipe(&self, recipe: &str) -> Result<(), ReadError> {
+        let ingredients = self
+            .collection
+            .iter()
+            .filter(|item| item.recipes.contains(&Recipe(recipe.to_string())))
+            .map(|item| item.name.0.clone())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        eprintln!("Recipe: {recipe}");
+        eprintln!("Ingredients: {ingredients}");
+
         Ok(())
     }
 }

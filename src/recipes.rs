@@ -41,7 +41,7 @@ impl Ingredients {
     }
 
     pub fn from_input_string(s: &str) -> Result<Self, ReadError> {
-        Ingredients::from_str(&s)
+        Ingredients::from_str(s)
     }
 }
 
