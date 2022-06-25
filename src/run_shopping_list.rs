@@ -1,32 +1,43 @@
 use crate::ReadError;
 use crate::ShoppingList;
+use clap::ArgMatches;
 use std::path::Path;
 
-pub fn run() -> Result<(), ReadError> {
-    if crate::Groceries::from_path("groceries.json").is_err() {
-        return Err(ReadError::LibraryNotFound);
-    } else {
-        let mut sl = ShoppingList::new();
-        if Path::new("list.json").exists() {
-            eprintln!(
-                "\n\
+pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
+    let path = sync_matches.get_one::<String>("path").unwrap();
+
+    match sync_matches.subcommand() {
+        Some(("print", _)) => {
+            let list = ShoppingList::from_path(path)?;
+            list.print();
+        }
+        _ => {
+            if crate::Groceries::from_path("groceries.json").is_err() {
+                return Err(ReadError::LibraryNotFound);
+            } else {
+                let mut sl = ShoppingList::new();
+                if Path::new("list.json").exists() {
+                    eprintln!(
+                        "\n\
         Use most recently saved list?\n\
         *y*\n\
         *any other key* for fresh list"
-            );
-            if crate::prompt_for_y()? {
-                let path = "list.json";
-                sl = ShoppingList::from_path(path)?;
+                    );
+                    if crate::prompt_for_y()? {
+                        let path = "list.json";
+                        sl = ShoppingList::from_path(path)?;
+                    }
+
+                    // view list if using saved list
+                    sl.prompt_view_list()?;
+                }
+                sl.prompt_add_recipes()?;
+
+                sl.prompt_add_groceries()?;
+
+                sl.prompt_save_list()?;
             }
-
-            // view list if using saved list
-            sl.prompt_view_list()?;
         }
-        sl.prompt_add_recipes()?;
-
-        sl.prompt_add_groceries()?;
-
-        sl.prompt_save_list()?;
     }
     Ok(())
 }
