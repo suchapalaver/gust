@@ -1,40 +1,30 @@
 use crate::ReadError;
 use crate::ShoppingList;
 use clap::ArgMatches;
-use std::path::Path;
 
 pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
     let path = sync_matches.get_one::<String>("path").unwrap();
+    let lib_path = sync_matches.get_one::<String>("lib-path").unwrap();
 
     match sync_matches.subcommand() {
         Some(("print", _)) => {
             let list = ShoppingList::from_path(path)?;
             list.print();
         }
-        _ => {
-            if crate::Groceries::from_path("groceries.json").is_err() {
-                return Err(ReadError::LibraryNotFound);
-            } else {
-                match sync_matches.subcommand() {
-                    Some(("create", sync_matches)) => {
-                        let mut sl = ShoppingList::new();
-                        if !sync_matches.contains_id("fresh") {
-                            // Some(("used-saved", _)) => {
-                            if Path::new(path).exists() {
-                                // let path = "list.json";
-                                sl = ShoppingList::from_path(path)?;
-                            }
-                        }
-                        sl.prompt_add_recipes()?;
-
-                        sl.prompt_add_groceries()?;
-
-                        sl.prompt_save_list()?;
-                    }
-                    _ => unreachable!(),
+        _ => match sync_matches.subcommand() {
+            Some(("create", sync_matches)) => {
+                let mut sl = ShoppingList::new();
+                if !sync_matches.contains_id("fresh") {
+                    sl = ShoppingList::from_path(path)?;
                 }
+                sl.prompt_add_recipes(path)?;
+
+                sl.prompt_add_groceries(lib_path)?;
+
+                sl.prompt_save_list(path)?;
             }
-        }
+            _ => unreachable!(),
+        },
     }
     Ok(())
 }
@@ -57,7 +47,7 @@ impl ShoppingList {
     //     Ok(())
     // }
 
-    pub(crate) fn prompt_add_recipes(&mut self) -> Result<(), ReadError> {
+    pub(crate) fn prompt_add_recipes(&mut self, path: &str) -> Result<(), ReadError> {
         eprintln!(
             "Add recipe ingredients to our list?\n\
                 *y*\n\
@@ -65,7 +55,7 @@ impl ShoppingList {
         );
 
         while crate::prompt_for_y()? {
-            let groceries = crate::Groceries::from_path("groceries.json")?;
+            let groceries = crate::Groceries::from_path(path)?;
 
             for recipe in groceries.recipes.into_iter() {
                 eprintln!(
@@ -96,7 +86,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub(crate) fn prompt_add_groceries(&mut self) -> Result<(), ReadError> {
+    pub(crate) fn prompt_add_groceries(&mut self, path: &str) -> Result<(), ReadError> {
         eprintln!(
             "Add groceries to shopping list?\n\
             *y*\n\
@@ -104,7 +94,7 @@ impl ShoppingList {
         );
 
         while crate::prompt_for_y()? {
-            self.add_groceries()?;
+            self.add_groceries(path)?;
             eprintln!(
                 "Add more groceries to shopping list?\n\
             *y*\n\
@@ -114,7 +104,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub(crate) fn prompt_save_list(&mut self) -> Result<(), ReadError> {
+    pub(crate) fn prompt_save_list(&mut self, path: &str) -> Result<(), ReadError> {
         // don't save list if empty
         if !self.checklist.is_empty() && !self.groceries.is_empty() && !self.recipes.is_empty() {
             eprintln!(
@@ -124,7 +114,7 @@ impl ShoppingList {
             );
 
             if crate::prompt_for_y()? {
-                self.save()?;
+                self.save(path)?;
             }
 
             self.print();
