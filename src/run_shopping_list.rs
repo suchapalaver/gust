@@ -15,27 +15,24 @@ pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
             if crate::Groceries::from_path("groceries.json").is_err() {
                 return Err(ReadError::LibraryNotFound);
             } else {
-                let mut sl = ShoppingList::new();
-                if Path::new("list.json").exists() {
-                    eprintln!(
-                        "\n\
-        Use most recently saved list?\n\
-        *y*\n\
-        *any other key* for fresh list"
-                    );
-                    if crate::prompt_for_y()? {
-                        let path = "list.json";
-                        sl = ShoppingList::from_path(path)?;
+                match sync_matches.subcommand() {
+                    Some(("create", sync_matches)) => {
+                        let mut sl = ShoppingList::new();
+                        if !sync_matches.contains_id("fresh") {
+                            // Some(("used-saved", _)) => {
+                            if Path::new(path).exists() {
+                                // let path = "list.json";
+                                sl = ShoppingList::from_path(path)?;
+                            }
+                        }
+                        sl.prompt_add_recipes()?;
+
+                        sl.prompt_add_groceries()?;
+
+                        sl.prompt_save_list()?;
                     }
-
-                    // view list if using saved list
-                    sl.prompt_view_list()?;
+                    _ => unreachable!(),
                 }
-                sl.prompt_add_recipes()?;
-
-                sl.prompt_add_groceries()?;
-
-                sl.prompt_save_list()?;
             }
         }
     }
@@ -43,22 +40,22 @@ pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
 }
 
 impl ShoppingList {
-    pub(crate) fn prompt_view_list(&self) -> Result<(), ReadError> {
-        if !self.groceries.is_empty() {
-            eprintln!(
-                "\n\
-        Print shopping list?\n\
-        *y*\n\
-        *any other key* to continue"
-            );
-
-            if crate::prompt_for_y()? {
-                self.print();
-                println!();
-            }
-        }
-        Ok(())
-    }
+    // pub(crate) fn prompt_view_list(&self) -> Result<(), ReadError> {
+    //     if !self.groceries.is_empty() {
+    //         eprintln!(
+    //             "\n\
+    //     Print shopping list?\n\
+    //     *y*\n\
+    //     *any other key* to continue"
+    //         );
+    //
+    //         if crate::prompt_for_y()? {
+    //             self.print();
+    //             println!();
+    //         }
+    //     }
+    //     Ok(())
+    // }
 
     pub(crate) fn prompt_add_recipes(&mut self) -> Result<(), ReadError> {
         eprintln!(

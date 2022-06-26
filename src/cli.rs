@@ -154,6 +154,7 @@ pub fn cli() -> Command<'static> {
         .subcommand(
             Command::new("list")
                 .about("Makes shopping lists")
+                .subcommand_required(true)
                 .arg(
                     Arg::with_name("path")
                         .long("path")
@@ -168,6 +169,31 @@ pub fn cli() -> Command<'static> {
                         .default_value("groceries.json")
                         .help("Provides path for groceries library"),
                 )
-                .subcommand(Command::new("print").about("Print saved shopping list")),
+                .subcommand(Command::new("print").about("Print saved shopping list"))
+                .subcommand(
+                    Command::new("create")
+                        .about("Create a shopping list")
+                        .arg(
+                            Arg::with_name("path")
+                                .long("path")
+                                .takes_value(true)
+                                .default_value("list.json")
+                                .help("Provides path for shopping list"),
+                        )
+                        .arg(
+                            Arg::with_name("library path")
+                                .long("lib-path")
+                                .takes_value(true)
+                                .default_value("groceries.json")
+                                .help("Provides path for groceries library"),
+                        )
+                        .arg(
+                            Arg::with_name("fresh")
+                                .short('f')
+                                .long("fresh")
+                                .takes_value(false)
+                                .help("Make a new list from scratch"),
+                        ),
+                ),
         )
 }
