@@ -1,3 +1,5 @@
+use crate::Groceries;
+use crate::GroceriesItem;
 use crate::ReadError;
 use crate::ShoppingList;
 use std::path::Path;
@@ -102,6 +104,73 @@ impl ShoppingList {
             *y*\n\
             *any other key* to skip"
             );
+        }
+        Ok(())
+    }
+
+    pub(crate) fn add_groceries(&mut self) -> Result<(), ReadError> {
+        // move everything off list to temp list
+        let list_items: Vec<GroceriesItem> = self.groceries.drain(..).collect();
+        assert!(self.groceries.is_empty());
+        let sections = vec!["fresh", "pantry", "dairy", "protein", "freezer"];
+        let groceries = Groceries::from_path("groceries.json")?;
+        let groceries_by_section: Vec<Vec<GroceriesItem>> = {
+            sections
+                .into_iter()
+                .map(|section| {
+                    let mut a: Vec<GroceriesItem> = list_items
+                        .iter()
+                        .filter(|groceriesitem| groceriesitem.section.0 == section)
+                        .cloned()
+                        .collect();
+
+                    let b: Vec<GroceriesItem> = groceries
+                        .collection
+                        .iter()
+                        .filter(|groceriesitem| {
+                            groceriesitem.section.0 == section && !a.contains(groceriesitem)
+                        })
+                        .cloned()
+                        .collect();
+                    a.extend(b);
+                    a
+                })
+                .collect()
+        };
+        for section in groceries_by_section {
+            if !section.is_empty() {
+                for groceriesitem in &section {
+                    if !self.groceries.contains(groceriesitem)
+                        && groceriesitem
+                            .recipes
+                            .iter()
+                            .any(|recipe| self.recipes.contains(&*recipe))
+                    {
+                        self.add_groceries_item(groceriesitem.clone());
+                    }
+                }
+                for groceriesitem in section {
+                    if !self.groceries.contains(&groceriesitem) {
+                        eprintln!(
+                            "Do we need {}?\n\
+                              *y*\n\
+                              *any other key* for next item\n\
+                              *s* for next section",
+                            groceriesitem.name.0.to_lowercase()
+                        );
+
+                        match crate::get_user_input()?.as_str() {
+                            "y" => {
+                                if !self.groceries.contains(&groceriesitem) {
+                                    self.add_groceries_item(groceriesitem.clone());
+                                }
+                            }
+                            "s" => break,
+                            &_ => continue,
+                        }
+                    }
+                }
+            }
         }
         Ok(())
     }

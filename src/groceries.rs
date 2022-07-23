@@ -1,4 +1,4 @@
-use crate::ReadError;
+use crate::{ReadError, read};
 use crate::{GroceriesItem, GroceriesItemName, GroceriesItemSection, Ingredients, Recipe};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
@@ -8,43 +8,23 @@ pub struct Groceries {
     pub sections: Vec<GroceriesItemSection>,
     pub collection: Vec<GroceriesItem>,
     pub recipes: Vec<Recipe>,
-    //pub recipes_on_shoppinglist: Vec<Recipe>,
 }
 
 impl Groceries {
-    pub fn new_initialized(path: &str) -> Result<Self, ReadError> {
-        let g = Groceries {
+    pub fn new_initialized() -> Result<Self, ReadError> {
+        Ok(Groceries {
             sections: vec![],
             collection: vec![],
             recipes: vec![],
-        };
-        let s = serde_json::to_string(&g)?;
-        fs::write(path, s)?;
-        Ok(g)
+        })
     }
 
-    pub fn get_item(&self, name: &str) -> Option<GroceriesItem> {
-        // check any matches for a genuine match,
-        // e.g. 'instant ramen noodles' is a genuine match for 'ramen noodles'
-        // (in our case, at least)
-        for item in self.collection.iter() {
-            if item.matches(name) {
-                eprintln!(
-                    "is *{}* a match?\n\
-                  *y* for yes
-                  *any other key* for no",
-                    item
-                );
-                if crate::prompt_for_y().ok()? {
-                    return Some(item.clone());
-                }
-            }
-        }
-        None
+    pub fn get_item_matches(&self, name: &str) -> impl Iterator<Item = &GroceriesItem> {
+        self.collection.iter().filter(|item| item.matches(name)).collect::<Vec<_>>().into_iter()
     }
 
     pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, ReadError> {
-        Ok(serde_json::from_reader(crate::read(path)?)?)
+        Ok(serde_json::from_reader(read(path)?)?)
     }
 
     pub fn add_item(&mut self, item: GroceriesItem) {
@@ -68,24 +48,19 @@ impl Groceries {
         Ok(fs::write(path, s)?)
     }
 
-    pub fn print_groceries(&self) {
-        for sec in &self.sections {
-            let sec_items = self
-                .collection
-                .iter()
-                .filter(|x| x.section.0.contains(&sec.0))
-                .collect::<Vec<&GroceriesItem>>();
-            for item in sec_items {
-                eprintln!("{}", item);
-            }
-            eprintln!();
-        }
+    pub fn items(&self) -> impl Iterator<Item = &GroceriesItem> {
+        self.sections
+            .iter()
+            .flat_map(|sec| self
+              .collection
+              .iter()
+              .filter(|x| x.section.0.contains(&sec.0)))
+              .collect::<Vec<_>>()
+              .into_iter()
     }
 
-    pub fn print_recipes(&self) {
-        for recipe in self.recipes.iter() {
-            eprintln!("{}", recipe);
-        }
+    pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
+        self.recipes.iter()
     }
 
     // check if ingredients already in lib or add them if not
@@ -136,9 +111,9 @@ impl Groceries {
                         }
                     };
                 }
-                let section = crate::GroceriesItemSection(section_input);
+                let section = GroceriesItemSection(section_input);
 
-                let item = crate::GroceriesItem::new_initialized(ingredient.clone(), section);
+                let item = GroceriesItem::new_initialized(ingredient.clone(), section);
 
                 self.add_item(item);
             }
@@ -186,19 +161,13 @@ impl Groceries {
         Ok(())
     }
 
-    pub fn print_recipe(&self, recipe: &str) -> Result<(), ReadError> {
-        let ingredients = self
+    pub fn recipe_ingredients(&self, recipe: &str) -> impl Iterator<Item = &GroceriesItem> {
+        self
             .collection
             .iter()
             .filter(|item| item.recipes.contains(&Recipe(recipe.to_string())))
-            .map(|item| item.name.0.clone())
             .collect::<Vec<_>>()
-            .join(", ");
-
-        eprintln!("Recipe: {recipe}");
-        eprintln!("Ingredients: {ingredients}");
-
-        Ok(())
+            .into_iter()
     }
 }
 
@@ -219,7 +188,8 @@ pub mod test {
     #[test]
     fn test_groceries_new() -> Result<(), Box<dyn std::error::Error>> {
         let path = "test_groceries.json";
-        let _g = Groceries::new_initialized(path)?;
+        let g = Groceries::new_initialized()?;
+        g.save(path)?;
         let g = Groceries::from_path(path)?;
         insta::assert_json_snapshot!(g, @r###"
       {

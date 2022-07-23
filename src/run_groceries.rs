@@ -1,6 +1,7 @@
 use crate::Groceries;
 use crate::GroceriesItem;
 use crate::ReadError;
+use crate::prompt_for_y;
 
 pub fn run() -> Result<(), ReadError> {
     Groceries::prompt_view_groceries()?;
@@ -23,7 +24,10 @@ impl Groceries {
             #[allow(irrefutable_let_patterns)]
             if let groceries = Groceries::from_path(path)? {
                 eprintln!();
-                groceries.print_groceries();
+                for item in groceries.items() {
+                    eprintln!("{}", item);
+                }
+                eprintln!();
                 eprintln!();
                 eprintln!(
                     "View the groceries in our library?\n\
@@ -67,12 +71,26 @@ impl Groceries {
         let section = crate::get_user_input()?;
 
         let mut groceries = if Groceries::from_path("groceries.json").is_err() {
-            Groceries::new_initialized("groceries.json")?
+            Groceries::new_initialized()?
         } else {
             Groceries::from_path("groceries.json")?
         };
 
-        if groceries.get_item(&name) != None {
+        let mut present = false;
+        for item in groceries.get_item_matches(&name) {
+                eprintln!(
+                    "is *{}* a match?\n\
+                *y* for yes
+                *any other key* for no",
+                    item
+                );
+                if prompt_for_y()? {
+                    present = true;
+                    break;
+                }
+            }   
+        
+        if present {
             eprintln!("Item already in library");
         } else {
             let new_item = GroceriesItem::new(&name, &section);
@@ -84,7 +102,7 @@ impl Groceries {
     pub(crate) fn prompt_save() -> Result<(), ReadError> {
         let path = "groceries.json";
         let groceries = if Groceries::from_path(path).is_err() {
-            Groceries::new_initialized(path)?
+            Groceries::new_initialized()?
         } else {
             Groceries::from_path(path)?
         };

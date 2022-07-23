@@ -52,12 +52,18 @@ fn recipes_print(sync_matches: &ArgMatches, path: &str) -> Result<(), crate::Rea
     let groceries = Groceries::from_path(path)?;
     if let Ok(Some(name)) = sync_matches.try_get_one::<String>("recipe") {
         eprintln!();
-        groceries.print_recipe(name)?;
+        eprintln!("Recipe: {name}");
+        eprintln!("Ingredients:");
+        for ingredient in groceries.recipe_ingredients(name) {
+            eprintln!("{}", ingredient);
+        }
         eprintln!();
     } else {
         eprintln!();
         eprintln!("Here are our recipes:");
-        groceries.print_recipes();
+        for recipe in groceries.recipes() {
+            eprintln!("{}", recipe);
+        }
         eprintln!();
     }
     Ok(())
