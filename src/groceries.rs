@@ -1,5 +1,6 @@
-use crate::{ReadError, read};
+use crate::{read, ReadError};
 use crate::{GroceriesItem, GroceriesItemName, GroceriesItemSection, Ingredients, Recipe};
+use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
@@ -20,7 +21,11 @@ impl Groceries {
     }
 
     pub fn get_item_matches(&self, name: &str) -> impl Iterator<Item = &GroceriesItem> {
-        self.collection.iter().filter(|item| item.matches(name)).collect::<Vec<_>>().into_iter()
+        self.collection
+            .iter()
+            .filter(|item| item.matches(name))
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, ReadError> {
@@ -51,12 +56,13 @@ impl Groceries {
     pub fn items(&self) -> impl Iterator<Item = &GroceriesItem> {
         self.sections
             .iter()
-            .flat_map(|sec| self
-              .collection
-              .iter()
-              .filter(|x| x.section.0.contains(&sec.0)))
-              .collect::<Vec<_>>()
-              .into_iter()
+            .flat_map(|sec| {
+                self.collection
+                    .iter()
+                    .filter(|x| x.section.0.contains(&sec.0))
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
@@ -68,49 +74,29 @@ impl Groceries {
         let ingredients = Ingredients::from_input_string(ingredients)?;
         // add new items to groceries
         for ingredient in ingredients.iter() {
-            if self.collection.iter().all(|g| &g.name != ingredient) {
-                let mut section_input_ok = false;
-                let mut section_input = String::new();
-                while !section_input_ok {
-                    eprintln!(
-                        "which section is {} in?\n\
+            if self.collection.iter().all(|item| &item.name != ingredient) {
+                let res = Question::new(&format!(
+                    "Which section is {} in?\n\
                     *1* fresh
                     *2* pantry 
                     *3* protein 
                     *4* dairy 
                     *5* freezer",
-                        ingredient
-                    );
+                    ingredient
+                ))
+                .acceptable(vec!["1", "2", "3", "4", "5"])
+                .until_acceptable()
+                .ask();
 
-                    let input = crate::get_user_input()?;
+                let section_input = match res {
+                    Some(Answer::RESPONSE(res)) if &res == "1" => "fresh".to_string(),
+                    Some(Answer::RESPONSE(res)) if &res == "2" => "pantry".to_string(),
+                    Some(Answer::RESPONSE(res)) if &res == "3" => "protein".to_string(),
+                    Some(Answer::RESPONSE(res)) if &res == "4" => "dairy".to_string(),
+                    Some(Answer::RESPONSE(res)) if &res == "5" => "freezer".to_string(),
+                    _ => unreachable!(),
+                };
 
-                    section_input = match &input {
-                        _ if input == "1" => {
-                            section_input_ok = true;
-                            "fresh".to_string()
-                        }
-                        _ if input == "2" => {
-                            section_input_ok = true;
-                            "pantry".to_string()
-                        }
-                        _ if input == "3" => {
-                            section_input_ok = true;
-                            "protein".to_string()
-                        }
-                        _ if input == "4" => {
-                            section_input_ok = true;
-                            "dairy".to_string()
-                        }
-                        _ if input == "5" => {
-                            section_input_ok = true;
-                            "freezer".to_string()
-                        }
-                        _ => {
-                            eprintln!("re-enter section information");
-                            continue;
-                        }
-                    };
-                }
                 let section = GroceriesItemSection(section_input);
 
                 let item = GroceriesItem::new_initialized(ingredient.clone(), section);
@@ -162,8 +148,7 @@ impl Groceries {
     }
 
     pub fn recipe_ingredients(&self, recipe: &str) -> impl Iterator<Item = &GroceriesItem> {
-        self
-            .collection
+        self.collection
             .iter()
             .filter(|item| item.recipes.contains(&Recipe(recipe.to_string())))
             .collect::<Vec<_>>()

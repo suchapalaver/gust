@@ -1,3 +1,6 @@
+use question::Answer;
+use question::Question;
+
 use crate::Groceries;
 use crate::GroceriesItem;
 use crate::ReadError;
@@ -8,27 +11,27 @@ pub fn run() -> Result<(), ReadError> {
     if crate::Groceries::from_path("groceries.json").is_err() {
         return Err(ReadError::LibraryNotFound);
     } else {
-        let mut sl = ShoppingList::new();
+        let mut shopping_list = ShoppingList::new();
+
         if Path::new("list.json").exists() {
-            eprintln!(
-                "\n\
-        Use most recently saved list?\n\
-        *y*\n\
-        *any other key* for fresh list"
-            );
-            if crate::prompt_for_y()? {
+            let res = Question::new("Use most recently saved list?")
+                .default(question::Answer::NO)
+                .show_defaults()
+                .confirm();
+
+            if res == Answer::YES {
                 let path = "list.json";
-                sl = ShoppingList::from_path(path)?;
+                shopping_list = ShoppingList::from_path(path)?;
             }
 
             // view list if using saved list
-            sl.prompt_view_list()?;
+            shopping_list.prompt_view_list()?;
         }
-        sl.prompt_add_recipes()?;
+        shopping_list.prompt_add_recipes()?;
 
-        sl.prompt_add_groceries()?;
+        shopping_list.prompt_add_groceries()?;
 
-        sl.prompt_save_list()?;
+        shopping_list.prompt_save_list()?;
     }
     Ok(())
 }
@@ -36,14 +39,12 @@ pub fn run() -> Result<(), ReadError> {
 impl ShoppingList {
     pub(crate) fn prompt_view_list(&self) -> Result<(), ReadError> {
         if !self.groceries.is_empty() {
-            eprintln!(
-                "\n\
-        Print shopping list?\n\
-        *y*\n\
-        *any other key* to continue"
-            );
+            let res = Question::new("Print shopping list?")
+                .default(question::Answer::NO)
+                .show_defaults()
+                .confirm();
 
-            if crate::prompt_for_y()? {
+            if res == Answer::YES {
                 self.print();
                 println!();
             }
@@ -52,58 +53,46 @@ impl ShoppingList {
     }
 
     pub(crate) fn prompt_add_recipes(&mut self) -> Result<(), ReadError> {
-        eprintln!(
-            "Add recipe ingredients to our list?\n\
-                *y*\n\
-                *any other key* to continue"
-        );
-
-        while crate::prompt_for_y()? {
+        while Question::new("Add more recipe ingredients to our list?")
+            .default(question::Answer::NO)
+            .show_defaults()
+            .confirm()
+            == Answer::YES
+        {
             let groceries = crate::Groceries::from_path("groceries.json")?;
 
             for recipe in groceries.recipes.into_iter() {
-                eprintln!(
-                    "Shall we add ...\n\
-                            {}?\n\
-                            *y*\n\
-                            *s* to skip to end of recipes\n\
-                            *any other key* for next recipe",
+                let res = Question::new(&format!(
+                    "Shall we add {}? (*y*, *n* for next recipe, *s* to skip to end of recipes)",
                     recipe
-                );
+                ))
+                .acceptable(vec!["y", "n", "s"])
+                .until_acceptable()
+                .default(Answer::RESPONSE("n".to_string()))
+                .ask();
 
-                match crate::get_user_input()?.as_str() {
-                    "y" => {
+                match res {
+                    Some(Answer::RESPONSE(res)) if &res == "y" => {
                         if !self.recipes.contains(&recipe) {
                             self.add_recipe(recipe);
                         }
                     }
-                    "s" => break,
-                    &_ => continue,
+                    Some(Answer::RESPONSE(res)) if &res == "s" => break,
+                    _ => continue,
                 }
             }
-            eprintln!(
-                "Add any more recipe ingredients to our list?\n\
-                    *y*\n\
-                    *any other key* to continue"
-            );
         }
         Ok(())
     }
 
     pub(crate) fn prompt_add_groceries(&mut self) -> Result<(), ReadError> {
-        eprintln!(
-            "Add groceries to shopping list?\n\
-            *y*\n\
-            *any other key* to skip"
-        );
-
-        while crate::prompt_for_y()? {
+        while Question::new("Add groceries to shopping list?")
+            .default(question::Answer::NO)
+            .show_defaults()
+            .confirm()
+            == Answer::YES
+        {
             self.add_groceries()?;
-            eprintln!(
-                "Add more groceries to shopping list?\n\
-            *y*\n\
-            *any other key* to skip"
-            );
         }
         Ok(())
     }
@@ -151,22 +140,23 @@ impl ShoppingList {
                 }
                 for groceriesitem in section {
                     if !self.groceries.contains(&groceriesitem) {
-                        eprintln!(
-                            "Do we need {}?\n\
-                              *y*\n\
-                              *any other key* for next item\n\
-                              *s* for next section",
+                        let res = Question::new(&format!(
+                            "Do we need {}? (*y*, *n* for next item, *s* to skip to next section)",
                             groceriesitem.name.0.to_lowercase()
-                        );
+                        ))
+                        .acceptable(vec!["y", "n", "s"])
+                        .until_acceptable()
+                        .default(Answer::RESPONSE("n".to_string()))
+                        .ask();
 
-                        match crate::get_user_input()?.as_str() {
-                            "y" => {
+                        match res {
+                            Some(Answer::RESPONSE(res)) if &res == "y" => {
                                 if !self.groceries.contains(&groceriesitem) {
                                     self.add_groceries_item(groceriesitem.clone());
                                 }
                             }
-                            "s" => break,
-                            &_ => continue,
+                            Some(Answer::RESPONSE(res)) if &res == "s" => break,
+                            _ => continue,
                         }
                     }
                 }
@@ -178,13 +168,12 @@ impl ShoppingList {
     pub(crate) fn prompt_save_list(&mut self) -> Result<(), ReadError> {
         // don't save list if empty
         if !self.checklist.is_empty() && !self.groceries.is_empty() && !self.recipes.is_empty() {
-            eprintln!(
-                "Save current list?\n\
-                *y*\n\
-                *any other key* to continue"
-            );
+            let res = Question::new("Save current list?")
+                .default(question::Answer::NO)
+                .show_defaults()
+                .confirm();
 
-            if crate::prompt_for_y()? {
+            if res == Answer::YES {
                 self.save()?;
             }
 

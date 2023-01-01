@@ -8,16 +8,13 @@ description = "A tool to make grocery lists written in Rust"
 readme = "README.md"
 repository = "https://github.com/suchapalaver/grusterylist"
 
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-custom_error = "1.9.2"
-serde = { version = "*", features = ["derive"] }
-serde_json = "*"
-serde_derive = "*"
 clap = "3.2.5"
+custom_error = "1.9.2"
+question = "0.2.2"
+serde = { version = "*", features = ["derive"] }
+serde_derive = "*"
+serde_json = "*"
 
 [dev-dependencies]
 assert_fs = "1.0"

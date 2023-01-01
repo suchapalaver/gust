@@ -137,15 +137,15 @@ pub mod test {
     #[test]
     fn test_delete_groceries_item() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_json_file()?;
-        let mut sl = ShoppingList::from_path(file.path())?;
+        let mut shopping_list = ShoppingList::from_path(file.path())?;
         let item = GroceriesItem {
             name: GroceriesItemName("kumquats".to_string()),
             section: GroceriesItemSection("fresh".to_string()),
             is_recipe_ingredient: false,
             recipes: vec![],
         };
-        sl.add_groceries_item(item);
-        insta::assert_json_snapshot!(sl.groceries, @r###"
+        shopping_list.add_groceries_item(item);
+        insta::assert_json_snapshot!(shopping_list.groceries, @r###"
         [
           {
             "name": "garlic",
@@ -261,8 +261,8 @@ pub mod test {
           }
         ]
         "###);
-        sl.delete_groceries_item("kumquats")?;
-        insta::assert_json_snapshot!(sl.groceries, @r###"
+        shopping_list.delete_groceries_item("kumquats")?;
+        insta::assert_json_snapshot!(shopping_list.groceries, @r###"
         [
           {
             "name": "garlic",
@@ -378,15 +378,15 @@ pub mod test {
     #[test]
     fn test_delete_checklist_item() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_json_file()?;
-        let mut sl = ShoppingList::from_path(file.path())?;
+        let mut shopping_list = ShoppingList::from_path(file.path())?;
         let item = GroceriesItem {
             name: GroceriesItemName("kumquats".to_string()),
             section: GroceriesItemSection("fresh".to_string()),
             is_recipe_ingredient: false,
             recipes: vec![],
         };
-        sl.add_checklist_item(item);
-        insta::assert_json_snapshot!(sl.checklist, @r###"
+        shopping_list.add_checklist_item(item);
+        insta::assert_json_snapshot!(shopping_list.checklist, @r###"
         [
           {
             "name": "kumquats",
@@ -396,22 +396,22 @@ pub mod test {
           }
         ]
         "###);
-        sl.delete_checklist_item("kumquats")?;
-        insta::assert_json_snapshot!(sl.checklist, @"[]");
+        shopping_list.delete_checklist_item("kumquats")?;
+        insta::assert_json_snapshot!(shopping_list.checklist, @"[]");
         Ok(())
     }
 
     #[test]
     fn test_delete_recipe() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_json_file()?;
-        let mut sl = ShoppingList::from_path(file.path())?;
-        insta::assert_json_snapshot!(sl.recipes, @r###"
+        let mut shopping_list = ShoppingList::from_path(file.path())?;
+        insta::assert_json_snapshot!(shopping_list.recipes, @r###"
         [
           "tomato pasta"
         ]
         "###);
-        sl.delete_recipe("tomato pasta")?;
-        insta::assert_json_snapshot!(sl.recipes, @"[]");
+        shopping_list.delete_recipe("tomato pasta")?;
+        insta::assert_json_snapshot!(shopping_list.recipes, @"[]");
         Ok(())
     }
 
