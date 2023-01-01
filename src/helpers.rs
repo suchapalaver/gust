@@ -29,5 +29,5 @@ pub fn get_user_input() -> Result<String, ReadError> {
 }
 
 pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), ReadError> {
-    Ok(fs::write(path, &object)?)
+    Ok(fs::write(path, object)?)
 }

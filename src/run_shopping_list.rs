@@ -144,7 +144,7 @@ impl ShoppingList {
                         && groceriesitem
                             .recipes
                             .iter()
-                            .any(|recipe| self.recipes.contains(&*recipe))
+                            .any(|recipe| self.recipes.contains(recipe))
                     {
                         self.add_groceries_item(groceriesitem.clone());
                     }
