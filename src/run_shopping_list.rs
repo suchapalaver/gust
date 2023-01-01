@@ -1,14 +1,10 @@
-use question::Answer;
-use question::Question;
-
-use crate::Groceries;
-use crate::GroceriesItem;
-use crate::ReadError;
-use crate::ShoppingList;
+use crate::{Groceries, GroceriesItem, ReadError, ShoppingList};
 use std::path::Path;
 
+use question::{Answer, Question};
+
 pub fn run() -> Result<(), ReadError> {
-    if crate::Groceries::from_path("groceries.json").is_err() {
+    if Groceries::from_path("groceries.json").is_err() {
         return Err(ReadError::LibraryNotFound);
     } else {
         let mut shopping_list = ShoppingList::new();

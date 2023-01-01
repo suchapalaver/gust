@@ -1,7 +1,7 @@
-use crate::Groceries;
+use crate::{Groceries, ReadError};
 use clap::ArgMatches;
 
-pub fn run(sync_matches: &ArgMatches) -> Result<(), crate::ReadError> {
+pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
     let path = sync_matches.get_one::<String>("path").unwrap();
 
     match sync_matches.subcommand() {
@@ -12,7 +12,7 @@ pub fn run(sync_matches: &ArgMatches) -> Result<(), crate::ReadError> {
     Ok(())
 }
 
-fn recipes_add(s_matches: &ArgMatches, path: &str) -> Result<(), crate::ReadError> {
+fn recipes_add(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
     let name_elems: Vec<_> = s_matches
         .values_of("name")
         .expect("name is required")
@@ -33,7 +33,7 @@ fn recipes_add(s_matches: &ArgMatches, path: &str) -> Result<(), crate::ReadErro
     Ok(())
 }
 
-fn recipes_delete(s_matches: &ArgMatches, path: &str) -> Result<(), crate::ReadError> {
+fn recipes_delete(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
     let name_elems: Vec<_> = s_matches
         .values_of("name")
         .expect("name is required")
@@ -48,7 +48,7 @@ fn recipes_delete(s_matches: &ArgMatches, path: &str) -> Result<(), crate::ReadE
     Ok(())
 }
 
-fn recipes_print(sync_matches: &ArgMatches, path: &str) -> Result<(), crate::ReadError> {
+fn recipes_print(sync_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
     let groceries = Groceries::from_path(path)?;
     if let Ok(Some(name)) = sync_matches.try_get_one::<String>("recipe") {
         eprintln!();

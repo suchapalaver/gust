@@ -1,9 +1,8 @@
 use crate::Recipe;
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::ops::Deref;
+use std::{ops::Deref, fmt};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct GroceriesItem {
     pub name: GroceriesItemName,       // e.g. "apples"
     pub section: GroceriesItemSection, // e.g. "fresh"
@@ -15,22 +14,10 @@ pub struct GroceriesItem {
 
 impl GroceriesItem {
     pub fn new(name: &str, section: &str) -> Self {
-        Self::new_initialized(
-            GroceriesItemName(name.to_string()),
-            GroceriesItemSection(section.to_string()),
-        )
-    }
-
-    pub fn new_initialized(name: GroceriesItemName, section: GroceriesItemSection) -> Self {
-        //let name = name_and_section.get(0).expect("no grocery name found!");
-        //let section = name_and_section.get(1).expect("no grocery section found");
-        GroceriesItem {
-            name,
-            section,
-            is_recipe_ingredient: false,
-            recipes: vec![],
-            //on_list: false,
-            //on_checklist: false,
+        Self {
+            name: GroceriesItemName(name.to_string()),
+            section: GroceriesItemSection(section.to_string()),
+            ..Default::default()
         }
     }
 
@@ -53,7 +40,7 @@ impl Deref for GroceriesItem {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct GroceriesItemName(pub String);
 
 impl std::fmt::Display for GroceriesItemName {
@@ -62,7 +49,7 @@ impl std::fmt::Display for GroceriesItemName {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct GroceriesItemSection(pub String);
 
 impl fmt::Display for GroceriesItemSection {

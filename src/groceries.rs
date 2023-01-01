@@ -12,14 +12,6 @@ pub struct Groceries {
 }
 
 impl Groceries {
-    pub fn new_initialized() -> Result<Self, ReadError> {
-        Ok(Groceries {
-            sections: vec![],
-            collection: vec![],
-            recipes: vec![],
-        })
-    }
-
     pub fn get_item_matches(&self, name: &str) -> impl Iterator<Item = &GroceriesItem> {
         self.collection
             .iter()
@@ -99,7 +91,7 @@ impl Groceries {
 
                 let section = GroceriesItemSection(section_input);
 
-                let item = GroceriesItem::new_initialized(ingredient.clone(), section);
+                let item = GroceriesItem::new(&ingredient.0, &section.0);
 
                 self.add_item(item);
             }
@@ -173,7 +165,7 @@ pub mod test {
     #[test]
     fn test_groceries_new() -> Result<(), Box<dyn std::error::Error>> {
         let path = "test_groceries.json";
-        let g = Groceries::new_initialized()?;
+        let g = Groceries::default();
         g.save(path)?;
         let g = Groceries::from_path(path)?;
         insta::assert_json_snapshot!(g, @r###"

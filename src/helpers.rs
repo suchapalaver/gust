@@ -12,6 +12,6 @@ pub fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, ReadError> {
     Ok(reader)
 }
 
-pub fn write<P: AsRef<Path>>(path: P, object: String) -> Result<(), ReadError> {
+pub fn write<P: AsRef<Path>>(path: P, object: &str) -> Result<(), ReadError> {
     Ok(fs::write(path, object)?)
 }

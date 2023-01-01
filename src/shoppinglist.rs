@@ -1,35 +1,21 @@
-use crate::{GroceriesItem, GroceriesItemName, ReadError, Recipe};
+use crate::{GroceriesItem, GroceriesItemName, ReadError, Recipe, helpers};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
     pub checklist: Vec<GroceriesItem>,
     pub recipes: Vec<Recipe>,
     pub groceries: Vec<GroceriesItem>,
 }
 
-impl Default for ShoppingList {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ShoppingList {
     pub fn new() -> Self {
-        Self::new_initialized()
-    }
-
-    fn new_initialized() -> Self {
-        ShoppingList {
-            checklist: vec![],
-            recipes: vec![],
-            groceries: vec![],
-        }
+        Self::default()
     }
 
     pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, ReadError> {
-        let reader = crate::helpers::read(path)?;
+        let reader = helpers::read(path)?;
 
         Ok(serde_json::from_reader(reader)?)
     }
@@ -112,7 +98,7 @@ impl ShoppingList {
 
     pub fn save(&self) -> Result<(), ReadError> {
         let json = self.to_json_string()?;
-        crate::helpers::write("list.json", json)
+        helpers::write("list.json", &json)
     }
 }
 

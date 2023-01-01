@@ -13,7 +13,7 @@ pub fn run() -> Result<(), ReadError> {
 }
 
 impl Groceries {
-    pub(crate) fn prompt_view_groceries() -> Result<(), ReadError> {
+    fn prompt_view_groceries() -> Result<(), ReadError> {
         while Question::new("View the groceries in our library?")
             .default(question::Answer::NO)
             .show_defaults()
@@ -25,7 +25,7 @@ impl Groceries {
         Ok(())
     }
 
-    pub(crate) fn view_groceries() -> Result<(), ReadError> {
+    fn view_groceries() -> Result<(), ReadError> {
         let path = "groceries.json";
 
         for item in Self::from_path(path)?.items() {
@@ -36,7 +36,7 @@ impl Groceries {
         Ok(())
     }
 
-    pub(crate) fn prompt_add_groceries() -> Result<(), ReadError> {
+    fn prompt_add_groceries() -> Result<(), ReadError> {
         while Question::new("Add an item to our library?")
             .default(question::Answer::NO)
             .show_defaults()
@@ -65,7 +65,7 @@ impl Groceries {
     fn prompt_for_section() -> String {
         let ans = Question::new(
             "What is the section?\n\
-        e.g. 'bread'",
+            e.g. 'bread'",
         )
         .acceptable(vec!["fresh", "pantry", "protein", "dairy", "freezer"])
         .until_acceptable()
@@ -84,7 +84,7 @@ impl Groceries {
         let section = Self::prompt_for_section();
 
         let mut groceries = if Self::from_path("groceries.json").is_err() {
-            Self::new_initialized()?
+            Self::default()
         } else {
             Self::from_path("groceries.json")?
         };
@@ -112,10 +112,10 @@ impl Groceries {
         Ok(())
     }
 
-    pub(crate) fn prompt_save() -> Result<(), ReadError> {
+    fn prompt_save() -> Result<(), ReadError> {
         let path = "groceries.json";
         let groceries = if Self::from_path(path).is_err() {
-            Self::new_initialized()?
+            Self::default()
         } else {
             Self::from_path(path)?
         };

@@ -1,9 +1,6 @@
-use crate::GroceriesItemName;
-use crate::ReadError;
+use crate::{GroceriesItemName, ReadError};
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::ops::Deref;
-use std::str::FromStr;
+use std::{fmt, ops::Deref, str::FromStr};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Recipe(pub String);
@@ -15,8 +12,8 @@ impl fmt::Display for Recipe {
 }
 
 impl Recipe {
-    pub fn new(s: String) -> Result<Self, ReadError> {
-        Recipe::from_str(&s)
+    pub fn new(s: &str) -> Result<Self, ReadError> {
+        Self::from_str(s)
     }
 }
 
@@ -24,7 +21,7 @@ impl FromStr for Recipe {
     type Err = ReadError;
 
     fn from_str(s: &str) -> Result<Self, ReadError> {
-        Ok(Recipe(s.to_string()))
+        Ok(Self(s.to_string()))
     }
 }
 
@@ -32,8 +29,8 @@ impl FromStr for Recipe {
 pub struct Ingredients(pub Vec<GroceriesItemName>);
 
 impl Ingredients {
-    fn new() -> Ingredients {
-        Ingredients(Vec::new())
+    fn new() -> Self {
+        Self::default()
     }
 
     fn add(&mut self, elem: GroceriesItemName) {
@@ -41,7 +38,7 @@ impl Ingredients {
     }
 
     pub fn from_input_string(s: &str) -> Result<Self, ReadError> {
-        Ingredients::from_str(s)
+        Self::from_str(s)
     }
 }
 
@@ -57,7 +54,7 @@ impl FromIterator<GroceriesItemName> for Ingredients {
 }
 
 impl FromStr for Ingredients {
-    type Err = crate::errors::ReadError;
+    type Err = ReadError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(s.split(',')
@@ -67,7 +64,7 @@ impl FromStr for Ingredients {
 }
 
 impl Deref for Ingredients {
-    type Target = Vec<crate::GroceriesItemName>;
+    type Target = Vec<GroceriesItemName>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
