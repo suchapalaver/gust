@@ -9,6 +9,25 @@ pub fn cli() -> Command<'static> {
             Command::new("recipes")
                 .about("manages recipes library")
                 .subcommand(
+                    Command::new("show")
+                        .subcommand_required(false)
+                        .about("show recipes"),
+                )
+                .subcommand(
+                    Command::new("add-to-db")
+                        .subcommand_required(false)
+                        .about("adds recipe to db")
+                        .arg(
+                            Arg::with_name("name")
+                                .short('n')
+                                .long("name")
+                                .required(true)
+                                .takes_value(true)
+                                .multiple_values(true)
+                                .help("provides name of recipe to be added"),
+                        ),
+                )
+                .subcommand(
                     Command::new("add")
                         .subcommand_required(false)
                         .about("adds recipes to library")
@@ -34,6 +53,18 @@ pub fn cli() -> Command<'static> {
                 .subcommand(
                     Command::new("delete")
                         .about("deletes recipe from library")
+                        .arg(
+                            Arg::with_name("name")
+                                .long("name")
+                                .required(true)
+                                .takes_value(true)
+                                .multiple_values(true)
+                                .help("provides name of recipe to be deleted"),
+                        ),
+                )
+                .subcommand(
+                    Command::new("delete-from-db")
+                        .about("deletes recipe from db")
                         .arg(
                             Arg::with_name("name")
                                 .long("name")
@@ -132,8 +163,15 @@ pub fn cli() -> Command<'static> {
                     Arg::with_name("library path")
                         .long("lib-path")
                         .takes_value(true)
-                        .default_value("groceries.json")
+                        .default_value("list.json")
                         .help("provides path for groceries library"),
                 ),
         )
+        .subcommand(Command::new("show-list-sections").about("show shopping sections"))
+        .subcommand(Command::new("show-recipes").about("show recipes"))
+        .subcommand(
+            Command::new("migrate-json-items-to-db")
+                .about("transfer old version json file storage to SQLite db"),
+        )
+        .subcommand(Command::new("show-items-in-db").about("show items in SQLite db"))
 }

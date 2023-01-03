@@ -12,3 +12,6 @@ target/
 
 groceries.json
 list.json
+
+# Steps to add database
+db_steps.md

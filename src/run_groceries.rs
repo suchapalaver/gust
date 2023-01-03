@@ -1,6 +1,10 @@
+use colored::Colorize;
+use diesel::prelude::*;
 use question::Answer;
 use question::Question;
 
+use crate::models::Item;
+use crate::persistence::establish_connection;
 use crate::groceries::Groceries;
 use crate::GroceriesItem;
 use crate::ReadError;
@@ -10,6 +14,24 @@ pub fn run() -> Result<(), ReadError> {
     Groceries::prompt_add_groceries()?;
     Groceries::prompt_save()?;
     Ok(())
+}
+
+pub fn show_items() {
+    use crate::schema::items::dsl::*;
+
+    let connection = &mut establish_connection();
+    let results = items.load::<Item>(connection).expect("Error loading items");
+
+    println!(
+        "{} {} {}{}",
+        "Displaying".blue().bold(),
+        results.len().to_string().blue().bold(),
+        "items".blue().bold(),
+        ":".blue().bold()
+    );
+    for item in results {
+        println!(" {} {}", "-".bold().blue(), item.name.blue());
+    }
 }
 
 impl Groceries {

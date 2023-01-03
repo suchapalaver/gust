@@ -100,7 +100,7 @@ impl Groceries {
         Ok(())
     }
 
-    pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
+    pub(crate) fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
         let recipe = RecipeName(name.to_string());
 
         let ingredients = Ingredients::from_input_string(ingredients)?;
@@ -118,7 +118,7 @@ impl Groceries {
         Ok(())
     }
 
-    pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
+    pub(crate) fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
             .recipes
             .iter()
@@ -128,13 +128,10 @@ impl Groceries {
             self.recipes.remove(i);
         }
         for item in self.collection.iter_mut() {
-            match item.recipes.as_mut() {
-                Some(recipes) => {
-                    if let Some(i) = recipes.iter().position(|RecipeName(x)| x.as_str() == name) {
-                        recipes.remove(i);
-                    }
+            if let Some(recipes) = item.recipes.as_mut() {
+                if let Some(i) = recipes.iter().position(|RecipeName(x)| x.as_str() == name) {
+                    recipes.remove(i);
                 }
-                None => (),
             }
         }
         Ok(())

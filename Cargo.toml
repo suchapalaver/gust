@@ -10,7 +10,11 @@ repository = "https://github.com/suchapalaver/grusterylist"
 
 [dependencies]
 clap = "3.2.5"
+colored = "2.0.0"
 custom_error = "1.9.2"
+diesel = { version = "2.0.2", features = ["sqlite"] }
+diesel_migrations = "2.0.0"
+dotenv = "0.15.0"
 question = "0.2.2"
 reqwest = "0.11"
 scraper = "0.17.1"
@@ -23,4 +27,4 @@ url = "2.4.1"
 
 [dev-dependencies]
 assert_fs = "1.0"
-insta = "1.14.1"
+insta = { version = "1.14.1", features = ["json"] }
