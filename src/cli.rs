@@ -2,7 +2,7 @@ use clap::{Arg, Command};
 
 pub fn cli() -> Command<'static> {
     Command::new("grusterylist")
-        .about("grusterylist: makes grocery lists")
+        .about("grusterylist: makes grocery lists, written in rust")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(

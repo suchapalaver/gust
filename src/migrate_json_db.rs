@@ -134,11 +134,11 @@ pub(crate) fn migrate_groceries() -> Result<(), ReadError> {
                     name: &r.to_string(),
                 };
 
-                diesel::insert_into(schema::recipes::table)
-                    .values(&new_recipe)
-                    .on_conflict_do_nothing()
-                    .execute(connection)
-                    .unwrap_or_else(|_| panic!("Error inserting recipe {}", r));
+            diesel::insert_into(schema::recipes::table)
+                .values(&new_recipe)
+                .on_conflict_do_nothing()
+                .execute(connection)
+                .unwrap_or_else(|_| panic!("Error inserting recipe {r}"));
 
                 let results = recipes
                     .filter(schema::recipes::dsl::name.eq(r.to_string()))
