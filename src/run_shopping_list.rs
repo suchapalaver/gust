@@ -1,5 +1,5 @@
 use crate::{
-    models::Section, persistence::establish_connection, groceries::Groceries, GroceriesItem, ReadError,
+    groceries::Groceries, models::Section, persistence::establish_connection, Item, ReadError,
     ShoppingList,
 };
 use std::path::Path;
@@ -120,15 +120,15 @@ impl ShoppingList {
 
     pub(crate) fn add_groceries(&mut self) -> Result<(), ReadError> {
         // move everything off list to temp list
-        let list_items: Vec<GroceriesItem> = self.groceries.drain(..).collect();
+        let list_items: Vec<Item> = self.groceries.drain(..).collect();
         assert!(self.groceries.is_empty());
         let sections = vec!["fresh", "pantry", "dairy", "protein", "freezer"];
         let groceries = Groceries::from_path("groceries.json")?;
-        let groceries_by_section: Vec<Vec<GroceriesItem>> = {
+        let groceries_by_section: Vec<Vec<Item>> = {
             sections
                 .into_iter()
                 .map(|section| {
-                    let mut a: Vec<GroceriesItem> = list_items
+                    let mut a: Vec<Item> = list_items
                         .iter()
                         .filter(|groceriesitem| groceriesitem.section.is_some())
                         .filter(|groceriesitem| {
@@ -137,7 +137,7 @@ impl ShoppingList {
                         .cloned()
                         .collect();
 
-                    let b: Vec<GroceriesItem> = groceries
+                    let b: Vec<Item> = groceries
                         .collection
                         .iter()
                         .filter(|groceriesitem| groceriesitem.section.is_some())

@@ -1,4 +1,4 @@
-use crate::{migrate_json_db, run_groceries, run_recipes, run_shopping_list, ReadError, cli};
+use crate::{cli, migrate_json_db, run_groceries, run_recipes, run_shopping_list, ReadError};
 
 pub fn run() -> Result<(), ReadError> {
     let matches = cli().get_matches();

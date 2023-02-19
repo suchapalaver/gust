@@ -1,12 +1,12 @@
-use crate::{helpers, GroceriesItem, GroceriesItemName, ReadError, RecipeName};
+use crate::{helpers, Item, ItemName, ReadError, RecipeName};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
-    pub checklist: Vec<GroceriesItem>,
+    pub checklist: Vec<Item>,
     pub recipes: Vec<RecipeName>,
-    pub groceries: Vec<GroceriesItem>,
+    pub groceries: Vec<Item>,
 }
 
 impl ShoppingList {
@@ -44,7 +44,7 @@ impl ShoppingList {
         }
     }
 
-    pub fn add_groceries_item(&mut self, item: GroceriesItem) {
+    pub fn add_groceries_item(&mut self, item: Item) {
         self.groceries.push(item)
     }
 
@@ -52,7 +52,7 @@ impl ShoppingList {
         if let Ok(i) = self
             .groceries
             .iter()
-            .position(|x| x.name == GroceriesItemName(name.to_string()))
+            .position(|x| x.name == ItemName(name.to_string()))
             .ok_or(ReadError::ItemNotFound)
         {
             self.groceries.remove(i);
@@ -60,7 +60,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub fn add_checklist_item(&mut self, item: GroceriesItem) {
+    pub fn add_checklist_item(&mut self, item: Item) {
         self.checklist.push(item)
     }
 
@@ -68,7 +68,7 @@ impl ShoppingList {
         if let Ok(i) = self
             .checklist
             .iter()
-            .position(|x| x.name == GroceriesItemName(name.to_string()))
+            .position(|x| x.name == ItemName(name.to_string()))
             .ok_or(ReadError::ItemNotFound)
         {
             self.checklist.remove(i);
@@ -106,7 +106,7 @@ impl ShoppingList {
 pub mod test {
     use super::*;
 
-    use crate::GroceriesItemSection;
+    use crate::Section;
     use assert_fs::prelude::*;
 
     // test suite helper function
@@ -114,7 +114,7 @@ pub mod test {
         let file = assert_fs::NamedTempFile::new("test.json")?;
         file.write_str(
             r#"
-            {"checklist":[],"recipes":["tomato pasta"],"groceries":[{"name":"garlic","section":"fresh","is_recipe_ingredient":true,"recipes":["Sheet Pan Salmon with Broccoli","crispy tofu with cashews and blistered snap peas","chicken breasts with lemon","hummus","tomato pasta","crispy sheet-pan noodles","flue flighter chicken stew","sheet-pan chicken with jammy tomatoes","swordfish pasta"]},{"name":"tomatoes","section":"fresh","is_recipe_ingredient":true,"recipes":["tomato pasta"]},{"name":"basil","section":"fresh","is_recipe_ingredient":true,"recipes":["tomato pasta"]},{"name":"lemons","section":"fresh","is_recipe_ingredient":true,"recipes":["chicken breasts with lemon","hummus","sheet-pan chicken with jammy tomatoes","flue flighter chicken stew"]},{"name":"pasta","section":"pantry","is_recipe_ingredient":true,"recipes":["tomato pasta","swordfish pasta"]},{"name":"olive oil","section":"pantry","is_recipe_ingredient":true,"recipes":["Sheet Pan Salmon with Broccoli","chicken breasts with lemon","hummus","tomato pasta","sheet-pan chicken with jammy tomatoes","turkey meatballs","swordfish pasta"]},{"name":"short grain brown rice","section":"pantry","is_recipe_ingredient":true,"recipes":["Sheet Pan Salmon with Broccoli","flue flighter chicken stew"]},{"name":"parmigiana","section":"dairy","is_recipe_ingredient":true,"recipes":["tomato pasta","turkey meatballs"]},{"name":"eggs","section":"dairy","is_recipe_ingredient":true,"recipes":["oatmeal chocolate chip cookies","fried eggs for breakfast","turkey meatballs"]},{"name":"sausages","section":"protein","is_recipe_ingredient":true,"recipes":[]},{"name":"dumplings","section":"freezer","is_recipe_ingredient":false,"recipes":[]}]}
+            {"checklist":[],"recipes":["tomato pasta"],"groceries":[{"name":"garlic","section":"fresh","is_ingredient":true,"recipes":["Sheet Pan Salmon with Broccoli","crispy tofu with cashews and blistered snap peas","chicken breasts with lemon","hummus","tomato pasta","crispy sheet-pan noodles","flue flighter chicken stew","sheet-pan chicken with jammy tomatoes","swordfish pasta"]},{"name":"tomatoes","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"basil","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"lemons","section":"fresh","is_ingredient":true,"recipes":["chicken breasts with lemon","hummus","sheet-pan chicken with jammy tomatoes","flue flighter chicken stew"]},{"name":"pasta","section":"pantry","is_ingredient":true,"recipes":["tomato pasta","swordfish pasta"]},{"name":"olive oil","section":"pantry","is_ingredient":true,"recipes":["Sheet Pan Salmon with Broccoli","chicken breasts with lemon","hummus","tomato pasta","sheet-pan chicken with jammy tomatoes","turkey meatballs","swordfish pasta"]},{"name":"short grain brown rice","section":"pantry","is_ingredient":true,"recipes":["Sheet Pan Salmon with Broccoli","flue flighter chicken stew"]},{"name":"parmigiana","section":"dairy","is_ingredient":true,"recipes":["tomato pasta","turkey meatballs"]},{"name":"eggs","section":"dairy","is_ingredient":true,"recipes":["oatmeal chocolate chip cookies","fried eggs for breakfast","turkey meatballs"]},{"name":"sausages","section":"protein","is_ingredient":true,"recipes":[]},{"name":"dumplings","section":"freezer","is_ingredient":false,"recipes":[]}]}
             "#
         )?;
         Ok(file)
@@ -124,9 +124,9 @@ pub mod test {
     fn test_delete_groceries_item() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_json_file()?;
         let mut shopping_list = ShoppingList::from_path(file.path())?;
-        let item = GroceriesItem {
-            name: GroceriesItemName("kumquats".to_string()),
-            section: Some(GroceriesItemSection("fresh".to_string())),
+        let item = Item {
+            name: ItemName("kumquats".to_string()),
+            section: Some(Section("fresh".to_string())),
             recipes: None,
         };
         shopping_list.add_groceries_item(item);
@@ -341,9 +341,9 @@ pub mod test {
     fn test_delete_checklist_item() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_json_file()?;
         let mut shopping_list = ShoppingList::from_path(file.path())?;
-        let item = GroceriesItem {
-            name: GroceriesItemName("kumquats".to_string()),
-            section: Some(GroceriesItemSection("fresh".to_string())),
+        let item = Item {
+            name: ItemName("kumquats".to_string()),
+            section: Some(Section("fresh".to_string())),
             recipes: None,
         };
         shopping_list.add_checklist_item(item);
@@ -598,9 +598,9 @@ pub mod test {
         }
         "###);
 
-        let item = GroceriesItem {
-            name: crate::GroceriesItemName("cumquats".to_string()),
-            section: Some(crate::GroceriesItemSection("fresh".to_string())),
+        let item = Item {
+            name: ItemName("cumquats".to_string()),
+            section: Some(Section("fresh".to_string())),
             recipes: Some(vec![RecipeName("cumquat chutney".to_string())]),
         };
         let recipe = RecipeName("cumquat chutney".to_string());

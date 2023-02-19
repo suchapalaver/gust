@@ -6,7 +6,7 @@ use crate::{
     groceries::Groceries,
     models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
     persistence::establish_connection,
-    schema, GroceriesItem, GroceriesItemSection, ReadError, RecipeName, ShoppingList,
+    schema, Item, ReadError, RecipeName, Section, ShoppingList,
 };
 
 fn load_groceries_library() -> Result<Groceries, ReadError> {
@@ -17,7 +17,7 @@ fn load_list() -> Result<ShoppingList, ReadError> {
     ShoppingList::from_path("list.json")
 }
 
-fn load_groceries_collection() -> Result<Vec<GroceriesItem>, ReadError> {
+fn load_groceries_collection() -> Result<Vec<Item>, ReadError> {
     Ok(load_groceries_library()?.collection)
 }
 
@@ -51,7 +51,7 @@ fn load_recipes() -> Result<Vec<RecipeName>, ReadError> {
     Ok(recipes.into_iter().collect())
 }
 
-fn load_sections() -> Result<Vec<GroceriesItemSection>, ReadError> {
+fn load_sections() -> Result<Vec<Section>, ReadError> {
     Ok(load_groceries_library()?.sections)
 }
 

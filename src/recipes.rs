@@ -1,6 +1,6 @@
-use std::{str::FromStr, ops::Deref, fmt};
+use std::{fmt, ops::Deref, str::FromStr};
 
-use crate::{GroceriesItemName, ReadError};
+use crate::{ItemName, ReadError};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
@@ -27,14 +27,14 @@ impl FromStr for RecipeName {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
-pub struct Ingredients(pub Vec<GroceriesItemName>);
+pub struct Ingredients(pub Vec<ItemName>);
 
 impl Ingredients {
     fn new() -> Self {
         Self::default()
     }
 
-    fn add(&mut self, elem: GroceriesItemName) {
+    fn add(&mut self, elem: ItemName) {
         self.0.push(elem);
     }
 
@@ -43,8 +43,8 @@ impl Ingredients {
     }
 }
 
-impl FromIterator<GroceriesItemName> for Ingredients {
-    fn from_iter<I: IntoIterator<Item = GroceriesItemName>>(iter: I) -> Self {
+impl FromIterator<ItemName> for Ingredients {
+    fn from_iter<I: IntoIterator<Item = ItemName>>(iter: I) -> Self {
         let mut c = Ingredients::new();
 
         for i in iter {
@@ -59,13 +59,13 @@ impl FromStr for Ingredients {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(s.split(',')
-            .map(|item| GroceriesItemName(item.trim().to_lowercase()))
+            .map(|item| ItemName(item.trim().to_lowercase()))
             .collect())
     }
 }
 
 impl Deref for Ingredients {
-    type Target = Vec<GroceriesItemName>;
+    type Target = Vec<ItemName>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
