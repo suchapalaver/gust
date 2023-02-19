@@ -1,6 +1,5 @@
-use crate::{helpers, Item, ItemName, ReadError, RecipeName};
+use crate::{Item, ItemName, ReadError, ReadWrite, RecipeName};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
@@ -9,15 +8,11 @@ pub struct ShoppingList {
     pub groceries: Vec<Item>,
 }
 
+impl ReadWrite for ShoppingList {}
+
 impl ShoppingList {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<ShoppingList, ReadError> {
-        let reader = helpers::read(path)?;
-
-        Ok(serde_json::from_reader(reader)?)
     }
 
     pub fn print(&self) {
@@ -94,11 +89,6 @@ impl ShoppingList {
 
     pub fn to_json_string(&self) -> Result<String, ReadError> {
         Ok(serde_json::to_string(&self)?)
-    }
-
-    pub fn save(&self) -> Result<(), ReadError> {
-        let json = self.to_json_string()?;
-        helpers::write("list.json", &json)
     }
 }
 

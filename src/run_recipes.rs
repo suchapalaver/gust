@@ -1,4 +1,4 @@
-use crate::{groceries::Groceries, persistence::establish_connection, ReadError};
+use crate::{groceries::Groceries, persistence::establish_connection, ReadError, ReadWrite};
 use clap::ArgMatches;
 use colored::Colorize;
 

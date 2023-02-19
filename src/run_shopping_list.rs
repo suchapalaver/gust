@@ -1,5 +1,6 @@
 use crate::{
     groceries::Groceries, models::Section, persistence::establish_connection, Item, ReadError,
+    ReadWrite,
     ShoppingList,
 };
 use std::path::Path;
@@ -203,7 +204,7 @@ impl ShoppingList {
                 .confirm();
 
             if res == Answer::YES {
-                self.save()?;
+                self.save("list.json")?;
             }
 
             self.print();

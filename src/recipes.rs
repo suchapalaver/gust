@@ -21,7 +21,7 @@ impl RecipeName {
 impl FromStr for RecipeName {
     type Err = ReadError;
 
-    fn from_str(s: &str) -> Result<Self, ReadError> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(s.to_string()))
     }
 }

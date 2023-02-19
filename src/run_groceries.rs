@@ -1,13 +1,11 @@
 use colored::Colorize;
 use diesel::prelude::*;
-use question::Answer;
-use question::Question;
+use question::{Answer, Question};
 
-use crate::groceries::Groceries;
-use crate::models::Item;
-use crate::persistence::establish_connection;
-use crate::Item as GroceriesItem;
-use crate::ReadError;
+use crate::{
+    groceries::Groceries, models::Item, persistence::establish_connection, Item as GroceriesItem,
+    ReadError, ReadWrite,
+};
 
 pub fn run() -> Result<(), ReadError> {
     Groceries::prompt_view_groceries()?;

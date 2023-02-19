@@ -19,7 +19,7 @@ impl Item {
         }
     }
 
-    pub fn matches(&self, s: &str) -> bool {
+    pub(crate) fn matches(&self, s: &str) -> bool {
         s.split(' ').all(|word| !self.name.0.contains(word))
     }
 }

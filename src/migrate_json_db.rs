@@ -6,7 +6,7 @@ use crate::{
     groceries::Groceries,
     models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
     persistence::establish_connection,
-    schema, Item, ReadError, RecipeName, Section, ShoppingList,
+    schema, Item, ReadError, ReadWrite, RecipeName, Section, ShoppingList,
 };
 
 fn load_groceries_library() -> Result<Groceries, ReadError> {

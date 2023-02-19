@@ -1,7 +1,6 @@
-use crate::{read, Ingredients, Item, ItemName, ReadError, RecipeName, Section};
+use crate::{Ingredients, Item, ItemName, ReadError, ReadWrite, RecipeName, Section};
 use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Groceries {
@@ -10,6 +9,8 @@ pub struct Groceries {
     pub recipes: Vec<RecipeName>,
 }
 
+impl ReadWrite for Groceries {}
+
 impl Groceries {
     pub fn get_item_matches(&self, name: &str) -> impl Iterator<Item = &Item> {
         self.collection
@@ -17,10 +18,6 @@ impl Groceries {
             .filter(|item| item.matches(name))
             .collect::<Vec<_>>()
             .into_iter()
-    }
-
-    pub fn from_path<P: AsRef<Path> + Copy>(path: P) -> Result<Groceries, ReadError> {
-        Ok(serde_json::from_reader(read(path)?)?)
     }
 
     pub fn add_item(&mut self, item: Item) {
@@ -37,11 +34,6 @@ impl Groceries {
             self.collection.remove(i);
         }
         Ok(())
-    }
-
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), ReadError> {
-        let s = serde_json::to_string(&self)?;
-        Ok(fs::write(path, s)?)
     }
 
     pub fn items(&self) -> impl Iterator<Item = &Item> {
