@@ -17,7 +17,9 @@ mod run_recipes;
 mod run_shopping_list;
 mod schema;
 mod shoppinglist;
+mod show;
 pub mod startup;
+pub mod commands;
 
 // Note: Re-exports the content of the square_content module to keep paths short.
 //       Read more at https://doc.rust-lang.org/reference/items/use-declarations.html#use-visibility

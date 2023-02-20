@@ -5,8 +5,6 @@ use crate::{
 };
 use std::path::Path;
 
-use colored::Colorize;
-use diesel::RunQueryDsl;
 use question::{Answer, Question};
 
 pub fn run() -> Result<(), ReadError> {
@@ -36,26 +34,6 @@ pub fn run() -> Result<(), ReadError> {
         shopping_list.prompt_save_list()?;
     }
     Ok(())
-}
-
-pub fn sections() {
-    use crate::schema::sections::dsl::*;
-
-    let connection = &mut establish_connection();
-    let results = sections
-        .load::<Section>(connection)
-        .expect("Error loading sections");
-
-    println!(
-        "{} {} {}{}",
-        "Displaying".blue().bold(),
-        results.len().to_string().blue().bold(),
-        "sections".blue().bold(),
-        ":".blue().bold()
-    );
-    for item in results {
-        println!(" {} {}", "-".bold().blue(), item.name.blue());
-    }
 }
 
 impl ShoppingList {

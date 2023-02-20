@@ -1,4 +1,7 @@
-use crate::schema::{checklist, items, items_recipes, items_sections, recipes, sections};
+use crate::{
+    schema::{checklist, items, items_recipes, items_sections, list, recipes, sections},
+    ItemInfo,
+};
 use diesel::prelude::*;
 
 #[derive(Queryable)]
@@ -20,6 +23,24 @@ pub struct Item {
     pub name: String,
 }
 
+impl ItemInfo for Item {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+#[derive(Queryable)]
+#[diesel(table_name = list)]
+pub struct ListItem {
+    pub item_id: i32,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = list)]
+pub struct NewListItem {
+    pub item_id: i32,
+}
+
 #[derive(Insertable)]
 #[diesel(table_name = items)]
 pub struct NewItem<'a> {
@@ -39,6 +60,12 @@ pub struct Recipe {
     pub name: String,
 }
 
+impl ItemInfo for Recipe {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
 #[derive(Insertable)]
 #[diesel(table_name = sections)]
 pub struct NewSection<'a> {
@@ -50,6 +77,12 @@ pub struct NewSection<'a> {
 pub struct Section {
     pub id: i32,
     pub name: String,
+}
+
+impl ItemInfo for Section {
+    fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 #[derive(Insertable)]

@@ -6,6 +6,10 @@ use std::{
 
 use crate::ReadError;
 
+pub trait ItemInfo {
+    fn name(&self) -> &str;
+}
+
 fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, ReadError> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);

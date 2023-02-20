@@ -1,11 +1,13 @@
-use crate::{groceries::Groceries, persistence::establish_connection, ReadError, ReadWrite};
+use crate::{groceries::Groceries, 
+    persistence::establish_connection, GrusterylistError,
+    ReadError, ReadWrite,
+};
 use clap::ArgMatches;
-use colored::Colorize;
 
 use crate::models::*;
 use diesel::prelude::*;
 
-pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
+pub fn run(sync_matches: &ArgMatches) -> Result<(), GrusterylistError> {
     let path = sync_matches.get_one::<String>("path").unwrap();
 
     match sync_matches.subcommand() {
@@ -19,25 +21,25 @@ pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
     Ok(())
 }
 
-fn show_recipes() {
-    use crate::schema::recipes::dsl::*;
+// fn show_recipes() {
+//     use crate::schema::recipes::dsl::*;
 
-    let connection = &mut establish_connection();
-    let results = recipes
-        .load::<Recipe>(connection)
-        .expect("Error loading recipes");
+//     let connection = &mut establish_connection();
+//     let results = recipes
+//         .load::<Recipe>(connection)
+//         .expect("Error loading recipes");
 
-    println!(
-        "{} {} {}{}",
-        "Displaying".blue().bold(),
-        results.len().to_string().blue().bold(),
-        "recipes".blue().bold(),
-        ":".blue().bold()
-    );
-    for item in results {
-        println!(" {} {}", "-".bold().blue(), item.name.blue());
-    }
-}
+//     println!(
+//         "{} {} {}{}",
+//         "Displaying".blue().bold(),
+//         results.len().to_string().blue().bold(),
+//         "recipes".blue().bold(),
+//         ":".blue().bold()
+//     );
+//     for item in results {
+//         println!(" {} {}", "-".bold().blue(), item.name.blue());
+//     }
+// }
 
 fn add_recipe_to_db(s_matches: &ArgMatches) {
     use crate::schema::recipes;
@@ -76,24 +78,35 @@ fn delete_recipe_from_db(s_matches: &ArgMatches) {
         .expect("Error deleting recipe");
 }
 
-fn add_recipe(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
+fn add_recipe(s_matches: &ArgMatches, path: &str) -> Result<(), GrusterylistError> {
     let name_elems: Vec<_> = s_matches
         .values_of("name")
         .expect("name is required")
         .collect();
-    let n = name_elems.join(" ");
-    eprintln!("RecipeName: {}", n);
+
+    let name = name_elems.join(" ");
+
+    eprintln!("Recipe: {name}");
+
     let ingredient_vec: Vec<_> = s_matches
         .values_of("ingredients")
         .expect("ingredients required")
         .collect();
-    let i = ingredient_vec.join(", ");
-    eprintln!("Ingredients: {}", i);
-    let mut g = Groceries::from_path(path)?;
-    eprintln!("before adding: {:?}", g.recipes);
-    g.add_recipe(&n, &i)?;
-    eprintln!("after adding: {:?}", g.recipes);
-    g.save(path)?;
+
+    let ingredients = ingredient_vec.join(", ");
+
+    eprintln!("Ingredients: {ingredients}");
+
+    let mut groceries = Groceries::from_path(path)?;
+
+    eprintln!("before adding: {:?}", groceries.recipes);
+
+    groceries.add_recipe(&name, &ingredients)?;
+
+    eprintln!("after adding: {:?}", groceries.recipes);
+
+    groceries.save(path)?;
+
     Ok(())
 }
 
@@ -102,13 +115,21 @@ fn recipes_delete(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
         .values_of("name")
         .expect("name is required")
         .collect();
+
     let n = name_elems.join(" ");
-    eprintln!("RecipeName: {}", n);
+
+    eprintln!("Recipe: {}", n);
+
     let mut g = Groceries::from_path(path)?;
+
     eprintln!("before deleting: {:?}", g.recipes);
+
     g.delete_recipe(&n)?;
+
     eprintln!("after: {:?}", g.recipes);
+
     g.save(path)?;
+
     Ok(())
 }
 

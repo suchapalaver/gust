@@ -1,6 +1,6 @@
 use std::{fmt, ops::Deref, str::FromStr};
 
-use crate::{ItemName, ReadError};
+use crate::{CliError, ItemName, ReadError};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
@@ -38,8 +38,8 @@ impl Ingredients {
         self.0.push(elem);
     }
 
-    pub fn from_input_string(s: &str) -> Result<Self, ReadError> {
-        Self::from_str(s)
+    pub fn from_input_string(s: &str) -> Result<Self, CliError> {
+        Self::try_from(s)
     }
 }
 
@@ -54,10 +54,9 @@ impl FromIterator<ItemName> for Ingredients {
     }
 }
 
-impl FromStr for Ingredients {
-    type Err = ReadError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl TryFrom<&str> for Ingredients {
+    type Error = CliError;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         Ok(s.split(',')
             .map(|item| ItemName(item.trim().to_lowercase()))
             .collect())

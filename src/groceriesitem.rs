@@ -39,6 +39,12 @@ impl std::fmt::Display for ItemName {
     }
 }
 
+impl From<&str> for ItemName {
+    fn from(value: &str) -> Self {
+        ItemName(value.to_owned())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct Section(pub String);
 

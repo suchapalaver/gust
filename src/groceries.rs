@@ -1,4 +1,4 @@
-use crate::{Ingredients, Item, ItemName, ReadError, ReadWrite, RecipeName, Section};
+use crate::{CliError, Ingredients, Item, ItemName, ReadError, ReadWrite, RecipeName, Section};
 use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
 
@@ -54,7 +54,7 @@ impl Groceries {
     }
 
     // check if ingredients already in lib or add them if not
-    pub fn check_recipe_ingredients(&mut self, ingredients: &str) -> Result<(), ReadError> {
+    pub fn check_recipe_ingredients(&mut self, ingredients: &str) -> Result<(), CliError> {
         let ingredients = Ingredients::from_input_string(ingredients)?;
         // add new items to groceries
         for ingredient in ingredients.iter() {
@@ -90,7 +90,7 @@ impl Groceries {
         Ok(())
     }
 
-    pub(crate) fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
+    pub(crate) fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), CliError> {
         let recipe = RecipeName(name.to_string());
 
         let ingredients = Ingredients::from_input_string(ingredients)?;
