@@ -17,8 +17,6 @@ SUBCOMMANDS:
     help      Print this message or the help of the given subcommand(s)
 ```
 
----
-
 ```bash
 grusterylist-recipes-add 
 Adds recipes to library
@@ -32,8 +30,6 @@ OPTIONS:
     -n, --name <name>...                  Provides name of recipe to be added
 ```
 
----
-
 ```bash
 grusterylist-recipes-delete 
 Deletes recipe from library
@@ -45,8 +41,6 @@ OPTIONS:
     -h, --help              Print help information
         --name <name>...    Provides name of recipe to be deleted
 ```
-
----
 
 ## WISHES
 

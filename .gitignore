@@ -15,3 +15,5 @@ list.json
 
 # Steps to add database
 db_steps.md
+
+sqlite.db

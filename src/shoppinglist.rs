@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct ShoppingList {
     pub checklist: Vec<Item>,
     pub recipes: Vec<RecipeName>,
-    pub groceries: Vec<Item>,
+    pub items: Vec<Item>,
 }
 
 impl ReadWrite for ShoppingList {}
@@ -30,27 +30,27 @@ impl ShoppingList {
                 println!("\t{}", recipe);
             });
         }
-        if !self.groceries.is_empty() {
+        if !self.items.is_empty() {
             println!("groceries:");
 
-            self.groceries.iter().for_each(|item| {
+            self.items.iter().for_each(|item| {
                 println!("\t{}", item.name.0.to_lowercase());
             });
         }
     }
 
     pub fn add_groceries_item(&mut self, item: Item) {
-        self.groceries.push(item)
+        self.items.push(item)
     }
 
     pub fn delete_groceries_item(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
-            .groceries
+            .items
             .iter()
             .position(|x| x.name == ItemName(name.to_string()))
             .ok_or(ReadError::ItemNotFound)
         {
-            self.groceries.remove(i);
+            self.items.remove(i);
         }
         Ok(())
     }
@@ -120,7 +120,7 @@ pub mod test {
             recipes: None,
         };
         shopping_list.add_groceries_item(item);
-        insta::assert_json_snapshot!(shopping_list.groceries, @r###"
+        insta::assert_json_snapshot!(shopping_list.items, @r###"
         [
           {
             "name": "garlic",
@@ -225,7 +225,7 @@ pub mod test {
         ]
         "###);
         shopping_list.delete_groceries_item("kumquats")?;
-        insta::assert_json_snapshot!(shopping_list.groceries, @r###"
+        insta::assert_json_snapshot!(shopping_list.items, @r###"
         [
           {
             "name": "garlic",

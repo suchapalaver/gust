@@ -1,50 +1,8 @@
-use colored::Colorize;
-use diesel::prelude::*;
 use question::{Answer, Question};
 
-use crate::{
-    groceries::Groceries, models::Item, persistence::establish_connection, Item as GroceriesItem,
-    ReadError, ReadWrite,
-};
-
-pub fn run() -> Result<(), ReadError> {
-    Groceries::prompt_view_groceries()?;
-    Groceries::prompt_add_groceries()?;
-    Groceries::prompt_save()?;
-    Ok(())
-}
-
-pub fn show_items() {
-    use crate::schema::items::dsl::*;
-
-    let connection = &mut establish_connection();
-    let results = items.load::<Item>(connection).expect("Error loading items");
-
-    println!(
-        "{} {} {}{}",
-        "Displaying".blue().bold(),
-        results.len().to_string().blue().bold(),
-        "items".blue().bold(),
-        ":".blue().bold()
-    );
-    for item in results {
-        println!(" {} {}", "-".bold().blue(), item.name.blue());
-    }
-}
+use crate::{groceries::Groceries, Item as GroceriesItem, ReadError, ReadWrite};
 
 impl Groceries {
-    fn prompt_view_groceries() -> Result<(), ReadError> {
-        while Question::new("View the groceries in our library?")
-            .default(question::Answer::NO)
-            .show_defaults()
-            .confirm()
-            == Answer::YES
-        {
-            Self::view_groceries()?
-        }
-        Ok(())
-    }
-
     fn view_groceries() -> Result<(), ReadError> {
         let path = "groceries.json";
 

@@ -22,7 +22,7 @@ impl FromStr for RecipeName {
     type Err = ReadError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(s.to_string()))
+        Ok(Self(s.trim().to_lowercase()))
     }
 }
 
@@ -30,11 +30,11 @@ impl FromStr for RecipeName {
 pub struct Ingredients(pub Vec<ItemName>);
 
 impl Ingredients {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
-    fn add(&mut self, elem: ItemName) {
+    pub(crate) fn add(&mut self, elem: ItemName) {
         self.0.push(elem);
     }
 

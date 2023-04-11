@@ -41,12 +41,18 @@ impl std::fmt::Display for ItemName {
 
 impl From<&str> for ItemName {
     fn from(value: &str) -> Self {
-        ItemName(value.to_owned())
+        ItemName(value.trim().to_lowercase())
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct Section(pub String);
+
+impl From<&str> for Section {
+    fn from(value: &str) -> Self {
+        Self(value.trim().to_lowercase())
+    }
+}
 
 impl fmt::Display for Section {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

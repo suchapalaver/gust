@@ -7,48 +7,15 @@ use clap::ArgMatches;
 use crate::models::*;
 use diesel::prelude::*;
 
-pub fn run(sync_matches: &ArgMatches) -> Result<(), GrusterylistError> {
-    let path = sync_matches.get_one::<String>("path").unwrap();
-
-    match sync_matches.subcommand() {
-        Some(("add", s_matches)) => add_recipe(s_matches, path)?,
-        Some(("add-to-db", s_matches)) => add_recipe_to_db(s_matches),
-        Some(("delete", s_matches)) => recipes_delete(s_matches, path)?,
-        Some(("delete-from-db", s_matches)) => delete_recipe_from_db(s_matches),
-        Some(("show", _)) => show_recipes(),
-        _ => recipes_print(sync_matches, path)?,
-    }
-    Ok(())
-}
-
-// fn show_recipes() {
-//     use crate::schema::recipes::dsl::*;
-
-//     let connection = &mut establish_connection();
-//     let results = recipes
-//         .load::<Recipe>(connection)
-//         .expect("Error loading recipes");
-
-//     println!(
-//         "{} {} {}{}",
-//         "Displaying".blue().bold(),
-//         results.len().to_string().blue().bold(),
-//         "recipes".blue().bold(),
-//         ":".blue().bold()
-//     );
-//     for item in results {
-//         println!(" {} {}", "-".bold().blue(), item.name.blue());
-//     }
-// }
-
-fn add_recipe_to_db(s_matches: &ArgMatches) {
+fn add_recipe_to_db(matches: &ArgMatches) {
     use crate::schema::recipes;
 
     let connection = &mut establish_connection();
 
-    let name_elems: Vec<_> = s_matches
-        .values_of("name")
+    let name_elems: Vec<_> = matches
+        .get_many::<String>("name")
         .expect("name is required")
+        .cloned()
         .collect();
     let name = &name_elems.join(" ");
     eprintln!("Recipe: {}", name);
@@ -62,14 +29,15 @@ fn add_recipe_to_db(s_matches: &ArgMatches) {
         .expect("Error saving new post");
 }
 
-fn delete_recipe_from_db(s_matches: &ArgMatches) {
+fn delete_recipe_from_db(matches: &ArgMatches) {
     use crate::schema::recipes::dsl::*;
 
     let connection = &mut establish_connection();
 
-    let name_elems: Vec<_> = s_matches
-        .values_of("name")
+    let name_elems: Vec<_> = matches
+        .get_many::<String>("name")
         .expect("name is required")
+        .cloned()
         .collect();
     let pattern = &name_elems.join(" ");
 
@@ -78,42 +46,47 @@ fn delete_recipe_from_db(s_matches: &ArgMatches) {
         .expect("Error deleting recipe");
 }
 
-fn add_recipe(s_matches: &ArgMatches, path: &str) -> Result<(), GrusterylistError> {
-    let name_elems: Vec<_> = s_matches
-        .values_of("name")
+fn add_recipe(matches: &ArgMatches, path: &str) -> Result<(), GrusterylistError> {
+    // connect to db
+    // https://docs.diesel.rs/master/diesel/upsert/struct.IncompleteOnConflict.html#method.do_update
+    let name_elems: Vec<_> = matches
+        .get_many::<String>("name")
         .expect("name is required")
+        .cloned()
         .collect();
 
     let name = name_elems.join(" ");
 
-    eprintln!("Recipe: {name}");
+    println!("Recipe: {name}");
 
-    let ingredient_vec: Vec<_> = s_matches
-        .values_of("ingredients")
+    let ingredient_vec: Vec<_> = matches
+        .get_many::<String>("ingredients")
         .expect("ingredients required")
+        .cloned()
         .collect();
 
     let ingredients = ingredient_vec.join(", ");
 
-    eprintln!("Ingredients: {ingredients}");
+    println!("Ingredients: {ingredients}");
 
     let mut groceries = Groceries::from_path(path)?;
 
-    eprintln!("before adding: {:?}", groceries.recipes);
+    println!("before adding: {:?}", groceries.recipes);
 
     groceries.add_recipe(&name, &ingredients)?;
 
-    eprintln!("after adding: {:?}", groceries.recipes);
+    println!("after adding: {:?}", groceries.recipes);
 
     groceries.save(path)?;
 
     Ok(())
 }
 
-fn recipes_delete(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
-    let name_elems: Vec<_> = s_matches
-        .values_of("name")
+fn recipes_delete(matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
+    let name_elems: Vec<_> = matches
+        .get_many::<String>("name")
         .expect("name is required")
+        .cloned()
         .collect();
 
     let n = name_elems.join(" ");
@@ -133,9 +106,9 @@ fn recipes_delete(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
     Ok(())
 }
 
-fn recipes_print(sync_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
+fn recipes_print(matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
     let groceries = Groceries::from_path(path)?;
-    if let Ok(Some(name)) = sync_matches.try_get_one::<String>("recipe") {
+    if let Ok(Some(name)) = matches.try_get_one::<String>("recipe") {
         eprintln!();
         eprintln!("RecipeName: {name}");
         eprintln!("Ingredients:");

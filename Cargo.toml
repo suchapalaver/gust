@@ -9,7 +9,7 @@ readme = "README.md"
 repository = "https://github.com/suchapalaver/grusterylist"
 
 [dependencies]
-clap = "3.2.5"
+clap = "4.1.14"
 colored = "2.0.0"
 diesel = { version = "2.0.2", features = ["sqlite"] }
 diesel_migrations = "2.0.0"

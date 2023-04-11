@@ -1,490 +1,283 @@
-use clap::{Arg, Command};
+use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
 
-pub fn cli() -> Command<'static> {
+fn ingredient() -> Arg {
+    Arg::new("ingredient")
+        .long("ingredient")
+        .num_args(1)
+        .value_hint(ValueHint::Unknown)
+        .value_parser(NonEmptyStringValueParser::new())
+        .help("provides ingredient name")
+}
+
+fn ingredients() -> Arg {
+    Arg::new("ingredients")
+        .short('i')
+        .long("ingredients")
+        .num_args(1)
+        .value_hint(ValueHint::Unknown)
+        .value_parser(NonEmptyStringValueParser::new())
+        .help("provides name of recipe to be added")
+}
+
+fn checklist_item() -> Arg {
+    Arg::new("checklist-item")
+        .long("checklist-item")
+        .value_hint(ValueHint::Unknown)
+        .value_parser(NonEmptyStringValueParser::new())
+        .help("checklist-item name")
+}
+
+fn item() -> Arg {
+    Arg::new("item")
+        .long("item")
+        .value_hint(ValueHint::Unknown)
+        .value_parser(NonEmptyStringValueParser::new())
+        .help("item name")
+}
+
+fn path() -> Arg {
+    Arg::new("path")
+        .long("path")
+        .value_hint(ValueHint::FilePath)
+        .help("provides path for shopping list")
+}
+
+fn recipe() -> Arg {
+    Arg::new("recipe")
+        .long("recipe")
+        .value_hint(ValueHint::Unknown)
+        .value_parser(NonEmptyStringValueParser::new())
+        .help("provides recipe name")
+}
+
+fn section() -> Arg {
+    Arg::new("section")
+        .long("section")
+        .value_hint(ValueHint::Unknown)
+        .value_parser(NonEmptyStringValueParser::new())
+        .help("provides item's section")
+}
+
+fn clear_checklist() -> Command {
+    Command::new("clear")
+        .subcommand_required(false)
+        .about("delete everything from checklist")
+}
+
+fn clear_list() -> Command {
+    Command::new("clear")
+        .subcommand_required(false)
+        .about("delete everything from list")
+}
+
+fn read_all_items() -> Command {
+    Command::new("all")
+        .subcommand_required(false)
+        .about("read all items from library")
+}
+
+fn sections() -> Command {
+    Command::new("sections").about("see sections")
+}
+
+fn checklist() -> Command {
+    Command::new("checklist")
+        .about("work with the checklist")
+        .arg(item())
+}
+
+fn read_list() -> Command {
+    Command::new("list").about("read the list")
+}
+
+fn list() -> Command {
+    Command::new("list").about("work with the list")
+}
+
+fn add() -> Command {
+    Command::new("add")
+        .subcommand_required(false)
+        .about("add stuff")
+        .arg(item())
+        .arg(section())
+        .arg(recipe())
+        .arg(ingredients())
+        .arg(checklist_item())
+        .subcommand(list().arg(item()).arg(recipe()))
+}
+
+fn delete() -> Command {
+    Command::new("delete")
+        .subcommand_required(false)
+        .about("delete stuff")
+        .subcommand(
+            checklist()
+                .subcommand(clear_checklist())
+                .arg(recipe())
+                .arg(checklist_item()),
+        )
+        .arg(recipe())
+        .arg(item())
+        .subcommand(list().subcommand(clear_list()).arg(recipe()).arg(item()))
+}
+
+fn read() -> Command {
+    Command::new("read")
+        .subcommand_required(false)
+        .about("read stuff")
+        .arg(item())
+        .arg(recipe())
+        .subcommand(read_list())
+        .subcommand(checklist())
+        .subcommand(read_all_items())
+        .subcommand(
+            Command::new("recipes")
+                .subcommand_required(false)
+                .about("read all recipes"),
+        )
+        .subcommand(sections())
+}
+
+fn update() -> Command {
+    Command::new("update")
+        .subcommand_required(false)
+        .about("update stuff")
+        .arg(item())
+        .subcommand(
+            Command::new("recipe")
+                .subcommand_required(false)
+                .about("update recipe")
+                .arg(recipe())
+                .arg(ingredient())
+                .subcommand(
+                    Command::new("delete-ingredient")
+                        .about("delete an ingredient from a recipe")
+                        .arg(ingredient()),
+                )
+                .subcommand(
+                    Command::new("edit-ingredient")
+                        .about("edits an ingredient in a recipe")
+                        .arg(ingredient()),
+                ),
+        )
+}
+
+fn migrate_json_db() -> Command {
+    Command::new("migrate-json-db")
+        .subcommand_required(false)
+        .about("migrate a JSON databse to Postgres")
+        .arg(path().default_value("groceries.json"))
+}
+
+pub fn cli() -> Command {
     Command::new("grusterylist")
         .about("grusterylist: makes grocery lists, written in rust")
         .subcommand_required(true)
         .arg_required_else_help(true)
-        // Add
-        .subcommand(
-            Command::new("add")
-                .subcommand_required(false)
-                .about("add stuff")
-                .subcommand(
-                    Command::new("checklist-item")
-                        .subcommand_required(false)
-                        .about("add item to checklist")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("item")
-                        .subcommand_required(false)
-                        .about("add item to library")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        )
-                        .arg(
-                            Arg::with_name("section")
-                                .long("section")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides item's section"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("list-item")
-                        .subcommand_required(false)
-                        .about("add item to list")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("recipe")
-                        .subcommand_required(false)
-                        .about("add recipe to library")
-                        .arg(
-                            Arg::with_name("name")
-                                .short('n')
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be added"),
-                        )
-                        .arg(
-                            Arg::with_name("ingredients")
-                                .short('i')
-                                .long("ingredients")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be added"),
-                        ),
-                ),
-        )
-        // Delete
-        .subcommand(
-            Command::new("delete")
-                .subcommand_required(false)
-                .about("add stuff")
-                .subcommand(
-                    Command::new("checklist-item")
-                        .subcommand_required(false)
-                        .about("delete item from checklist")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("checklist")
-                        .subcommand_required(false)
-                        .about("clear checklist"),
-                )
-                .subcommand(
-                    Command::new("list")
-                        .subcommand_required(false)
-                        .about("clear list"),
-                )
-                .subcommand(
-                    Command::new("item")
-                        .subcommand_required(false)
-                        .about("delete item from library")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("list-item")
-                        .subcommand_required(false)
-                        .about("delete item from list")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("recipe")
-                        .subcommand_required(false)
-                        .about("delete recipe from library")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be deleted"),
-                        ),
-                ),
-        )
-        // Read
-        .subcommand(
-            Command::new("read")
-                .subcommand_required(false)
-                .about("read stuff")
-                .subcommand(
-                    Command::new("read-checklist")
-                        .subcommand_required(false)
-                        .about("read checklist"),
-                )
-                .subcommand(
-                    Command::new("read-checklist-item")
-                        .subcommand_required(false)
-                        .about("read item from checklist")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("read-item")
-                        .subcommand_required(false)
-                        .about("read item from library")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("read-items")
-                        .subcommand_required(false)
-                        .about("read all items from library"),
-                )
-                .subcommand(
-                    Command::new("read-item-recipes")
-                        .subcommand_required(false)
-                        .about("read recipes associated with an item")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("read-list")
-                        .subcommand_required(false)
-                        .about("read list"),
-                )
-                .subcommand(
-                    Command::new("read-list-item")
-                        .subcommand_required(false)
-                        .about("read an item from the list")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("read-recipe")
-                        .subcommand_required(false)
-                        .about("read recipe")
-                        .arg(
-                            Arg::with_name("recipe")
-                                .long("recipe")
-                                .takes_value(true)
-                                .help("provides name of recipe to view"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("read-recipes")
-                        .subcommand_required(false)
-                        .about("read all recipes"),
-                ),
-        )
-        // Update
-        .subcommand(
-            Command::new("update-item")
-                .subcommand_required(false)
-                .about("update commands")
-                .subcommand(
-                    Command::new("update-item")
-                        .subcommand_required(false)
-                        .about("update item")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of item"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("update-recipe")
-                        .subcommand_required(false)
-                        .about("update recipe")
-                        .arg(
-                            Arg::with_name("recipe")
-                                .long("recipe")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be edited"),
-                        )
-                        .subcommand(
-                            Command::new("add-ingredient")
-                                .about("adds an ingredient to a recipe")
-                                .arg(
-                                    Arg::with_name("ingredient")
-                                        .long("ingredient")
-                                        .required(true)
-                                        .takes_value(true)
-                                        .multiple_values(true)
-                                        .help("provides name of ingredient to be added"),
-                                ),
-                        )
-                        .subcommand(
-                            Command::new("delete-ingredient")
-                                .about("delete an ingredient from a recipe")
-                                .arg(
-                                    Arg::with_name("ingredient")
-                                        .long("ingredient")
-                                        .required(true)
-                                        .takes_value(true)
-                                        .multiple_values(true)
-                                        .help("provides name of ingredient to be deleted"),
-                                ),
-                        )
-                        .subcommand(
-                            Command::new("edit-ingredient")
-                                .about("edits an ingredient in a recipe")
-                                .arg(
-                                    Arg::with_name("ingredient")
-                                        .long("ingredient")
-                                        .required(true)
-                                        .takes_value(true)
-                                        .multiple_values(true)
-                                        .help("provides name of ingredient to be edited"),
-                                ),
-                        ),
-                ),
-        )
-        ////////////////////////////////////////////////////////////////////////////////
-        // Recipes
-        .subcommand(
-            Command::new("recipes")
-                .about("manages recipes library")
-                .subcommand(
-                    Command::new("show")
-                        .subcommand_required(false)
-                        .about("show recipes"),
-                )
-                .subcommand(
-                    Command::new("add-to-db")
-                        .subcommand_required(false)
-                        .about("adds recipe to db")
-                        .arg(
-                            Arg::with_name("name")
-                                .short('n')
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be added"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("add")
-                        .subcommand_required(false)
-                        .about("adds recipes to library")
-                        .arg(
-                            Arg::with_name("name")
-                                .short('n')
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be added"),
-                        )
-                        .arg(
-                            Arg::with_name("ingredients")
-                                .short('i')
-                                .long("ingredients")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be added"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("delete")
-                        .about("deletes recipe from library")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be deleted"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("delete-from-db")
-                        .about("deletes recipe from db")
-                        .arg(
-                            Arg::with_name("name")
-                                .long("name")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be deleted"),
-                        ),
-                )
-                .subcommand(
-                    Command::new("edit")
-                        .about("edits recipes in library")
-                        .arg(
-                            Arg::with_name("recipe")
-                                .long("recipe")
-                                .required(true)
-                                .takes_value(true)
-                                .multiple_values(true)
-                                .help("provides name of recipe to be edited"),
-                        )
-                        .subcommand(
-                            Command::new("delete")
-                                .about("delete an ingredient from a recipe")
-                                .arg(
-                                    Arg::with_name("ingredient")
-                                        .long("ingredient")
-                                        .required(true)
-                                        .takes_value(true)
-                                        .multiple_values(true)
-                                        .help("provides name of ingredient to be deleted"),
-                                ),
-                        )
-                        .subcommand(
-                            Command::new("add")
-                                .about("adds an ingredient to a recipe")
-                                .arg(
-                                    Arg::with_name("ingredient")
-                                        .long("ingredient")
-                                        .required(true)
-                                        .takes_value(true)
-                                        .multiple_values(true)
-                                        .help("provides name of ingredient to be added"),
-                                ),
-                        )
-                        .subcommand(
-                            Command::new("edit")
-                                .about("edits an ingredient in a recipe")
-                                .arg(
-                                    Arg::with_name("ingredient")
-                                        .long("ingredient")
-                                        .required(true)
-                                        .takes_value(true)
-                                        .multiple_values(true)
-                                        .help("provides name of ingredient to be edited"),
-                                ),
-                        ),
-                )
-                // --path groceries.json
-                .arg(
-                    Arg::with_name("path")
-                        .long("path")
-                        .takes_value(true)
-                        .default_value("groceries.json")
-                        .help("provides path for groceries library"),
-                )
-                .arg(
-                    Arg::with_name("recipe")
-                        .long("recipe")
-                        .takes_value(true)
-                        .help("provides name of recipe to view"),
-                ),
-        )
-        // Groceries
-        .subcommand(
-            Command::new("groceries")
-                .about("manages groceries library")
-                .subcommand(Command::new("add").about("Adds grocery items to library"))
-                .arg(
-                    Arg::with_name("path")
-                        .long("path")
-                        .takes_value(true)
-                        .default_value("groceries.json")
-                        .help("provides path for groceries library"),
-                ),
-        )
-        // List
-        .subcommand(
-            Command::new("list")
-                .about("makes shopping lists")
-                .arg(
-                    Arg::with_name("path")
-                        .long("path")
-                        .takes_value(true)
-                        .default_value("list.json")
-                        .help("provides path for shopping list"),
-                )
-                .arg(
-                    Arg::with_name("library path")
-                        .long("lib-path")
-                        .takes_value(true)
-                        .default_value("list.json")
-                        .help("provides path for groceries library"),
-                ),
-        )
-        // Show
-        .subcommand(
-            Command::new("query").about("query commands").subcommand(
-                Command::new("recipes")
+        .subcommand(add())
+        .subcommand(delete())
+        .subcommand(read())
+        .subcommand(update())
+        .subcommand(migrate_json_db())
+    ////////////////////////////////////////////////////////////////////////////////
+    // Recipes
+    /*
+    .subcommand(
+        Command::new("recipes")
+            .about("manages recipes library")
+            .subcommand(
+                Command::new("show")
                     .subcommand_required(false)
-                    .about("query recipes"),
-            ),
-        )
-        .subcommand(Command::new("show-list-sections").about("show shopping sections"))
-        .subcommand(Command::new("show-recipes").about("show recipes"))
-        .subcommand(
-            Command::new("migrate-json-groceries-to-db")
-                .about("transfer old version json file storage to SQLite db"),
-        )
-        .subcommand(Command::new("show-items-in-db").about("show items in SQLite db"))
+                    .about("show recipes"),
+            )
+            .subcommand(
+                Command::new("add-to-db")
+                    .subcommand_required(false)
+                    .about("adds recipe to db")
+                    .arg(item()),
+            )
+            .subcommand(
+                Command::new("add")
+                    .subcommand_required(false)
+                    .about("adds recipes to library")
+                    .arg(item())
+                    .arg(
+                        Arg::new("ingredients")
+                            .short('i')
+                            .long("ingredients")
+                            .required(true)
+                            .num_args(1)
+                            .value_hint(ValueHint::Unknown)
+                            .value_parser(NonEmptyStringValueParser::new()),
+                    ),
+            )
+            .subcommand(
+                Command::new("delete")
+                    .about("deletes recipe from library")
+                    .arg(item()),
+            )
+            .subcommand(
+                Command::new("delete-from-db")
+                    .about("deletes recipe from db")
+                    .arg(item()),
+            )
+            .subcommand(
+                Command::new("edit")
+                    .about("edits recipes in library")
+                    .arg(recipe())
+                    .subcommand(
+                        Command::new("delete")
+                            .about("delete an ingredient from a recipe")
+                            .arg(
+                                ingredient()
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("add")
+                            .about("adds an ingredient to a recipe")
+                            .arg(
+                                ingredient()
+                            ),
+                    )
+                    .subcommand(
+                        Command::new("edit")
+                            .about("edits an ingredient in a recipe")
+                            .arg(
+                                ingredient()
+                            ),
+                    ),
+            )
+            // --path groceries.json
+            .arg(path())
+            .arg(recipe()),
+    )
+    // Groceries
+    .subcommand(
+        Command::new("groceries")
+            .about("manages groceries library")
+            .subcommand(Command::new("add").about("Adds grocery items to library"))
+            .arg(path().default_value("groceries.json")),
+    )
+    // List
+    .subcommand(
+        Command::new("list")
+            .about("makes shopping lists")
+            .arg(path().default_value("list.json"))
+    )
+    // Show
+    .subcommand(
+        Command::new("query").about("query commands").subcommand(
+            Command::new("recipes")
+                .subcommand_required(false)
+                .about("query recipes"),
+        ),
+    )
+    .subcommand(Command::new("show-list-sections").about("show shopping sections"))
+    .subcommand(Command::new("show-recipes").about("show recipes"))
+    .subcommand(
+        Command::new("migrate-json-groceries-to-db")
+            .about("transfer old version json file storage to SQLite db"),
+    )
+    .subcommand(Command::new("show-items-in-db").about("show items in SQLite db"))
+    */
 }
