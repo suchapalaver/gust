@@ -12,10 +12,15 @@ repository = "https://github.com/suchapalaver/grusterylist"
 clap = "3.2.5"
 custom_error = "1.9.2"
 question = "0.2.2"
+reqwest = "0.11"
+scraper = "0.17.1"
 serde = { version = "*", features = ["derive"] }
 serde_derive = "*"
 serde_json = "*"
+thiserror = "1.0.48"
+tokio = { version = "1", features = ["full"] }
+url = "2.4.1"
 
 [dev-dependencies]
 assert_fs = "1.0"
-insta     = "1.14.1"
+insta = "1.14.1"
