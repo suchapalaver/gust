@@ -1,7 +1,7 @@
 use question::Answer;
 use question::Question;
 
-use crate::Groceries;
+use crate::groceries::Groceries;
 use crate::GroceriesItem;
 use crate::ReadError;
 

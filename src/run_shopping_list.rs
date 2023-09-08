@@ -1,4 +1,4 @@
-use crate::{Groceries, GroceriesItem, ReadError, ShoppingList};
+use crate::{groceries::Groceries, GroceriesItem, ReadError, ShoppingList};
 use std::path::Path;
 
 use question::{Answer, Question};
@@ -55,7 +55,7 @@ impl ShoppingList {
             .confirm()
             == Answer::YES
         {
-            let groceries = crate::Groceries::from_path("groceries.json")?;
+            let groceries = Groceries::from_path("groceries.json")?;
 
             for recipe in groceries.recipes.into_iter() {
                 let res = Question::new(&format!(
@@ -105,15 +105,20 @@ impl ShoppingList {
                 .map(|section| {
                     let mut a: Vec<GroceriesItem> = list_items
                         .iter()
-                        .filter(|groceriesitem| groceriesitem.section.0 == section)
+                        .filter(|groceriesitem| groceriesitem.section.is_some())
+                        .filter(|groceriesitem| {
+                            groceriesitem.section.as_ref().unwrap().0 == section
+                        })
                         .cloned()
                         .collect();
 
                     let b: Vec<GroceriesItem> = groceries
                         .collection
                         .iter()
+                        .filter(|groceriesitem| groceriesitem.section.is_some())
                         .filter(|groceriesitem| {
-                            groceriesitem.section.0 == section && !a.contains(groceriesitem)
+                            groceriesitem.section.as_ref().unwrap().0 == section
+                                && !a.contains(groceriesitem)
                         })
                         .cloned()
                         .collect();
@@ -126,8 +131,11 @@ impl ShoppingList {
             if !section.is_empty() {
                 for groceriesitem in &section {
                     if !self.groceries.contains(groceriesitem)
+                        && groceriesitem.recipes.is_some()
                         && groceriesitem
                             .recipes
+                            .as_ref()
+                            .unwrap()
                             .iter()
                             .any(|recipe| self.recipes.contains(recipe))
                     {

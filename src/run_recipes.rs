@@ -1,4 +1,4 @@
-use crate::{Groceries, ReadError};
+use crate::{groceries::Groceries, ReadError};
 use clap::ArgMatches;
 
 pub fn run(sync_matches: &ArgMatches) -> Result<(), ReadError> {
@@ -18,7 +18,7 @@ fn recipes_add(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
         .expect("name is required")
         .collect();
     let n = name_elems.join(" ");
-    eprintln!("Recipe: {}", n);
+    eprintln!("RecipeName: {}", n);
     let ingredient_vec: Vec<_> = s_matches
         .values_of("ingredients")
         .expect("ingredients required")
@@ -39,7 +39,7 @@ fn recipes_delete(s_matches: &ArgMatches, path: &str) -> Result<(), ReadError> {
         .expect("name is required")
         .collect();
     let n = name_elems.join(" ");
-    eprintln!("Recipe: {}", n);
+    eprintln!("RecipeName: {}", n);
     let mut g = Groceries::from_path(path)?;
     eprintln!("before deleting: {:?}", g.recipes);
     g.delete_recipe(&n)?;
@@ -52,7 +52,7 @@ fn recipes_print(sync_matches: &ArgMatches, path: &str) -> Result<(), ReadError>
     let groceries = Groceries::from_path(path)?;
     if let Ok(Some(name)) = sync_matches.try_get_one::<String>("recipe") {
         eprintln!();
-        eprintln!("Recipe: {name}");
+        eprintln!("RecipeName: {name}");
         eprintln!("Ingredients:");
         for ingredient in groceries.recipe_ingredients(name) {
             eprintln!("{}", ingredient);

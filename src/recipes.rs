@@ -1,23 +1,24 @@
+use std::{str::FromStr, ops::Deref, fmt};
+
 use crate::{GroceriesItemName, ReadError};
 use serde::{Deserialize, Serialize};
-use std::{fmt, ops::Deref, str::FromStr};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
-pub struct Recipe(pub String);
+pub struct RecipeName(pub String);
 
-impl fmt::Display for Recipe {
+impl fmt::Display for RecipeName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl Recipe {
+impl RecipeName {
     pub fn new(s: &str) -> Result<Self, ReadError> {
         Self::from_str(s)
     }
 }
 
-impl FromStr for Recipe {
+impl FromStr for RecipeName {
     type Err = ReadError;
 
     fn from_str(s: &str) -> Result<Self, ReadError> {

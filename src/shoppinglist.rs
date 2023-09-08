@@ -1,11 +1,11 @@
-use crate::{GroceriesItem, GroceriesItemName, ReadError, Recipe, helpers};
+use crate::{helpers, GroceriesItem, GroceriesItemName, ReadError, RecipeName};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
     pub checklist: Vec<GroceriesItem>,
-    pub recipes: Vec<Recipe>,
+    pub recipes: Vec<RecipeName>,
     pub groceries: Vec<GroceriesItem>,
 }
 
@@ -76,7 +76,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub fn add_recipe(&mut self, recipe: Recipe) {
+    pub fn add_recipe(&mut self, recipe: RecipeName) {
         self.recipes.push(recipe)
     }
 
@@ -84,7 +84,7 @@ impl ShoppingList {
         if let Ok(i) = self
             .recipes
             .iter()
-            .position(|x| x == &Recipe(name.to_string()))
+            .position(|x| x == &RecipeName(name.to_string()))
             .ok_or(ReadError::ItemNotFound)
         {
             self.recipes.remove(i);
@@ -126,9 +126,8 @@ pub mod test {
         let mut shopping_list = ShoppingList::from_path(file.path())?;
         let item = GroceriesItem {
             name: GroceriesItemName("kumquats".to_string()),
-            section: GroceriesItemSection("fresh".to_string()),
-            is_recipe_ingredient: false,
-            recipes: vec![],
+            section: Some(GroceriesItemSection("fresh".to_string())),
+            recipes: None,
         };
         shopping_list.add_groceries_item(item);
         insta::assert_json_snapshot!(shopping_list.groceries, @r###"
@@ -136,7 +135,6 @@ pub mod test {
           {
             "name": "garlic",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas",
@@ -152,7 +150,6 @@ pub mod test {
           {
             "name": "tomatoes",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -160,7 +157,6 @@ pub mod test {
           {
             "name": "basil",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -168,7 +164,6 @@ pub mod test {
           {
             "name": "lemons",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "chicken breasts with lemon",
               "hummus",
@@ -179,7 +174,6 @@ pub mod test {
           {
             "name": "pasta",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "swordfish pasta"
@@ -188,7 +182,6 @@ pub mod test {
           {
             "name": "olive oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "chicken breasts with lemon",
@@ -202,7 +195,6 @@ pub mod test {
           {
             "name": "short grain brown rice",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "flue flighter chicken stew"
@@ -211,7 +203,6 @@ pub mod test {
           {
             "name": "parmigiana",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "turkey meatballs"
@@ -220,7 +211,6 @@ pub mod test {
           {
             "name": "eggs",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies",
               "fried eggs for breakfast",
@@ -230,20 +220,17 @@ pub mod test {
           {
             "name": "sausages",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "dumplings",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "kumquats",
             "section": "fresh",
-            "is_recipe_ingredient": false,
-            "recipes": []
+            "recipes": null
           }
         ]
         "###);
@@ -253,7 +240,6 @@ pub mod test {
           {
             "name": "garlic",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas",
@@ -269,7 +255,6 @@ pub mod test {
           {
             "name": "tomatoes",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -277,7 +262,6 @@ pub mod test {
           {
             "name": "basil",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -285,7 +269,6 @@ pub mod test {
           {
             "name": "lemons",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "chicken breasts with lemon",
               "hummus",
@@ -296,7 +279,6 @@ pub mod test {
           {
             "name": "pasta",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "swordfish pasta"
@@ -305,7 +287,6 @@ pub mod test {
           {
             "name": "olive oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "chicken breasts with lemon",
@@ -319,7 +300,6 @@ pub mod test {
           {
             "name": "short grain brown rice",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "flue flighter chicken stew"
@@ -328,7 +308,6 @@ pub mod test {
           {
             "name": "parmigiana",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "turkey meatballs"
@@ -337,7 +316,6 @@ pub mod test {
           {
             "name": "eggs",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies",
               "fried eggs for breakfast",
@@ -347,13 +325,11 @@ pub mod test {
           {
             "name": "sausages",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "dumplings",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           }
         ]
@@ -367,9 +343,8 @@ pub mod test {
         let mut shopping_list = ShoppingList::from_path(file.path())?;
         let item = GroceriesItem {
             name: GroceriesItemName("kumquats".to_string()),
-            section: GroceriesItemSection("fresh".to_string()),
-            is_recipe_ingredient: false,
-            recipes: vec![],
+            section: Some(GroceriesItemSection("fresh".to_string())),
+            recipes: None,
         };
         shopping_list.add_checklist_item(item);
         insta::assert_json_snapshot!(shopping_list.checklist, @r###"
@@ -377,8 +352,7 @@ pub mod test {
           {
             "name": "kumquats",
             "section": "fresh",
-            "is_recipe_ingredient": false,
-            "recipes": []
+            "recipes": null
           }
         ]
         "###);
@@ -391,11 +365,11 @@ pub mod test {
     fn test_delete_recipe() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_json_file()?;
         let mut shopping_list = ShoppingList::from_path(file.path())?;
-        insta::assert_json_snapshot!(shopping_list.recipes, @r###"
+        insta::assert_json_snapshot!(shopping_list.recipes, @r#"
         [
           "tomato pasta"
         ]
-        "###);
+        "#);
         shopping_list.delete_recipe("tomato pasta")?;
         insta::assert_json_snapshot!(shopping_list.recipes, @"[]");
         Ok(())
@@ -416,7 +390,6 @@ pub mod test {
             {
               "name": "garlic",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -432,7 +405,6 @@ pub mod test {
             {
               "name": "tomatoes",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -440,7 +412,6 @@ pub mod test {
             {
               "name": "basil",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -448,7 +419,6 @@ pub mod test {
             {
               "name": "lemons",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "chicken breasts with lemon",
                 "hummus",
@@ -459,7 +429,6 @@ pub mod test {
             {
               "name": "pasta",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "swordfish pasta"
@@ -468,7 +437,6 @@ pub mod test {
             {
               "name": "olive oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "chicken breasts with lemon",
@@ -482,7 +450,6 @@ pub mod test {
             {
               "name": "short grain brown rice",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "flue flighter chicken stew"
@@ -491,7 +458,6 @@ pub mod test {
             {
               "name": "parmigiana",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "turkey meatballs"
@@ -500,7 +466,6 @@ pub mod test {
             {
               "name": "eggs",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies",
                 "fried eggs for breakfast",
@@ -510,13 +475,11 @@ pub mod test {
             {
               "name": "sausages",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "dumplings",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             }
           ]
@@ -539,7 +502,6 @@ pub mod test {
             {
               "name": "garlic",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -555,7 +517,6 @@ pub mod test {
             {
               "name": "tomatoes",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -563,7 +524,6 @@ pub mod test {
             {
               "name": "basil",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -571,7 +531,6 @@ pub mod test {
             {
               "name": "lemons",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "chicken breasts with lemon",
                 "hummus",
@@ -582,7 +541,6 @@ pub mod test {
             {
               "name": "pasta",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "swordfish pasta"
@@ -591,7 +549,6 @@ pub mod test {
             {
               "name": "olive oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "chicken breasts with lemon",
@@ -605,7 +562,6 @@ pub mod test {
             {
               "name": "short grain brown rice",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "flue flighter chicken stew"
@@ -614,7 +570,6 @@ pub mod test {
             {
               "name": "parmigiana",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "turkey meatballs"
@@ -623,7 +578,6 @@ pub mod test {
             {
               "name": "eggs",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies",
                 "fried eggs for breakfast",
@@ -633,13 +587,11 @@ pub mod test {
             {
               "name": "sausages",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "dumplings",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             }
           ]
@@ -648,11 +600,10 @@ pub mod test {
 
         let item = GroceriesItem {
             name: crate::GroceriesItemName("cumquats".to_string()),
-            section: crate::GroceriesItemSection("fresh".to_string()),
-            is_recipe_ingredient: true,
-            recipes: vec![Recipe("cumquat chutney".to_string())],
+            section: Some(crate::GroceriesItemSection("fresh".to_string())),
+            recipes: Some(vec![RecipeName("cumquat chutney".to_string())]),
         };
-        let recipe = Recipe("cumquat chutney".to_string());
+        let recipe = RecipeName("cumquat chutney".to_string());
         list.add_groceries_item(item);
         list.add_recipe(recipe);
         insta::assert_json_snapshot!(list, @r###"
@@ -666,7 +617,6 @@ pub mod test {
             {
               "name": "garlic",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -682,7 +632,6 @@ pub mod test {
             {
               "name": "tomatoes",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -690,7 +639,6 @@ pub mod test {
             {
               "name": "basil",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -698,7 +646,6 @@ pub mod test {
             {
               "name": "lemons",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "chicken breasts with lemon",
                 "hummus",
@@ -709,7 +656,6 @@ pub mod test {
             {
               "name": "pasta",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "swordfish pasta"
@@ -718,7 +664,6 @@ pub mod test {
             {
               "name": "olive oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "chicken breasts with lemon",
@@ -732,7 +677,6 @@ pub mod test {
             {
               "name": "short grain brown rice",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "flue flighter chicken stew"
@@ -741,7 +685,6 @@ pub mod test {
             {
               "name": "parmigiana",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "turkey meatballs"
@@ -750,7 +693,6 @@ pub mod test {
             {
               "name": "eggs",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies",
                 "fried eggs for breakfast",
@@ -760,19 +702,16 @@ pub mod test {
             {
               "name": "sausages",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "dumplings",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "cumquats",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "cumquat chutney"
               ]

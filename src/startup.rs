@@ -1,7 +1,7 @@
-use crate::{ReadError, run_recipes, run_groceries, run_shopping_list};
+use crate::{cli, run_groceries, run_recipes, run_shopping_list, ReadError};
 
 pub fn run() -> Result<(), ReadError> {
-    let matches = crate::cli::cli().get_matches();
+    let matches = cli().get_matches();
 
     match matches.subcommand() {
         Some(("recipes", sync_matches)) => Ok(run_recipes::run(sync_matches)?),
@@ -10,4 +10,3 @@ pub fn run() -> Result<(), ReadError> {
         _ => unreachable!(),
     }
 }
-     

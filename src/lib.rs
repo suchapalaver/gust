@@ -4,6 +4,7 @@
 //       https://doc.rust-lang.org/book/ch07-05-separating-modules-into-different-files.html
 mod cli;
 mod errors;
+pub mod fetch;
 mod groceries;
 mod groceriesitem;
 mod helpers;
@@ -18,12 +19,8 @@ pub mod startup;
 //       Read more at https://doc.rust-lang.org/reference/items/use-declarations.html#use-visibility
 pub use crate::cli::*;
 pub use crate::errors::*;
-pub use crate::groceries::*;
 pub use crate::groceriesitem::*;
 pub use crate::helpers::*;
 pub use crate::recipes::*;
-pub use crate::run_groceries::*;
-pub use crate::run_recipes::*;
-pub use crate::run_shopping_list::*;
 pub use crate::shoppinglist::*;
 pub use crate::startup::*;

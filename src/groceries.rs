@@ -1,5 +1,5 @@
 use crate::{read, ReadError};
-use crate::{GroceriesItem, GroceriesItemName, GroceriesItemSection, Ingredients, Recipe};
+use crate::{GroceriesItem, GroceriesItemName, GroceriesItemSection, Ingredients, RecipeName};
 use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
@@ -8,7 +8,7 @@ use std::{fs, path::Path};
 pub struct Groceries {
     pub sections: Vec<GroceriesItemSection>,
     pub collection: Vec<GroceriesItem>,
-    pub recipes: Vec<Recipe>,
+    pub recipes: Vec<RecipeName>,
 }
 
 impl Groceries {
@@ -51,13 +51,14 @@ impl Groceries {
             .flat_map(|sec| {
                 self.collection
                     .iter()
-                    .filter(|x| x.section.0.contains(&sec.0))
+                    .filter(|x| x.section.is_some())
+                    .filter(|x| x.section.as_ref().unwrap().0.contains(&sec.0))
             })
             .collect::<Vec<_>>()
             .into_iter()
     }
 
-    pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
+    pub fn recipes(&self) -> impl Iterator<Item = &RecipeName> {
         self.recipes.iter()
     }
 
@@ -100,18 +101,16 @@ impl Groceries {
     }
 
     pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
-        let recipe = Recipe(name.to_string());
+        let recipe = RecipeName(name.to_string());
 
         let ingredients = Ingredients::from_input_string(ingredients)?;
 
         self.collection
             .iter_mut()
             .filter(|x| ingredients.contains(&x.name))
-            .for_each(|mut x| {
-                if !x.is_recipe_ingredient {
-                    x.is_recipe_ingredient = true;
-                }
-                x.recipes.push(recipe.clone());
+            .for_each(|x| match x.recipes.as_mut() {
+                Some(recipes) => recipes.push(recipe.clone()),
+                None => x.recipes = Some(vec![recipe.clone()]),
             });
 
         self.recipes.push(recipe);
@@ -123,17 +122,19 @@ impl Groceries {
         if let Ok(i) = self
             .recipes
             .iter()
-            .position(|Recipe(x)| x.as_str() == name)
+            .position(|RecipeName(x)| x.as_str() == name)
             .ok_or(ReadError::ItemNotFound)
         {
             self.recipes.remove(i);
         }
         for item in self.collection.iter_mut() {
-            if let Some(i) = item.recipes.iter().position(|Recipe(x)| x.as_str() == name) {
-                item.recipes.remove(i);
-                if item.recipes.is_empty() {
-                    item.is_recipe_ingredient = false;
+            match item.recipes.as_mut() {
+                Some(recipes) => {
+                    if let Some(i) = recipes.iter().position(|RecipeName(x)| x.as_str() == name) {
+                        recipes.remove(i);
+                    }
                 }
+                None => (),
             }
         }
         Ok(())
@@ -142,7 +143,13 @@ impl Groceries {
     pub fn recipe_ingredients(&self, recipe: &str) -> impl Iterator<Item = &GroceriesItem> {
         self.collection
             .iter()
-            .filter(|item| item.recipes.contains(&Recipe(recipe.to_string())))
+            .filter(|item| item.recipes.is_some())
+            .filter(|item| {
+                item.recipes
+                    .as_ref()
+                    .unwrap()
+                    .contains(&RecipeName(recipe.to_string()))
+            })
             .collect::<Vec<_>>()
             .into_iter()
     }
@@ -168,13 +175,13 @@ pub mod test {
         let g = Groceries::default();
         g.save(path)?;
         let g = Groceries::from_path(path)?;
-        insta::assert_json_snapshot!(g, @r###"
+        insta::assert_json_snapshot!(g, @r#"
       {
         "sections": [],
         "collection": [],
         "recipes": []
       }
-      "###);
+      "#);
         std::fs::remove_file(path)?;
         Ok(())
     }
@@ -183,7 +190,7 @@ pub mod test {
     fn test_delete_recipe() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_json_file()?;
         let mut g = Groceries::from_path(file.path())?;
-        insta::assert_json_snapshot!(g.recipes, @r###"
+        insta::assert_json_snapshot!(g.recipes, @r#"
         [
           "oatmeal chocolate chip cookies",
           "tomato pasta",
@@ -200,9 +207,9 @@ pub mod test {
           "crispy tofu with cashews and blistered snap peas",
           "swordfish pasta"
         ]
-        "###);
+        "#);
         g.delete_recipe("oatmeal chocolate chip cookies")?;
-        insta::assert_json_snapshot!(g.recipes, @r###"
+        insta::assert_json_snapshot!(g.recipes, @r#"
         [
           "tomato pasta",
           "fried eggs for breakfast",
@@ -218,7 +225,7 @@ pub mod test {
           "crispy tofu with cashews and blistered snap peas",
           "swordfish pasta"
         ]
-        "###);
+        "#);
         Ok(())
     }
 
@@ -231,7 +238,6 @@ pub mod test {
           {
             "name": "eggs",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies",
               "fried eggs for breakfast",
@@ -241,13 +247,11 @@ pub mod test {
           {
             "name": "milk",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "lemons",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "chicken breasts with lemon",
               "hummus",
@@ -258,7 +262,6 @@ pub mod test {
           {
             "name": "ginger",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli"
             ]
@@ -266,7 +269,6 @@ pub mod test {
           {
             "name": "spinach",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast",
               "flue flighter chicken stew"
@@ -275,7 +277,6 @@ pub mod test {
           {
             "name": "garlic",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas",
@@ -291,7 +292,6 @@ pub mod test {
           {
             "name": "yellow onion",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew"
             ]
@@ -299,25 +299,21 @@ pub mod test {
           {
             "name": "fizzy water",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "kale",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "beer",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "parsley",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs",
               "flue flighter chicken stew",
@@ -328,31 +324,26 @@ pub mod test {
           {
             "name": "kefir",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "kimchi",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "sour cream",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "potatoes",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "broccoli",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli"
             ]
@@ -360,25 +351,21 @@ pub mod test {
           {
             "name": "asparagus",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "dill",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "red onion",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "unsalted butter",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "chicken breasts with lemon",
               "oatmeal chocolate chip cookies",
@@ -388,7 +375,6 @@ pub mod test {
           {
             "name": "scallions",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas"
@@ -397,43 +383,36 @@ pub mod test {
           {
             "name": "mozzarella",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "cucumbers",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "greek yogurt",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "cream cheese",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "sweet potato",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "sausages",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "tofu",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy tofu with cashews and blistered snap peas",
               "crispy sheet-pan noodles"
@@ -442,7 +421,6 @@ pub mod test {
           {
             "name": "short grain brown rice",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "flue flighter chicken stew"
@@ -451,7 +429,6 @@ pub mod test {
           {
             "name": "tahini",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "hummus"
             ]
@@ -459,19 +436,16 @@ pub mod test {
           {
             "name": "chicken stock",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "orzo",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "pasta",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "swordfish pasta"
@@ -480,7 +454,6 @@ pub mod test {
           {
             "name": "bread",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast",
               "peanut butter and jelly on toast",
@@ -490,19 +463,16 @@ pub mod test {
           {
             "name": "coffee",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "cumin",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "coconut milk (unsweetened)",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy tofu with cashews and blistered snap peas"
             ]
@@ -510,25 +480,21 @@ pub mod test {
           {
             "name": "tortilla chips",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "Ritz crackers",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "black beans",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "mustard",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey and cheese sandwiches"
             ]
@@ -536,19 +502,16 @@ pub mod test {
           {
             "name": "chips",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "popcorn",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "olive oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "chicken breasts with lemon",
@@ -562,7 +525,6 @@ pub mod test {
           {
             "name": "honey",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas"
@@ -571,7 +533,6 @@ pub mod test {
           {
             "name": "black pepper",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "sheet-pan chicken with jammy tomatoes"
@@ -580,25 +541,21 @@ pub mod test {
           {
             "name": "apple cider vinegar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "pickles",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "jasmine rice",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "rice vinegar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas"
@@ -607,13 +564,11 @@ pub mod test {
           {
             "name": "balsamic vinegar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "vegetable oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy tofu with cashews and blistered snap peas",
               "crispy sheet-pan noodles"
@@ -622,13 +577,11 @@ pub mod test {
           {
             "name": "baking soda",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "mayonnaise",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey and cheese sandwiches"
             ]
@@ -636,37 +589,31 @@ pub mod test {
           {
             "name": "cannellini beans",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "whole-wheat tortillas",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "dumplings",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "edamame",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "ice cream",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "old fashioned rolled oats",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -674,7 +621,6 @@ pub mod test {
           {
             "name": "chocolate chips",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -682,7 +628,6 @@ pub mod test {
           {
             "name": "baking powder",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -690,7 +635,6 @@ pub mod test {
           {
             "name": "baking soda",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -698,7 +642,6 @@ pub mod test {
           {
             "name": "salt",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "oatmeal chocolate chip cookies",
@@ -709,7 +652,6 @@ pub mod test {
           {
             "name": "white sugar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -717,7 +659,6 @@ pub mod test {
           {
             "name": "vanilla extract",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -725,7 +666,6 @@ pub mod test {
           {
             "name": "whole-wheat flour",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -733,7 +673,6 @@ pub mod test {
           {
             "name": "tomatoes",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -741,7 +680,6 @@ pub mod test {
           {
             "name": "basil",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -749,7 +687,6 @@ pub mod test {
           {
             "name": "parmigiana",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "turkey meatballs"
@@ -758,7 +695,6 @@ pub mod test {
           {
             "name": "1/2 & 1/2",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast"
             ]
@@ -766,7 +702,6 @@ pub mod test {
           {
             "name": "feta",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast"
             ]
@@ -774,7 +709,6 @@ pub mod test {
           {
             "name": "instant ramen noodles",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -782,7 +716,6 @@ pub mod test {
           {
             "name": "sesame oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy sheet-pan noodles"
@@ -791,7 +724,6 @@ pub mod test {
           {
             "name": "soy sauce",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas",
@@ -801,7 +733,6 @@ pub mod test {
           {
             "name": "baby bok choy",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -809,7 +740,6 @@ pub mod test {
           {
             "name": "cilantro",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -817,7 +747,6 @@ pub mod test {
           {
             "name": "hoisin",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -825,7 +754,6 @@ pub mod test {
           {
             "name": "maple syrup",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -833,7 +761,6 @@ pub mod test {
           {
             "name": "sesame seeds",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy sheet-pan noodles"
@@ -842,7 +769,6 @@ pub mod test {
           {
             "name": "ground turkey",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs"
             ]
@@ -850,7 +776,6 @@ pub mod test {
           {
             "name": "panko bread crumbs",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs"
             ]
@@ -858,7 +783,6 @@ pub mod test {
           {
             "name": "garlic powder",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs"
             ]
@@ -866,7 +790,6 @@ pub mod test {
           {
             "name": "skinless boneless chicken thighs",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew",
               "sheet-pan chicken with jammy tomatoes"
@@ -875,7 +798,6 @@ pub mod test {
           {
             "name": "carrots",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew"
             ]
@@ -883,7 +805,6 @@ pub mod test {
           {
             "name": "red pepper flakes",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew",
               "crispy tofu with cashews and blistered snap peas"
@@ -892,7 +813,6 @@ pub mod test {
           {
             "name": "chicken broth",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew",
               "chicken breasts with lemon"
@@ -901,37 +821,31 @@ pub mod test {
           {
             "name": "string beans",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "peaches",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "whipped cream",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "kiwi fruit",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "marscapone cheese",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "swordfish",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -939,7 +853,6 @@ pub mod test {
           {
             "name": "eggplant",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -947,7 +860,6 @@ pub mod test {
           {
             "name": "tomato puree",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -955,7 +867,6 @@ pub mod test {
           {
             "name": "pine nuts",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -963,13 +874,11 @@ pub mod test {
           {
             "name": "french bread",
             "section": "pantry",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "cayenne pepper",
             "section": "pantry",
-            "is_recipe_ingredient": false,
             "recipes": []
           }
         ]
@@ -980,13 +889,11 @@ pub mod test {
           {
             "name": "milk",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "lemons",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "chicken breasts with lemon",
               "hummus",
@@ -997,7 +904,6 @@ pub mod test {
           {
             "name": "ginger",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli"
             ]
@@ -1005,7 +911,6 @@ pub mod test {
           {
             "name": "spinach",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast",
               "flue flighter chicken stew"
@@ -1014,7 +919,6 @@ pub mod test {
           {
             "name": "garlic",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas",
@@ -1030,7 +934,6 @@ pub mod test {
           {
             "name": "yellow onion",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew"
             ]
@@ -1038,25 +941,21 @@ pub mod test {
           {
             "name": "fizzy water",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "kale",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "beer",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "parsley",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs",
               "flue flighter chicken stew",
@@ -1067,31 +966,26 @@ pub mod test {
           {
             "name": "kefir",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "kimchi",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "sour cream",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "potatoes",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "broccoli",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli"
             ]
@@ -1099,25 +993,21 @@ pub mod test {
           {
             "name": "asparagus",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "dill",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "red onion",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "unsalted butter",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "chicken breasts with lemon",
               "oatmeal chocolate chip cookies",
@@ -1127,7 +1017,6 @@ pub mod test {
           {
             "name": "scallions",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas"
@@ -1136,43 +1025,36 @@ pub mod test {
           {
             "name": "mozzarella",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "cucumbers",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "greek yogurt",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "cream cheese",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "sweet potato",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "sausages",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "tofu",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy tofu with cashews and blistered snap peas",
               "crispy sheet-pan noodles"
@@ -1181,7 +1063,6 @@ pub mod test {
           {
             "name": "short grain brown rice",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "flue flighter chicken stew"
@@ -1190,7 +1071,6 @@ pub mod test {
           {
             "name": "tahini",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "hummus"
             ]
@@ -1198,19 +1078,16 @@ pub mod test {
           {
             "name": "chicken stock",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "orzo",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "pasta",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "swordfish pasta"
@@ -1219,7 +1096,6 @@ pub mod test {
           {
             "name": "bread",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast",
               "peanut butter and jelly on toast",
@@ -1229,19 +1105,16 @@ pub mod test {
           {
             "name": "coffee",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "cumin",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "coconut milk (unsweetened)",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy tofu with cashews and blistered snap peas"
             ]
@@ -1249,25 +1122,21 @@ pub mod test {
           {
             "name": "tortilla chips",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "Ritz crackers",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "black beans",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "mustard",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey and cheese sandwiches"
             ]
@@ -1275,19 +1144,16 @@ pub mod test {
           {
             "name": "chips",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "popcorn",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "olive oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "chicken breasts with lemon",
@@ -1301,7 +1167,6 @@ pub mod test {
           {
             "name": "honey",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas"
@@ -1310,7 +1175,6 @@ pub mod test {
           {
             "name": "black pepper",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "sheet-pan chicken with jammy tomatoes"
@@ -1319,25 +1183,21 @@ pub mod test {
           {
             "name": "apple cider vinegar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "pickles",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "jasmine rice",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "rice vinegar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas"
@@ -1346,13 +1206,11 @@ pub mod test {
           {
             "name": "balsamic vinegar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "vegetable oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy tofu with cashews and blistered snap peas",
               "crispy sheet-pan noodles"
@@ -1361,13 +1219,11 @@ pub mod test {
           {
             "name": "baking soda",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "mayonnaise",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey and cheese sandwiches"
             ]
@@ -1375,37 +1231,31 @@ pub mod test {
           {
             "name": "cannellini beans",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "whole-wheat tortillas",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": []
           },
           {
             "name": "dumplings",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "edamame",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "ice cream",
             "section": "freezer",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "old fashioned rolled oats",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -1413,7 +1263,6 @@ pub mod test {
           {
             "name": "chocolate chips",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -1421,7 +1270,6 @@ pub mod test {
           {
             "name": "baking powder",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -1429,7 +1277,6 @@ pub mod test {
           {
             "name": "baking soda",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -1437,7 +1284,6 @@ pub mod test {
           {
             "name": "salt",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "oatmeal chocolate chip cookies",
@@ -1448,7 +1294,6 @@ pub mod test {
           {
             "name": "white sugar",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -1456,7 +1301,6 @@ pub mod test {
           {
             "name": "vanilla extract",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -1464,7 +1308,6 @@ pub mod test {
           {
             "name": "whole-wheat flour",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "oatmeal chocolate chip cookies"
             ]
@@ -1472,7 +1315,6 @@ pub mod test {
           {
             "name": "tomatoes",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -1480,7 +1322,6 @@ pub mod test {
           {
             "name": "basil",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta"
             ]
@@ -1488,7 +1329,6 @@ pub mod test {
           {
             "name": "parmigiana",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "tomato pasta",
               "turkey meatballs"
@@ -1497,7 +1337,6 @@ pub mod test {
           {
             "name": "1/2 & 1/2",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast"
             ]
@@ -1505,7 +1344,6 @@ pub mod test {
           {
             "name": "feta",
             "section": "dairy",
-            "is_recipe_ingredient": true,
             "recipes": [
               "fried eggs for breakfast"
             ]
@@ -1513,7 +1351,6 @@ pub mod test {
           {
             "name": "instant ramen noodles",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -1521,7 +1358,6 @@ pub mod test {
           {
             "name": "sesame oil",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy sheet-pan noodles"
@@ -1530,7 +1366,6 @@ pub mod test {
           {
             "name": "soy sauce",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy tofu with cashews and blistered snap peas",
@@ -1540,7 +1375,6 @@ pub mod test {
           {
             "name": "baby bok choy",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -1548,7 +1382,6 @@ pub mod test {
           {
             "name": "cilantro",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -1556,7 +1389,6 @@ pub mod test {
           {
             "name": "hoisin",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -1564,7 +1396,6 @@ pub mod test {
           {
             "name": "maple syrup",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "crispy sheet-pan noodles"
             ]
@@ -1572,7 +1403,6 @@ pub mod test {
           {
             "name": "sesame seeds",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "Sheet Pan Salmon with Broccoli",
               "crispy sheet-pan noodles"
@@ -1581,7 +1411,6 @@ pub mod test {
           {
             "name": "ground turkey",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs"
             ]
@@ -1589,7 +1418,6 @@ pub mod test {
           {
             "name": "panko bread crumbs",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs"
             ]
@@ -1597,7 +1425,6 @@ pub mod test {
           {
             "name": "garlic powder",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "turkey meatballs"
             ]
@@ -1605,7 +1432,6 @@ pub mod test {
           {
             "name": "skinless boneless chicken thighs",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew",
               "sheet-pan chicken with jammy tomatoes"
@@ -1614,7 +1440,6 @@ pub mod test {
           {
             "name": "carrots",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew"
             ]
@@ -1622,7 +1447,6 @@ pub mod test {
           {
             "name": "red pepper flakes",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew",
               "crispy tofu with cashews and blistered snap peas"
@@ -1631,7 +1455,6 @@ pub mod test {
           {
             "name": "chicken broth",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "flue flighter chicken stew",
               "chicken breasts with lemon"
@@ -1640,37 +1463,31 @@ pub mod test {
           {
             "name": "string beans",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "peaches",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "whipped cream",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "kiwi fruit",
             "section": "fresh",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "marscapone cheese",
             "section": "dairy",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "swordfish",
             "section": "protein",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -1678,7 +1495,6 @@ pub mod test {
           {
             "name": "eggplant",
             "section": "fresh",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -1686,7 +1502,6 @@ pub mod test {
           {
             "name": "tomato puree",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -1694,7 +1509,6 @@ pub mod test {
           {
             "name": "pine nuts",
             "section": "pantry",
-            "is_recipe_ingredient": true,
             "recipes": [
               "swordfish pasta"
             ]
@@ -1702,13 +1516,11 @@ pub mod test {
           {
             "name": "french bread",
             "section": "pantry",
-            "is_recipe_ingredient": false,
             "recipes": []
           },
           {
             "name": "cayenne pepper",
             "section": "pantry",
-            "is_recipe_ingredient": false,
             "recipes": []
           }
         ]
@@ -1734,7 +1546,6 @@ pub mod test {
             {
               "name": "eggs",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies",
                 "fried eggs for breakfast",
@@ -1744,13 +1555,11 @@ pub mod test {
             {
               "name": "milk",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "lemons",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "chicken breasts with lemon",
                 "hummus",
@@ -1761,7 +1570,6 @@ pub mod test {
             {
               "name": "ginger",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli"
               ]
@@ -1769,7 +1577,6 @@ pub mod test {
             {
               "name": "spinach",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast",
                 "flue flighter chicken stew"
@@ -1778,7 +1585,6 @@ pub mod test {
             {
               "name": "garlic",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -1794,7 +1600,6 @@ pub mod test {
             {
               "name": "yellow onion",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew"
               ]
@@ -1802,25 +1607,21 @@ pub mod test {
             {
               "name": "fizzy water",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "kale",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "beer",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "parsley",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs",
                 "flue flighter chicken stew",
@@ -1831,31 +1632,26 @@ pub mod test {
             {
               "name": "kefir",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "kimchi",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "sour cream",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "potatoes",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "broccoli",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli"
               ]
@@ -1863,25 +1659,21 @@ pub mod test {
             {
               "name": "asparagus",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "dill",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "red onion",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "unsalted butter",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "chicken breasts with lemon",
                 "oatmeal chocolate chip cookies",
@@ -1891,7 +1683,6 @@ pub mod test {
             {
               "name": "scallions",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas"
@@ -1900,43 +1691,36 @@ pub mod test {
             {
               "name": "mozzarella",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "cucumbers",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "greek yogurt",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "cream cheese",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "sweet potato",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "sausages",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "tofu",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy tofu with cashews and blistered snap peas",
                 "crispy sheet-pan noodles"
@@ -1945,7 +1729,6 @@ pub mod test {
             {
               "name": "short grain brown rice",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "flue flighter chicken stew"
@@ -1954,7 +1737,6 @@ pub mod test {
             {
               "name": "tahini",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "hummus"
               ]
@@ -1962,19 +1744,16 @@ pub mod test {
             {
               "name": "chicken stock",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "orzo",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "pasta",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "swordfish pasta"
@@ -1983,7 +1762,6 @@ pub mod test {
             {
               "name": "bread",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast",
                 "peanut butter and jelly on toast",
@@ -1993,19 +1771,16 @@ pub mod test {
             {
               "name": "coffee",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "cumin",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "coconut milk (unsweetened)",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy tofu with cashews and blistered snap peas"
               ]
@@ -2013,25 +1788,21 @@ pub mod test {
             {
               "name": "tortilla chips",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "Ritz crackers",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "black beans",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "mustard",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey and cheese sandwiches"
               ]
@@ -2039,19 +1810,16 @@ pub mod test {
             {
               "name": "chips",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "popcorn",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "olive oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "chicken breasts with lemon",
@@ -2065,7 +1833,6 @@ pub mod test {
             {
               "name": "honey",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas"
@@ -2074,7 +1841,6 @@ pub mod test {
             {
               "name": "black pepper",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "sheet-pan chicken with jammy tomatoes"
@@ -2083,25 +1849,21 @@ pub mod test {
             {
               "name": "apple cider vinegar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "pickles",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "jasmine rice",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "rice vinegar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas"
@@ -2110,13 +1872,11 @@ pub mod test {
             {
               "name": "balsamic vinegar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "vegetable oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy tofu with cashews and blistered snap peas",
                 "crispy sheet-pan noodles"
@@ -2125,13 +1885,11 @@ pub mod test {
             {
               "name": "baking soda",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "mayonnaise",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey and cheese sandwiches"
               ]
@@ -2139,37 +1897,31 @@ pub mod test {
             {
               "name": "cannellini beans",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "whole-wheat tortillas",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "dumplings",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "edamame",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "ice cream",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "old fashioned rolled oats",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2177,7 +1929,6 @@ pub mod test {
             {
               "name": "chocolate chips",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2185,7 +1936,6 @@ pub mod test {
             {
               "name": "baking powder",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2193,7 +1943,6 @@ pub mod test {
             {
               "name": "baking soda",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2201,7 +1950,6 @@ pub mod test {
             {
               "name": "salt",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "oatmeal chocolate chip cookies",
@@ -2212,7 +1960,6 @@ pub mod test {
             {
               "name": "white sugar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2220,7 +1967,6 @@ pub mod test {
             {
               "name": "vanilla extract",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2228,7 +1974,6 @@ pub mod test {
             {
               "name": "whole-wheat flour",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2236,7 +1981,6 @@ pub mod test {
             {
               "name": "tomatoes",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -2244,7 +1988,6 @@ pub mod test {
             {
               "name": "basil",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -2252,7 +1995,6 @@ pub mod test {
             {
               "name": "parmigiana",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "turkey meatballs"
@@ -2261,7 +2003,6 @@ pub mod test {
             {
               "name": "1/2 & 1/2",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast"
               ]
@@ -2269,7 +2010,6 @@ pub mod test {
             {
               "name": "feta",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast"
               ]
@@ -2277,7 +2017,6 @@ pub mod test {
             {
               "name": "instant ramen noodles",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -2285,7 +2024,6 @@ pub mod test {
             {
               "name": "sesame oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy sheet-pan noodles"
@@ -2294,7 +2032,6 @@ pub mod test {
             {
               "name": "soy sauce",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -2304,7 +2041,6 @@ pub mod test {
             {
               "name": "baby bok choy",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -2312,7 +2048,6 @@ pub mod test {
             {
               "name": "cilantro",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -2320,7 +2055,6 @@ pub mod test {
             {
               "name": "hoisin",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -2328,7 +2062,6 @@ pub mod test {
             {
               "name": "maple syrup",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -2336,7 +2069,6 @@ pub mod test {
             {
               "name": "sesame seeds",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy sheet-pan noodles"
@@ -2345,7 +2077,6 @@ pub mod test {
             {
               "name": "ground turkey",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs"
               ]
@@ -2353,7 +2084,6 @@ pub mod test {
             {
               "name": "panko bread crumbs",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs"
               ]
@@ -2361,7 +2091,6 @@ pub mod test {
             {
               "name": "garlic powder",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs"
               ]
@@ -2369,7 +2098,6 @@ pub mod test {
             {
               "name": "skinless boneless chicken thighs",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew",
                 "sheet-pan chicken with jammy tomatoes"
@@ -2378,7 +2106,6 @@ pub mod test {
             {
               "name": "carrots",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew"
               ]
@@ -2386,7 +2113,6 @@ pub mod test {
             {
               "name": "red pepper flakes",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew",
                 "crispy tofu with cashews and blistered snap peas"
@@ -2395,7 +2121,6 @@ pub mod test {
             {
               "name": "chicken broth",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew",
                 "chicken breasts with lemon"
@@ -2404,37 +2129,31 @@ pub mod test {
             {
               "name": "string beans",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "peaches",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "whipped cream",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "kiwi fruit",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "marscapone cheese",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "swordfish",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -2442,7 +2161,6 @@ pub mod test {
             {
               "name": "eggplant",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -2450,7 +2168,6 @@ pub mod test {
             {
               "name": "tomato puree",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -2458,7 +2175,6 @@ pub mod test {
             {
               "name": "pine nuts",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -2466,13 +2182,11 @@ pub mod test {
             {
               "name": "french bread",
               "section": "pantry",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "cayenne pepper",
               "section": "pantry",
-              "is_recipe_ingredient": false,
               "recipes": []
             }
           ],
@@ -2497,9 +2211,8 @@ pub mod test {
 
         let item = GroceriesItem {
             name: crate::GroceriesItemName("cumquats".to_string()),
-            section: crate::GroceriesItemSection("fresh".to_string()),
-            is_recipe_ingredient: true,
-            recipes: vec![Recipe("cumquat chutney".to_string())],
+            section: Some(crate::GroceriesItemSection("fresh".to_string())),
+            recipes: Some(vec![RecipeName("cumquat chutney".to_string())]),
         };
         let recipe = "cumquat chutney";
 
@@ -2521,7 +2234,6 @@ pub mod test {
             {
               "name": "eggs",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies",
                 "fried eggs for breakfast",
@@ -2531,13 +2243,11 @@ pub mod test {
             {
               "name": "milk",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "lemons",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "chicken breasts with lemon",
                 "hummus",
@@ -2548,7 +2258,6 @@ pub mod test {
             {
               "name": "ginger",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "cumquat chutney"
@@ -2557,7 +2266,6 @@ pub mod test {
             {
               "name": "spinach",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast",
                 "flue flighter chicken stew"
@@ -2566,7 +2274,6 @@ pub mod test {
             {
               "name": "garlic",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -2583,7 +2290,6 @@ pub mod test {
             {
               "name": "yellow onion",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew"
               ]
@@ -2591,25 +2297,21 @@ pub mod test {
             {
               "name": "fizzy water",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "kale",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "beer",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "parsley",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs",
                 "flue flighter chicken stew",
@@ -2620,31 +2322,26 @@ pub mod test {
             {
               "name": "kefir",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "kimchi",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "sour cream",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "potatoes",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "broccoli",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli"
               ]
@@ -2652,25 +2349,21 @@ pub mod test {
             {
               "name": "asparagus",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "dill",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "red onion",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "unsalted butter",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "chicken breasts with lemon",
                 "oatmeal chocolate chip cookies",
@@ -2680,7 +2373,6 @@ pub mod test {
             {
               "name": "scallions",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas"
@@ -2689,43 +2381,36 @@ pub mod test {
             {
               "name": "mozzarella",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "cucumbers",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "greek yogurt",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "cream cheese",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "sweet potato",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "sausages",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "tofu",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy tofu with cashews and blistered snap peas",
                 "crispy sheet-pan noodles"
@@ -2734,7 +2419,6 @@ pub mod test {
             {
               "name": "short grain brown rice",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "flue flighter chicken stew"
@@ -2743,7 +2427,6 @@ pub mod test {
             {
               "name": "tahini",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "hummus"
               ]
@@ -2751,19 +2434,16 @@ pub mod test {
             {
               "name": "chicken stock",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "orzo",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "pasta",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "swordfish pasta"
@@ -2772,7 +2452,6 @@ pub mod test {
             {
               "name": "bread",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast",
                 "peanut butter and jelly on toast",
@@ -2782,19 +2461,16 @@ pub mod test {
             {
               "name": "coffee",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "cumin",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "coconut milk (unsweetened)",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy tofu with cashews and blistered snap peas"
               ]
@@ -2802,25 +2478,21 @@ pub mod test {
             {
               "name": "tortilla chips",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "Ritz crackers",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "black beans",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "mustard",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey and cheese sandwiches"
               ]
@@ -2828,19 +2500,16 @@ pub mod test {
             {
               "name": "chips",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "popcorn",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "olive oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "chicken breasts with lemon",
@@ -2854,7 +2523,6 @@ pub mod test {
             {
               "name": "honey",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -2864,7 +2532,6 @@ pub mod test {
             {
               "name": "black pepper",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "sheet-pan chicken with jammy tomatoes"
@@ -2873,25 +2540,21 @@ pub mod test {
             {
               "name": "apple cider vinegar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "pickles",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "jasmine rice",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "rice vinegar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas"
@@ -2900,13 +2563,11 @@ pub mod test {
             {
               "name": "balsamic vinegar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "vegetable oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy tofu with cashews and blistered snap peas",
                 "crispy sheet-pan noodles"
@@ -2915,13 +2576,11 @@ pub mod test {
             {
               "name": "baking soda",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "mayonnaise",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey and cheese sandwiches"
               ]
@@ -2929,37 +2588,31 @@ pub mod test {
             {
               "name": "cannellini beans",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "whole-wheat tortillas",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": []
             },
             {
               "name": "dumplings",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "edamame",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "ice cream",
               "section": "freezer",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "old fashioned rolled oats",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2967,7 +2620,6 @@ pub mod test {
             {
               "name": "chocolate chips",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2975,7 +2627,6 @@ pub mod test {
             {
               "name": "baking powder",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2983,7 +2634,6 @@ pub mod test {
             {
               "name": "baking soda",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -2991,7 +2641,6 @@ pub mod test {
             {
               "name": "salt",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "oatmeal chocolate chip cookies",
@@ -3002,7 +2651,6 @@ pub mod test {
             {
               "name": "white sugar",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -3010,7 +2658,6 @@ pub mod test {
             {
               "name": "vanilla extract",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -3018,7 +2665,6 @@ pub mod test {
             {
               "name": "whole-wheat flour",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "oatmeal chocolate chip cookies"
               ]
@@ -3026,7 +2672,6 @@ pub mod test {
             {
               "name": "tomatoes",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -3034,7 +2679,6 @@ pub mod test {
             {
               "name": "basil",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta"
               ]
@@ -3042,7 +2686,6 @@ pub mod test {
             {
               "name": "parmigiana",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "tomato pasta",
                 "turkey meatballs"
@@ -3051,7 +2694,6 @@ pub mod test {
             {
               "name": "1/2 & 1/2",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast"
               ]
@@ -3059,7 +2701,6 @@ pub mod test {
             {
               "name": "feta",
               "section": "dairy",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "fried eggs for breakfast"
               ]
@@ -3067,7 +2708,6 @@ pub mod test {
             {
               "name": "instant ramen noodles",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -3075,7 +2715,6 @@ pub mod test {
             {
               "name": "sesame oil",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy sheet-pan noodles"
@@ -3084,7 +2723,6 @@ pub mod test {
             {
               "name": "soy sauce",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy tofu with cashews and blistered snap peas",
@@ -3094,7 +2732,6 @@ pub mod test {
             {
               "name": "baby bok choy",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -3102,7 +2739,6 @@ pub mod test {
             {
               "name": "cilantro",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -3110,7 +2746,6 @@ pub mod test {
             {
               "name": "hoisin",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -3118,7 +2753,6 @@ pub mod test {
             {
               "name": "maple syrup",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "crispy sheet-pan noodles"
               ]
@@ -3126,7 +2760,6 @@ pub mod test {
             {
               "name": "sesame seeds",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "Sheet Pan Salmon with Broccoli",
                 "crispy sheet-pan noodles"
@@ -3135,7 +2768,6 @@ pub mod test {
             {
               "name": "ground turkey",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs"
               ]
@@ -3143,7 +2775,6 @@ pub mod test {
             {
               "name": "panko bread crumbs",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs"
               ]
@@ -3151,7 +2782,6 @@ pub mod test {
             {
               "name": "garlic powder",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "turkey meatballs"
               ]
@@ -3159,7 +2789,6 @@ pub mod test {
             {
               "name": "skinless boneless chicken thighs",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew",
                 "sheet-pan chicken with jammy tomatoes"
@@ -3168,7 +2797,6 @@ pub mod test {
             {
               "name": "carrots",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew",
                 "cumquat chutney"
@@ -3177,7 +2805,6 @@ pub mod test {
             {
               "name": "red pepper flakes",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew",
                 "crispy tofu with cashews and blistered snap peas"
@@ -3186,7 +2813,6 @@ pub mod test {
             {
               "name": "chicken broth",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "flue flighter chicken stew",
                 "chicken breasts with lemon"
@@ -3195,37 +2821,31 @@ pub mod test {
             {
               "name": "string beans",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "peaches",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "whipped cream",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "kiwi fruit",
               "section": "fresh",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "marscapone cheese",
               "section": "dairy",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "swordfish",
               "section": "protein",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -3233,7 +2853,6 @@ pub mod test {
             {
               "name": "eggplant",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -3241,7 +2860,6 @@ pub mod test {
             {
               "name": "tomato puree",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -3249,7 +2867,6 @@ pub mod test {
             {
               "name": "pine nuts",
               "section": "pantry",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "swordfish pasta"
               ]
@@ -3257,19 +2874,16 @@ pub mod test {
             {
               "name": "french bread",
               "section": "pantry",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "cayenne pepper",
               "section": "pantry",
-              "is_recipe_ingredient": false,
               "recipes": []
             },
             {
               "name": "cumquats",
               "section": "fresh",
-              "is_recipe_ingredient": true,
               "recipes": [
                 "cumquat chutney"
               ]

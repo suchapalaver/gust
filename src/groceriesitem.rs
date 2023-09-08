@@ -1,22 +1,20 @@
-use crate::Recipe;
+use crate::RecipeName;
 use serde::{Deserialize, Serialize};
-use std::{ops::Deref, fmt};
+use std::fmt;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct GroceriesItem {
-    pub name: GroceriesItemName,       // e.g. "apples"
-    pub section: GroceriesItemSection, // e.g. "fresh"
-    pub is_recipe_ingredient: bool,    // i.e. true
-    pub recipes: Vec<Recipe>,          // list of recipes: "apple pie", "cheese plate", ...
-                                       //pub on_list: bool,
-                                       //pub on_checklist: bool,
+    pub name: GroceriesItemName,                // e.g. "apples"
+    pub section: Option<GroceriesItemSection>,  // e.g. "fresh"
+    pub recipes: Option<Vec<RecipeName>>,       // list of recipes: "apple pie", "cheese plate", ...
+                                                // pub on_list: bool,
+                                                // pub on_checklist: bool,
 }
 
 impl GroceriesItem {
     pub fn new(name: &str, section: &str) -> Self {
         Self {
             name: GroceriesItemName(name.to_string()),
-            section: GroceriesItemSection(section.to_string()),
             ..Default::default()
         }
     }
@@ -29,14 +27,6 @@ impl GroceriesItem {
 impl fmt::Display for GroceriesItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)
-    }
-}
-
-impl Deref for GroceriesItem {
-    type Target = Vec<Recipe>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.recipes
     }
 }
 
