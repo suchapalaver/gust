@@ -1,30 +1,8 @@
-use question::Answer;
-use question::Question;
+use question::{Answer, Question};
 
-use crate::groceries::Groceries;
-use crate::GroceriesItem;
-use crate::ReadError;
-
-pub fn run() -> Result<(), ReadError> {
-    Groceries::prompt_view_groceries()?;
-    Groceries::prompt_add_groceries()?;
-    Groceries::prompt_save()?;
-    Ok(())
-}
+use crate::{groceries::Groceries, Item as GroceriesItem, ReadError, ReadWrite};
 
 impl Groceries {
-    fn prompt_view_groceries() -> Result<(), ReadError> {
-        while Question::new("View the groceries in our library?")
-            .default(question::Answer::NO)
-            .show_defaults()
-            .confirm()
-            == Answer::YES
-        {
-            Self::view_groceries()?
-        }
-        Ok(())
-    }
-
     fn view_groceries() -> Result<(), ReadError> {
         let path = "groceries.json";
 

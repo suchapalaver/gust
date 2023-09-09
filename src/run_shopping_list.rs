@@ -1,40 +1,14 @@
-use crate::{groceries::Groceries, GroceriesItem, ReadError, ShoppingList};
-use std::path::Path;
+use crate::{
+    groceries::Groceries, models::Section, persistence::establish_connection, Item, ReadError,
+    ReadWrite,
+    ShoppingList,
+};
 
 use question::{Answer, Question};
 
-pub fn run() -> Result<(), ReadError> {
-    if Groceries::from_path("groceries.json").is_err() {
-        return Err(ReadError::LibraryNotFound);
-    } else {
-        let mut shopping_list = ShoppingList::new();
-
-        if Path::new("list.json").exists() {
-            let res = Question::new("Use most recently saved list?")
-                .default(question::Answer::NO)
-                .show_defaults()
-                .confirm();
-
-            if res == Answer::YES {
-                let path = "list.json";
-                shopping_list = ShoppingList::from_path(path)?;
-            }
-
-            // view list if using saved list
-            shopping_list.prompt_view_list()?;
-        }
-        shopping_list.prompt_add_recipes()?;
-
-        shopping_list.prompt_add_groceries()?;
-
-        shopping_list.prompt_save_list()?;
-    }
-    Ok(())
-}
-
 impl ShoppingList {
     pub(crate) fn prompt_view_list(&self) -> Result<(), ReadError> {
-        if !self.groceries.is_empty() {
+        if !self.items.is_empty() {
             let res = Question::new("Print shopping list?")
                 .default(question::Answer::NO)
                 .show_defaults()
@@ -95,15 +69,15 @@ impl ShoppingList {
 
     pub(crate) fn add_groceries(&mut self) -> Result<(), ReadError> {
         // move everything off list to temp list
-        let list_items: Vec<GroceriesItem> = self.groceries.drain(..).collect();
-        assert!(self.groceries.is_empty());
+        let list_items: Vec<Item> = self.items.drain(..).collect();
+        assert!(self.items.is_empty());
         let sections = vec!["fresh", "pantry", "dairy", "protein", "freezer"];
         let groceries = Groceries::from_path("groceries.json")?;
-        let groceries_by_section: Vec<Vec<GroceriesItem>> = {
+        let groceries_by_section: Vec<Vec<Item>> = {
             sections
                 .into_iter()
                 .map(|section| {
-                    let mut a: Vec<GroceriesItem> = list_items
+                    let mut a: Vec<Item> = list_items
                         .iter()
                         .filter(|groceriesitem| groceriesitem.section.is_some())
                         .filter(|groceriesitem| {
@@ -112,7 +86,7 @@ impl ShoppingList {
                         .cloned()
                         .collect();
 
-                    let b: Vec<GroceriesItem> = groceries
+                    let b: Vec<Item> = groceries
                         .collection
                         .iter()
                         .filter(|groceriesitem| groceriesitem.section.is_some())
@@ -130,7 +104,7 @@ impl ShoppingList {
         for section in groceries_by_section {
             if !section.is_empty() {
                 for groceriesitem in &section {
-                    if !self.groceries.contains(groceriesitem)
+                    if !self.items.contains(groceriesitem)
                         && groceriesitem.recipes.is_some()
                         && groceriesitem
                             .recipes
@@ -143,7 +117,7 @@ impl ShoppingList {
                     }
                 }
                 for groceriesitem in section {
-                    if !self.groceries.contains(&groceriesitem) {
+                    if !self.items.contains(&groceriesitem) {
                         let res = Question::new(&format!(
                             "Do we need {}? (*y*, *n* for next item, *s* to skip to next section)",
                             groceriesitem.name.0.to_lowercase()
@@ -155,7 +129,7 @@ impl ShoppingList {
 
                         match res {
                             Some(Answer::RESPONSE(res)) if &res == "y" => {
-                                if !self.groceries.contains(&groceriesitem) {
+                                if !self.items.contains(&groceriesitem) {
                                     self.add_groceries_item(groceriesitem.clone());
                                 }
                             }
@@ -171,14 +145,14 @@ impl ShoppingList {
 
     pub(crate) fn prompt_save_list(&mut self) -> Result<(), ReadError> {
         // don't save list if empty
-        if !self.checklist.is_empty() && !self.groceries.is_empty() && !self.recipes.is_empty() {
+        if !self.checklist.is_empty() && !self.items.is_empty() && !self.recipes.is_empty() {
             let res = Question::new("Save current list?")
                 .default(question::Answer::NO)
                 .show_defaults()
                 .confirm();
 
             if res == Answer::YES {
-                self.save()?;
+                self.save("list.json")?;
             }
 
             self.print();

@@ -1,7 +1,40 @@
-custom_error::custom_error! {pub ReadError
-    DeserializingError{ source: serde_json::Error } = "Invalid JSON file {source}",
-    ParseInputError = "Invalid input",
-    ReadWriteError{ source: std::io::Error } = "Error reading/writing file {source}",
-    ItemNotFound = "Item not found",
-    LibraryNotFound = "No groceries library found.\nRun grusterylist groceries to create a groceries library",
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum GrusterylistError {
+    #[error("Cli error: {0}")]
+    CliError(#[from] CliError),
+
+    #[error("Read error: {0}")]
+    ReadError(#[from] ReadError),
+}
+
+#[derive(Error, Debug)]
+pub enum CliError {
+    #[error("Invalid input: {0}")]
+    ParseInputError(String),
+
+    #[error("Read error: {0}")]
+    ReadError(#[from] ReadError),
+}
+
+#[derive(Error, Debug)]
+pub enum ReadError {
+    #[error("Invalid JSON file: {0}")]
+    DeserializingError(#[from] serde_json::Error),
+
+    #[error("Error reading/writing file: {0}")]
+    ReadWriteError(#[from] std::io::Error),
+
+    #[error("Item not found")]
+    ItemNotFound,
+
+    #[error("No groceries library found")]
+    LibraryNotFound,
+}
+
+#[derive(Error, Debug)]
+pub enum StoreError {
+    #[error("DB query failed: {0}")]
+    DBQuery(#[from] diesel::result::Error),
 }

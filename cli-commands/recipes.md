@@ -1,4 +1,6 @@
-```
+# Grusterylist-Recipes Ideas
+
+```bash
 grusterylist-recipes 
 Manages recipes library
 
@@ -14,8 +16,8 @@ SUBCOMMANDS:
     delete    Deletes recipe from library
     help      Print this message or the help of the given subcommand(s)
 ```
----
-```
+
+```bash
 grusterylist-recipes-add 
 Adds recipes to library
 
@@ -27,8 +29,8 @@ OPTIONS:
     -i, --ingredients <ingredients>...    Provides name of recipe to be added
     -n, --name <name>...                  Provides name of recipe to be added
 ```
----
-```
+
+```bash
 grusterylist-recipes-delete 
 Deletes recipe from library
 
@@ -39,8 +41,11 @@ OPTIONS:
     -h, --help              Print help information
         --name <name>...    Provides name of recipe to be deleted
 ```
----
+
 ## WISHES
-`$ cargo run -- recipes edit --name <name> --add <ingredient>`
-`$ cargo run -- recipes edit --name <name> --edit <ingredient>`
-`$ cargo run -- recipes edit --name <name> --delete <ingredient>`
+
+```bash
+cargo run -- recipes edit --name <name> --add <ingredient>
+cargo run -- recipes edit --name <name> --edit <ingredient>
+cargo run -- recipes edit --name <name> --delete <ingredient>
+```
