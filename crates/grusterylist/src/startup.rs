@@ -1,14 +1,17 @@
 use std::str::FromStr;
 
 use clap::ArgMatches;
+use common::{
+    commands::{Add, ApiCommand, Delete, Read, Update},
+    errors::CliError,
+    groceriesitem::{ItemName, Section},
+    recipes::{Ingredients, RecipeName},
+};
 
 use crate::{
     cli,
-    commands::{Add, ApiCommand, Delete, Read, Update},
-    groceriesitem::ItemName,
     migrate_json_db::migrate_groceries,
-    persistence::{establish_connection, Store},
-    CliError, Ingredients, RecipeName, Section,
+    persistence::{establish_connection, execute, Store},
 };
 
 pub fn run() -> Result<(), CliError> {
@@ -31,7 +34,7 @@ pub fn run() -> Result<(), CliError> {
         _ => unreachable!(),
     };
 
-    cmd.execute(&mut store);
+    execute(&cmd, &mut store);
 
     Ok(())
 }

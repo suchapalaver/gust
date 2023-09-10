@@ -1,4 +1,9 @@
-use crate::{Item, ItemName, ReadError, ReadWrite, RecipeName};
+use crate::{
+    errors::ReadError,
+    groceriesitem::{Item, ItemName},
+    helpers::ReadWrite,
+    recipes::RecipeName,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
@@ -94,9 +99,10 @@ impl ShoppingList {
 
 #[cfg(test)]
 pub mod test {
+    use crate::groceriesitem::Section;
+
     use super::*;
 
-    use crate::Section;
     use assert_fs::prelude::*;
 
     // test suite helper function

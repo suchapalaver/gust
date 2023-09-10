@@ -1,6 +1,7 @@
-use crate::RecipeName;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+
+use crate::recipes::RecipeName;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Item {
