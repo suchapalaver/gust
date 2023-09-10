@@ -24,16 +24,16 @@ pub fn establish_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-pub(crate) struct Store {
-    pub(crate) connection: SqliteConnection,
+pub struct Store {
+    pub connection: SqliteConnection,
 }
 
 impl Store {
-    pub(crate) fn new(connection: SqliteConnection) -> Self {
+    pub fn new(connection: SqliteConnection) -> Self {
         Self { connection }
     }
 
-    pub(crate) fn add_checklist_item(&mut self, item: &ItemName) {
+    pub fn add_checklist_item(&mut self, item: &ItemName) {
         let item_name = item.to_string();
         let item_id = self.get_or_insert_item(&item_name);
         let item_query = diesel::insert_into(crate::schema::checklist::table)
@@ -44,12 +44,12 @@ impl Store {
             .expect("Error adding item to checklist");
     }
 
-    pub(crate) fn add_item(&mut self, item: &ItemName) {
+    pub fn add_item(&mut self, item: &ItemName) {
         let item_name = item.to_string();
         let _ = self.get_or_insert_item(&item_name);
     }
 
-    pub(crate) fn add_list_item(&mut self, item: &ItemName) {
+    pub fn add_list_item(&mut self, item: &ItemName) {
         let item_name = item.to_string();
         let item_id = self.get_or_insert_item(&item_name);
         let item_query = diesel::insert_into(crate::schema::list::table)
@@ -60,7 +60,7 @@ impl Store {
             .expect("Error adding item to list");
     }
 
-    pub(crate) fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &Ingredients) {
+    pub fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &Ingredients) {
         let recipe_name = recipe.to_string().to_lowercase();
         let recipe_id = self.get_or_insert_recipe(&recipe_name);
         let item_ids: Vec<i32> = ingredients
@@ -76,7 +76,7 @@ impl Store {
         }
     }
 
-    pub(crate) fn delete_checklist_item(&mut self, item: &ItemName) {
+    pub fn delete_checklist_item(&mut self, item: &ItemName) {
         let name = item.to_string();
         diesel::delete(
             crate::schema::checklist::table.filter(
@@ -91,7 +91,7 @@ impl Store {
         .unwrap();
     }
 
-    pub(crate) fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError> {
+    pub fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError> {
         let name = recipe.to_string();
         diesel::delete(
             crate::schema::items_recipes::table.filter(
@@ -112,7 +112,7 @@ impl Store {
         Ok(())
     }
 
-    pub(crate) fn checklist(&mut self) -> Vec<Item> {
+    pub fn checklist(&mut self) -> Vec<Item> {
         crate::schema::items::table
             .filter(crate::schema::items::dsl::id.eq_any(
                 crate::schema::checklist::table.select(crate::schema::checklist::dsl::item_id),
@@ -167,7 +167,7 @@ impl Store {
             .expect("Error inserting new item-recipe");
     }
 
-    pub(crate) fn list(&mut self) -> Vec<Item> {
+    pub fn list(&mut self) -> Vec<Item> {
         crate::schema::items::table
             .filter(
                 crate::schema::items::dsl::id
@@ -177,24 +177,21 @@ impl Store {
             .expect("Error loading list")
     }
 
-    pub(crate) fn load_item(&mut self, item_id: i32) -> Vec<Item> {
+    pub fn load_item(&mut self, item_id: i32) -> Vec<Item> {
         crate::schema::items::table
             .filter(crate::schema::items::dsl::id.eq(&item_id))
             .load::<Item>(&mut self.connection)
             .expect("Error loading item")
     }
 
-    pub(crate) fn load_recipe(&mut self, recipe_name: &str) -> Vec<crate::models::Recipe> {
+    pub fn load_recipe(&mut self, recipe_name: &str) -> Vec<crate::models::Recipe> {
         crate::schema::recipes::table
             .filter(crate::schema::recipes::dsl::name.eq(recipe_name))
             .load::<crate::models::Recipe>(&mut self.connection)
             .expect("Error loading recipe")
     }
 
-    pub(crate) fn recipe_ingredients(
-        &mut self,
-        recipe: &RecipeName,
-    ) -> Vec<(RecipeName, Ingredients)> {
+    pub fn recipe_ingredients(&mut self, recipe: &RecipeName) -> Vec<(RecipeName, Ingredients)> {
         let results = self.load_recipe(&recipe.0.to_string());
 
         let mut v = Vec::<(RecipeName, Ingredients)>::with_capacity(results.len());
@@ -221,7 +218,7 @@ impl Store {
         v
     }
 
-    pub(crate) fn show_items(&mut self) {
+    pub fn show_items(&mut self) {
         use crate::schema::items::dsl::*;
 
         let results = items
@@ -231,7 +228,7 @@ impl Store {
         display(results, "items");
     }
 
-    pub(crate) fn show_sections(&mut self) {
+    pub fn show_sections(&mut self) {
         use crate::schema::sections::dsl::*;
 
         let results = sections
@@ -241,7 +238,7 @@ impl Store {
         display_sections(results, "sections");
     }
 
-    pub(crate) fn show_recipes(&mut self) {
+    pub fn show_recipes(&mut self) {
         use crate::schema::recipes::dsl::*;
 
         let results = recipes
@@ -252,7 +249,7 @@ impl Store {
     }
 }
 
-pub(crate) fn execute(command: &ApiCommand, store: &mut Store) {
+pub fn execute(command: &ApiCommand, store: &mut Store) {
     match command {
         ApiCommand::Add(Add::ChecklistItem(name)) => store.add_checklist_item(name),
         ApiCommand::Add(Add::Recipe {

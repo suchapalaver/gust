@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use api::persistence::{establish_connection, execute, Store};
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
@@ -8,11 +9,7 @@ use common::{
     recipes::{Ingredients, RecipeName},
 };
 
-use crate::{
-    cli,
-    migrate_json_db::migrate_groceries,
-    persistence::{establish_connection, execute, Store},
-};
+use crate::{cli, migrate_json_db::migrate_groceries};
 
 pub fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();

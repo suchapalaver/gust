@@ -5,11 +5,11 @@ use common::{
     helpers::ReadWrite,
 };
 
-use crate::{models::*, persistence::establish_connection};
+use api::{models::*, persistence::establish_connection};
 use diesel::prelude::*;
 
 fn add_recipe_to_db(matches: &ArgMatches) {
-    use crate::schema::recipes;
+    use api::schema::recipes;
 
     let connection = &mut establish_connection();
 
@@ -31,7 +31,7 @@ fn add_recipe_to_db(matches: &ArgMatches) {
 }
 
 fn delete_recipe_from_db(matches: &ArgMatches) {
-    use crate::schema::recipes::dsl::*;
+    use api::schema::recipes::dsl::*;
 
     let connection = &mut establish_connection();
 

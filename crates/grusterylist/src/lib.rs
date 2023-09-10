@@ -4,12 +4,8 @@
 //       https://doc.rust-lang.org/book/ch07-05-separating-modules-into-different-files.html
 mod cli;
 mod migrate_json_db;
-mod models;
-mod persistence;
 mod run_groceries;
 mod run_recipes;
-mod schema;
-mod show;
 pub mod startup;
 
 // Note: Re-exports the content of the square_content module to keep paths short.
