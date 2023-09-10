@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["crates/grusterylist"]
+members = ["crates/common", "crates/grusterylist"]
 
 [workspace.dependencies]
 assert_fs = "1.0"

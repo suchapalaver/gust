@@ -1,6 +1,7 @@
 use colored::Colorize;
+use common::helpers::ItemInfo;
 
-use crate::{models::Section, ItemInfo};
+use crate::models::Section;
 pub(crate) fn display<T: ItemInfo>(items: Vec<T>, to_display: &str) {
     println!("{}{}", to_display.blue().bold(), ":".blue().bold());
     for item in items {

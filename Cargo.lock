@@ -228,6 +228,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "assert_fs",
+ "diesel",
+ "diesel_migrations",
+ "insta",
+ "question",
+ "reqwest",
+ "scraper",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "console"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -576,6 +595,7 @@ dependencies = [
  "assert_fs",
  "clap",
  "colored",
+ "common",
  "diesel",
  "diesel_migrations",
  "dotenv",

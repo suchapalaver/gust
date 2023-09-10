@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use crate::ReadError;
+use crate::errors::ReadError;
 
 pub trait ItemInfo {
     fn name(&self) -> &str;

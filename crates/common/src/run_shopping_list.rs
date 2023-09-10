@@ -1,13 +1,11 @@
 use crate::{
-    groceries::Groceries, models::Section, persistence::establish_connection, Item, ReadError,
-    ReadWrite,
-    ShoppingList,
+    errors::ReadError, groceries::Groceries, groceriesitem::Item, helpers::ReadWrite,
+    shoppinglist::ShoppingList,
 };
-
 use question::{Answer, Question};
 
 impl ShoppingList {
-    pub(crate) fn prompt_view_list(&self) -> Result<(), ReadError> {
+    pub fn prompt_view_list(&self) -> Result<(), ReadError> {
         if !self.items.is_empty() {
             let res = Question::new("Print shopping list?")
                 .default(question::Answer::NO)
@@ -22,7 +20,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub(crate) fn prompt_add_recipes(&mut self) -> Result<(), ReadError> {
+    pub fn prompt_add_recipes(&mut self) -> Result<(), ReadError> {
         while Question::new("Add more recipe ingredients to our list?")
             .default(question::Answer::NO)
             .show_defaults()
@@ -67,7 +65,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub(crate) fn add_groceries(&mut self) -> Result<(), ReadError> {
+    pub fn add_groceries(&mut self) -> Result<(), ReadError> {
         // move everything off list to temp list
         let list_items: Vec<Item> = self.items.drain(..).collect();
         assert!(self.items.is_empty());
@@ -143,7 +141,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub(crate) fn prompt_save_list(&mut self) -> Result<(), ReadError> {
+    pub fn prompt_save_list(&mut self) -> Result<(), ReadError> {
         // don't save list if empty
         if !self.checklist.is_empty() && !self.items.is_empty() && !self.recipes.is_empty() {
             let res = Question::new("Save current list?")

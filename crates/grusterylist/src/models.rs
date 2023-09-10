@@ -1,7 +1,5 @@
-use crate::{
-    schema::{checklist, items, items_recipes, items_sections, list, recipes, sections},
-    ItemInfo,
-};
+use crate::schema::{checklist, items, items_recipes, items_sections, list, recipes, sections};
+use common::helpers::ItemInfo;
 use diesel::prelude::*;
 
 #[derive(Queryable)]

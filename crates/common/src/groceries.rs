@@ -1,6 +1,12 @@
-use crate::{CliError, Ingredients, Item, ItemName, ReadError, ReadWrite, RecipeName, Section};
 use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    errors::{CliError, ReadError},
+    groceriesitem::{Item, ItemName, Section},
+    helpers::ReadWrite,
+    recipes::{Ingredients, RecipeName},
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Groceries {
@@ -90,7 +96,7 @@ impl Groceries {
         Ok(())
     }
 
-    pub(crate) fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), CliError> {
+    pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), CliError> {
         let recipe = RecipeName(name.to_string());
 
         let ingredients = Ingredients::from_input_string(ingredients)?;
@@ -108,7 +114,7 @@ impl Groceries {
         Ok(())
     }
 
-    pub(crate) fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
+    pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
             .recipes
             .iter()
