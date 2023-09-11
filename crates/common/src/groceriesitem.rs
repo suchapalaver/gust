@@ -13,11 +13,16 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn new(name: &str, section: &str) -> Self {
+    pub fn new(name: &str) -> Self {
         Self {
             name: ItemName(name.to_string()),
             ..Default::default()
         }
+    }
+
+    pub fn with_section(mut self, section: &str) -> Self {
+        self.section = Some(Section(section.to_string()));
+        self
     }
 
     pub(crate) fn matches(&self, s: &str) -> bool {

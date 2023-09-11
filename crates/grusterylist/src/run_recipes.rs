@@ -3,7 +3,7 @@ use clap::ArgMatches;
 use db::{models::*, persistence::establish_connection};
 use diesel::prelude::*;
 
-fn add_recipe_to_db(matches: &ArgMatches) {
+pub fn add_recipe_to_db(matches: &ArgMatches) {
     use db::schema::recipes;
 
     let connection = &mut establish_connection();
@@ -25,7 +25,7 @@ fn add_recipe_to_db(matches: &ArgMatches) {
         .expect("Error saving new post");
 }
 
-fn delete_recipe_from_db(matches: &ArgMatches) {
+pub fn delete_recipe_from_db(matches: &ArgMatches) {
     use db::schema::recipes::dsl::*;
 
     let connection = &mut establish_connection();

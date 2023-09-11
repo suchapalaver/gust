@@ -1,6 +1,10 @@
 use crate::{
-    errors::ReadError, groceries::Groceries, groceriesitem::Item, helpers::ReadWrite,
-    shoppinglist::ShoppingList,
+    errors::ReadError,
+    groceries::{Groceries, ITEMS_JSON_PATH},
+    groceriesitem::Item,
+    helpers::ReadWrite,
+    sections::SECTIONS,
+    shoppinglist::{ShoppingList, LIST_JSON_PATH},
 };
 use question::{Answer, Question};
 
@@ -27,7 +31,7 @@ impl ShoppingList {
             .confirm()
             == Answer::YES
         {
-            let groceries = Groceries::from_path("groceries.json")?;
+            let groceries = Groceries::from_path(ITEMS_JSON_PATH)?;
 
             for recipe in groceries.recipes.into_iter() {
                 let res = Question::new(&format!(
@@ -53,7 +57,7 @@ impl ShoppingList {
         Ok(())
     }
 
-    pub(crate) fn prompt_add_groceries(&mut self) -> Result<(), ReadError> {
+    pub fn prompt_add_groceries(&mut self) -> Result<(), ReadError> {
         while Question::new("Add groceries to shopping list?")
             .default(question::Answer::NO)
             .show_defaults()
@@ -69,8 +73,8 @@ impl ShoppingList {
         // move everything off list to temp list
         let list_items: Vec<Item> = self.items.drain(..).collect();
         assert!(self.items.is_empty());
-        let sections = vec!["fresh", "pantry", "dairy", "protein", "freezer"];
-        let groceries = Groceries::from_path("groceries.json")?;
+        let sections = SECTIONS;
+        let groceries = Groceries::from_path(ITEMS_JSON_PATH)?;
         let groceries_by_section: Vec<Vec<Item>> = {
             sections
                 .into_iter()
@@ -150,7 +154,7 @@ impl ShoppingList {
                 .confirm();
 
             if res == Answer::YES {
-                self.save("list.json")?;
+                self.save(LIST_JSON_PATH)?;
             }
 
             self.print();

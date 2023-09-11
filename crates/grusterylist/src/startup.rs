@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use api::Api;
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
@@ -23,6 +24,8 @@ pub fn run() -> Result<(), CliError> {
         )?;
     }
 
+    let mut api = Api::new(store);
+
     let cmd = match matches.subcommand() {
         Some(("add", matches)) => ApiCommand::Add(add(matches)?),
         Some(("delete", matches)) => ApiCommand::Delete(delete(matches)),
@@ -31,7 +34,7 @@ pub fn run() -> Result<(), CliError> {
         _ => unreachable!(),
     };
 
-    api::execute(&cmd, &mut store);
+    api.execute(&cmd);
 
     Ok(())
 }
