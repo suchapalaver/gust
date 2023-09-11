@@ -166,7 +166,7 @@ fn migrate_json_db() -> Command {
     Command::new("migrate-json-db")
         .subcommand_required(false)
         .about("migrate a JSON databse to Postgres")
-        .arg(path().default_value("groceries.json"))
+        .arg(path().default_value(ITEMS_JSON_PATH))
 }
 
 pub fn cli() -> Command {
@@ -256,13 +256,13 @@ pub fn cli() -> Command {
         Command::new("groceries")
             .about("manages groceries library")
             .subcommand(Command::new("add").about("Adds grocery items to library"))
-            .arg(path().default_value("groceries.json")),
+            .arg(path().default_value(ITEMS_JSON_PATH)),
     )
     // List
     .subcommand(
         Command::new("list")
             .about("makes shopping lists")
-            .arg(path().default_value("list.json"))
+            .arg(path().default_value(LIST_JSON_PATH))
     )
     // Show
     .subcommand(

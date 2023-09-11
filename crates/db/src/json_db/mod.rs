@@ -9,6 +9,9 @@ use common::{
     shoppinglist::ShoppingList,
 };
 
+pub const ITEMS_JSON_PATH: &str = "groceries.json";
+pub const LIST_JSON_PATH: &str = "list.json";
+
 pub fn load_groceries_library<P: AsRef<Path> + std::marker::Copy>(
     path: P,
 ) -> Result<Groceries, ReadError> {
@@ -16,7 +19,7 @@ pub fn load_groceries_library<P: AsRef<Path> + std::marker::Copy>(
 }
 
 pub fn load_list() -> Result<ShoppingList, ReadError> {
-    ShoppingList::from_path("list.json")
+    ShoppingList::from_path(LIST_JSON_PATH)
 }
 
 pub fn load_groceries_collection<P: AsRef<Path> + std::marker::Copy>(
@@ -64,19 +67,42 @@ pub fn load_sections<P: AsRef<Path> + std::marker::Copy>(
 }
 
 pub fn save() -> Result<(), ReadError> {
-    let path = "groceries.json";
-    let groceries = Groceries::from_path(path).unwrap_or_default();
+    let groceries = Groceries::from_path(ITEMS_JSON_PATH).unwrap_or_default();
     groceries.save(path)?;
     Ok(())
 }
 
 pub fn view_groceries() -> Result<(), ReadError> {
-    let path = "groceries.json";
-
-    for item in Groceries::from_path(path)?.items() {
+    for item in Groceries::from_path(ITEMS_JSON_PATH)?.items() {
         eprintln!();
         eprintln!("{}", item);
         eprintln!();
+    }
+    Ok(())
+}
+
+pub fn add_grocery_item() -> Result<(), ReadError> {
+    let item = item_from_user();
+
+    let section = section_from_user();
+
+    let mut groceries = Groceries::from_path(ITEMS_JSON_PATH).unwrap_or_default();
+
+    let mut present = false;
+
+    for item in groceries.get_item_matches(&item) {
+        if item_matches(item) {
+            present = true;
+            break;
+        }
+    }
+
+    if present {
+        eprintln!("Item already in library");
+    } else {
+        let new_item = Item::new(&item, &section);
+        groceries.add_item(new_item);
+        todo!();
     }
     Ok(())
 }
