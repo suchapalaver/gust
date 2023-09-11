@@ -1,5 +1,4 @@
 use common::{
-    commands::{Add, ApiCommand, Delete, Read, Update},
     errors::StoreError,
     groceriesitem::ItemName,
     recipes::{Ingredients, RecipeName},
@@ -9,9 +8,8 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::{env, str::FromStr};
 
-use crate::{
-    models::{Item, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe, Section},
-    show::{display, display_sections},
+use crate::models::{
+    self, Item, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe, Recipe, Section,
 };
 
 // pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
@@ -218,74 +216,27 @@ impl Store {
         v
     }
 
-    pub fn show_items(&mut self) {
+    pub fn items(&mut self) -> Vec<Item> {
         use crate::schema::items::dsl::*;
 
-        let results = items
+        items
             .load::<Item>(&mut self.connection)
-            .expect("Error loading items");
-
-        display(results, "items");
+            .expect("Error loading items")
     }
 
-    pub fn show_sections(&mut self) {
+    pub fn sections(&mut self) -> Vec<Section> {
         use crate::schema::sections::dsl::*;
 
-        let results = sections
+        sections
             .load::<Section>(&mut self.connection)
-            .expect("Error loading sections");
-
-        display_sections(results, "sections");
+            .expect("Error loading sections")
     }
 
-    pub fn show_recipes(&mut self) {
+    pub fn recipes(&mut self) -> Vec<Recipe> {
         use crate::schema::recipes::dsl::*;
 
-        let results = recipes
-            .load::<crate::models::Recipe>(&mut self.connection)
-            .expect("Error loading recipes");
-
-        display(results, "recipes");
-    }
-}
-
-pub fn execute(command: &ApiCommand, store: &mut Store) {
-    match command {
-        ApiCommand::Add(Add::ChecklistItem(name)) => store.add_checklist_item(name),
-        ApiCommand::Add(Add::Recipe {
-            recipe,
-            ingredients,
-        }) => store.add_recipe(recipe, ingredients),
-        ApiCommand::Add(Add::Item { name, .. }) => store.add_item(name),
-        ApiCommand::Add(Add::ListItem(name)) => store.add_list_item(name),
-        ApiCommand::Add(Add::ListRecipe(recipe)) => todo!(),
-        ApiCommand::Add(Add::NewList) => todo!(),
-        ApiCommand::Delete(Delete::ChecklistItem(name)) => store.delete_checklist_item(name),
-        ApiCommand::Delete(Delete::ClearChecklist) => todo!(),
-        ApiCommand::Delete(Delete::ClearList) => todo!(),
-        ApiCommand::Delete(Delete::Item(name)) => todo!(),
-        ApiCommand::Delete(Delete::ListItem(name)) => todo!(),
-        ApiCommand::Delete(Delete::Recipe(recipe)) => store.delete_recipe(recipe).unwrap(),
-        ApiCommand::Read(Read::All) => store.show_items(),
-        ApiCommand::Read(Read::Checklist) => {
-            let items = store.checklist();
-            display(items, "checklist")
-        }
-        ApiCommand::Read(Read::Item(name)) => todo!(),
-        ApiCommand::Read(Read::Items) => todo!(),
-        ApiCommand::Read(Read::List) => {
-            let cmd = ApiCommand::Read(Read::Checklist);
-            execute(&cmd, store);
-            let items = store.list();
-            display(items, "list")
-        }
-        ApiCommand::Read(Read::ListRecipes) => todo!(),
-        ApiCommand::Read(Read::Recipe(recipe)) => {
-            let _ = store.recipe_ingredients(recipe);
-        }
-        ApiCommand::Read(Read::Recipes) => store.show_recipes(),
-        ApiCommand::Read(Read::Sections) => store.show_sections(),
-        ApiCommand::Update(Update::Item(name)) => todo!(),
-        ApiCommand::Update(Update::Recipe(name)) => todo!(),
+        recipes
+            .load::<models::Recipe>(&mut self.connection)
+            .expect("Error loading recipes")
     }
 }

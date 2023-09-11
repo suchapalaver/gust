@@ -1,77 +1,20 @@
-use std::{collections::HashSet, path::Path};
+use std::path::Path;
 
-use common::{
-    errors::ReadError,
-    groceries::Groceries,
-    groceriesitem::{Item, Section},
-    helpers::ReadWrite,
-    recipes::RecipeName,
-    shoppinglist::ShoppingList,
-};
+use common::errors::ReadError;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 
-use api::{
+use db::{
     models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
     schema,
 };
-
-fn load_groceries_library<P: AsRef<Path> + std::marker::Copy>(
-    path: P,
-) -> Result<Groceries, ReadError> {
-    Groceries::from_path(path)
-}
-
-fn load_list() -> Result<ShoppingList, ReadError> {
-    ShoppingList::from_path("list.json")
-}
-
-fn load_groceries_collection<P: AsRef<Path> + std::marker::Copy>(
-    path: P,
-) -> Result<Vec<Item>, ReadError> {
-    Ok(load_groceries_library(path)?.collection)
-}
-
-fn load_recipes<P: AsRef<Path> + std::marker::Copy>(path: P) -> Result<Vec<RecipeName>, ReadError> {
-    let mut recipes: HashSet<RecipeName> = HashSet::new();
-
-    {
-        let groceries = load_groceries_library(path)?;
-
-        for item in groceries.collection {
-            if let Some(item_recipes) = item.recipes {
-                for recipe in item_recipes {
-                    recipes.insert(recipe);
-                }
-            }
-        }
-
-        for recipe in groceries.recipes {
-            recipes.insert(recipe);
-        }
-    }
-
-    {
-        let list = load_list()?;
-
-        for recipe in list.recipes {
-            recipes.insert(recipe);
-        }
-    }
-
-    Ok(recipes.into_iter().collect())
-}
-
-fn load_sections<P: AsRef<Path> + std::marker::Copy>(path: P) -> Result<Vec<Section>, ReadError> {
-    Ok(load_groceries_library(path)?.sections)
-}
 
 fn migrate_sections<P: AsRef<Path> + std::marker::Copy>(
     connection: &mut SqliteConnection,
     path: P,
 ) -> Result<(), ReadError> {
-    let sections = load_sections(path)?;
+    let sections = db::json_db::load_sections(path)?;
 
-    use api::schema::sections;
+    use db::schema::sections;
 
     for name in sections {
         let section = NewSection {
@@ -92,9 +35,9 @@ fn migrate_recipes<P: AsRef<Path> + std::marker::Copy>(
     connection: &mut SqliteConnection,
     path: P,
 ) -> Result<(), ReadError> {
-    let recipes = load_recipes(path)?;
+    let recipes = db::json_db::load_recipes(path)?;
 
-    use api::schema::recipes;
+    use db::schema::recipes;
 
     for recipe in recipes {
         let recipe = NewRecipe {
@@ -118,7 +61,7 @@ pub(crate) fn migrate_groceries<P: AsRef<Path> + std::marker::Copy>(
     migrate_sections(connection, path)?;
     migrate_recipes(connection, path)?;
 
-    let groceries = load_groceries_collection(path)?;
+    let groceries = db::json_db::load_groceries_collection(path)?;
     let items_table = schema::items::table;
     let recipes_table = schema::recipes::table;
     let sections_table = schema::sections::table;

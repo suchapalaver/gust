@@ -4,7 +4,7 @@
 //       https://doc.rust-lang.org/book/ch07-05-separating-modules-into-different-files.html
 mod cli;
 mod migrate_json_db;
-mod run_groceries;
+pub mod prompts;
 mod run_recipes;
 pub mod startup;
 

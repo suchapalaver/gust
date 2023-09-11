@@ -10,6 +10,7 @@ repository = "https://github.com/suchapalaver/grusterylist"
 
 [dependencies]
 api = { path = "../api" }
+db = { path = "../db" }
 clap = { workspace = true }
 common = { path = "../common" }
 diesel = { workspace = true }

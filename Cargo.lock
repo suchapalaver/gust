@@ -92,9 +92,7 @@ version = "0.1.0"
 dependencies = [
  "colored",
  "common",
- "diesel",
- "diesel_migrations",
- "dotenv",
+ "db",
 ]
 
 [[package]]
@@ -306,6 +304,16 @@ checksum = "13b588ba4ac1a99f7f2964d24b3d896ddc6bf847ee3855dbd4366f058cfcd331"
 dependencies = [
  "quote",
  "syn 2.0.31",
+]
+
+[[package]]
+name = "db"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "diesel",
+ "diesel_migrations",
+ "dotenv",
 ]
 
 [[package]]
@@ -607,6 +615,7 @@ dependencies = [
  "assert_fs",
  "clap",
  "common",
+ "db",
  "diesel",
  "diesel_migrations",
  "insta",
