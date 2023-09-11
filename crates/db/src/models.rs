@@ -1,6 +1,9 @@
 use crate::schema::{checklist, items, items_recipes, items_sections, list, recipes, sections};
-use common::helpers::ItemInfo;
 use diesel::prelude::*;
+
+pub trait ItemInfo {
+    fn name(&self) -> &str;
+}
 
 #[derive(Queryable)]
 #[diesel(table_name = checklist)]

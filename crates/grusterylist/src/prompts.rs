@@ -1,17 +1,6 @@
 use common::{errors::ReadError, groceries::Groceries, groceriesitem::Item, helpers::ReadWrite};
 use question::{Answer, Question};
 
-fn view_groceries() -> Result<(), ReadError> {
-    let path = "groceries.json";
-
-    for item in Groceries::from_path(path)?.items() {
-        eprintln!();
-        eprintln!("{}", item);
-        eprintln!();
-    }
-    Ok(())
-}
-
 fn prompt_add_groceries() -> Result<(), ReadError> {
     while Question::new("Add an item to our library?")
         .default(question::Answer::NO)
@@ -59,11 +48,7 @@ fn add_grocery_item() -> Result<(), ReadError> {
 
     let section = prompt_for_section();
 
-    let mut groceries = if Groceries::from_path("groceries.json").is_err() {
-        Groceries::default()
-    } else {
-        Groceries::from_path("groceries.json")?
-    };
+    let mut groceries = Groceries::from_path("groceries.json").unwrap_or_default();
 
     let mut present = false;
 
@@ -84,13 +69,7 @@ fn add_grocery_item() -> Result<(), ReadError> {
     } else {
         let new_item = Item::new(&item, &section);
         groceries.add_item(new_item);
+        todo!();
     }
-    Ok(())
-}
-
-fn prompt_save() -> Result<(), ReadError> {
-    let path = "groceries.json";
-    let groceries = Groceries::from_path(path).unwrap_or_default();
-    groceries.save(path)?;
     Ok(())
 }

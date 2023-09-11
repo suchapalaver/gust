@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use api::persistence::{establish_connection, execute, Store};
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
@@ -8,6 +7,7 @@ use common::{
     groceriesitem::{ItemName, Section},
     recipes::{Ingredients, RecipeName},
 };
+use db::persistence::{establish_connection, Store};
 
 use crate::{cli, migrate_json_db::migrate_groceries};
 
@@ -31,7 +31,7 @@ pub fn run() -> Result<(), CliError> {
         _ => unreachable!(),
     };
 
-    execute(&cmd, &mut store);
+    api::execute(&cmd, &mut store);
 
     Ok(())
 }

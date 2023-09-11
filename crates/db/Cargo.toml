@@ -1,16 +1,15 @@
 [package]
-name = "api"
+name = "db"
 version = "0.1.0"
 edition = "2021"
 authors = ["https://github.com/suchapalaver"]
 license = "MIT"
-description = "A tool to make grocery lists written in Rust"
+description = "DB for making grocery lists"
 readme = "README.md"
 repository = "https://github.com/suchapalaver/grusterylist"
 
 [dependencies]
-colored = { workspace = true }
 common = { path = "../common" }
-db = { path = "../db" }
-
-[dev-dependencies]
+diesel = { workspace = true }
+diesel_migrations = { workspace = true }
+dotenv = { workspace = true }
