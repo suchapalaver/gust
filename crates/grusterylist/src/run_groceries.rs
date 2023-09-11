@@ -90,11 +90,7 @@ fn add_grocery_item() -> Result<(), ReadError> {
 
 fn prompt_save() -> Result<(), ReadError> {
     let path = "groceries.json";
-    let groceries = if Groceries::from_path(path).is_err() {
-        Groceries::default()
-    } else {
-        Groceries::from_path(path)?
-    };
+    let groceries = Groceries::from_path(path).unwrap_or_default();
     groceries.save(path)?;
     Ok(())
 }

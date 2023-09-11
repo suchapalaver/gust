@@ -9,12 +9,11 @@ readme = "README.md"
 repository = "https://github.com/suchapalaver/grusterylist"
 
 [dependencies]
+api = { path = "../api" }
 clap = { workspace = true }
-colored = { workspace = true }
 common = { path = "../common" }
 diesel = { workspace = true }
 diesel_migrations = { workspace = true }
-dotenv = { workspace = true }
 question = { workspace = true }
 reqwest = { workspace = true }
 scraper = { workspace = true }

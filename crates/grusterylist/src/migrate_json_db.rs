@@ -10,7 +10,7 @@ use common::{
 };
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 
-use crate::{
+use api::{
     models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
     schema,
 };
@@ -71,7 +71,7 @@ fn migrate_sections<P: AsRef<Path> + std::marker::Copy>(
 ) -> Result<(), ReadError> {
     let sections = load_sections(path)?;
 
-    use crate::schema::sections;
+    use api::schema::sections;
 
     for name in sections {
         let section = NewSection {
@@ -94,7 +94,7 @@ fn migrate_recipes<P: AsRef<Path> + std::marker::Copy>(
 ) -> Result<(), ReadError> {
     let recipes = load_recipes(path)?;
 
-    use crate::schema::recipes;
+    use api::schema::recipes;
 
     for recipe in recipes {
         let recipe = NewRecipe {
