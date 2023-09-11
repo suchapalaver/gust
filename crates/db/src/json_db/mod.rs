@@ -2,15 +2,13 @@ use std::{collections::HashSet, path::Path};
 
 use common::{
     errors::ReadError,
-    groceries::Groceries,
+    groceries::{Groceries, ITEMS_JSON_PATH},
     groceriesitem::{Item, Section},
     helpers::ReadWrite,
+    input::{item_from_user, item_matches, section_from_user},
     recipes::RecipeName,
-    shoppinglist::ShoppingList,
+    shoppinglist::{ShoppingList, LIST_JSON_PATH},
 };
-
-pub const ITEMS_JSON_PATH: &str = "groceries.json";
-pub const LIST_JSON_PATH: &str = "list.json";
 
 pub fn load_groceries_library<P: AsRef<Path> + std::marker::Copy>(
     path: P,
@@ -66,12 +64,6 @@ pub fn load_sections<P: AsRef<Path> + std::marker::Copy>(
     Ok(load_groceries_library(path)?.sections)
 }
 
-pub fn save() -> Result<(), ReadError> {
-    let groceries = Groceries::from_path(ITEMS_JSON_PATH).unwrap_or_default();
-    groceries.save(path)?;
-    Ok(())
-}
-
 pub fn view_groceries() -> Result<(), ReadError> {
     for item in Groceries::from_path(ITEMS_JSON_PATH)?.items() {
         eprintln!();
@@ -100,7 +92,7 @@ pub fn add_grocery_item() -> Result<(), ReadError> {
     if present {
         eprintln!("Item already in library");
     } else {
-        let new_item = Item::new(&item, &section);
+        let new_item = Item::new(&item).with_section(&section);
         groceries.add_item(new_item);
         todo!();
     }

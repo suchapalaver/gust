@@ -8,6 +8,8 @@ use crate::{
     recipes::{Ingredients, RecipeName},
 };
 
+pub const ITEMS_JSON_PATH: &str = "groceries.json";
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Groceries {
     pub sections: Vec<Section>,
@@ -88,7 +90,7 @@ impl Groceries {
 
                 let section = Section(section_input);
 
-                let item = Item::new(&ingredient.0, &section.0);
+                let item = Item::new(&ingredient.0).with_section(&section.0);
 
                 self.add_item(item);
             }

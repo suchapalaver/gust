@@ -1,7 +1,4 @@
-use crate::{
-    errors::ReadError, groceries::Groceries, groceriesitem::Item, helpers::ReadWrite,
-    sections::SECTIONS,
-};
+use crate::{groceriesitem::Item, sections::SECTIONS};
 use question::{Answer, Question};
 
 pub fn user_wants_to_add_item() -> bool {
