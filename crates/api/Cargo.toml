@@ -11,6 +11,6 @@ repository = "https://github.com/suchapalaver/grusterylist"
 [dependencies]
 colored = { workspace = true }
 common = { path = "../common" }
-db = { path = "../db" }
+db = { path = "../persistence" }
 
 [dev-dependencies]
