@@ -15,11 +15,11 @@ use crate::{cli, migrate_json_db::migrate_groceries};
 pub fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
 
-    let mut store = Store::new(establish_connection());
+    let mut store = Store::new_sqlite(establish_connection());
 
     if let Some(("migrate-json-db", matches)) = matches.subcommand() {
         migrate_groceries(
-            &mut store.connection,
+            store.sqlite_connection(),
             matches.get_one::<String>("path").unwrap().as_str(),
         )?;
     }
