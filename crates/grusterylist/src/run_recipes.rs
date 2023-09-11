@@ -1,6 +1,6 @@
 use clap::ArgMatches;
 
-use db::{models::*, persistence::establish_connection};
+use db::{models::*, store::establish_connection};
 use diesel::prelude::*;
 
 pub fn add_recipe_to_db(matches: &ArgMatches) {

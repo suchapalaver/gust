@@ -1,7 +1,7 @@
 use common::commands::{Add, ApiCommand, Delete, Read, Update};
 use db::{
     models::{ItemInfo, Section},
-    persistence::Store,
+    store::Store,
 };
 
 use colored::Colorize;

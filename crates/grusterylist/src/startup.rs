@@ -8,7 +8,7 @@ use common::{
     groceriesitem::{ItemName, Section},
     recipes::{Ingredients, RecipeName},
 };
-use db::persistence::{establish_connection, Store};
+use db::store::{establish_connection, Store};
 
 use crate::{cli, migrate_json_db::migrate_groceries};
 
