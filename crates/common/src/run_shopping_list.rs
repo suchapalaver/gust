@@ -1,10 +1,10 @@
 use crate::{
-    errors::ReadError,
     groceries::{Groceries, ITEMS_JSON_PATH},
     groceriesitem::Item,
     helpers::ReadWrite,
     sections::SECTIONS,
     shoppinglist::{ShoppingList, LIST_JSON_PATH},
+    ReadError,
 };
 use question::{Answer, Question};
 

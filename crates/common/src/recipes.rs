@@ -2,10 +2,7 @@ use std::{fmt, ops::Deref, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    errors::{CliError, ReadError},
-    groceriesitem::ItemName,
-};
+use crate::{groceriesitem::ItemName, ReadError};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
 pub struct RecipeName(pub String);
@@ -42,8 +39,8 @@ impl Ingredients {
         self.0.push(elem);
     }
 
-    pub fn from_input_string(s: &str) -> Result<Self, CliError> {
-        Self::try_from(s)
+    pub fn from_input_string(s: &str) -> Self {
+        Self::from(s)
     }
 }
 
@@ -58,12 +55,11 @@ impl FromIterator<ItemName> for Ingredients {
     }
 }
 
-impl TryFrom<&str> for Ingredients {
-    type Error = CliError;
-    fn try_from(s: &str) -> Result<Self, Self::Error> {
-        Ok(s.split(',')
+impl From<&str> for Ingredients {
+    fn from(s: &str) -> Self {
+        s.split(',')
             .map(|item| ItemName(item.trim().to_lowercase()))
-            .collect())
+            .collect()
     }
 }
 

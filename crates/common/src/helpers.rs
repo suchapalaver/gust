@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use crate::errors::ReadError;
+use crate::ReadError;
 
 fn read<P: AsRef<Path>>(path: P) -> Result<BufReader<File>, ReadError> {
     let file = File::open(path)?;
