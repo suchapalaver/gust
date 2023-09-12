@@ -16,7 +16,7 @@ use crate::{
         Section,
     },
     schema,
-    store::{Store, StoreError},
+    store::{Storage, StoreError},
 };
 
 pub fn establish_connection() -> SqliteConnection {
@@ -97,7 +97,7 @@ impl SqliteStore {
     }
 }
 
-impl Store for SqliteStore {
+impl Storage for SqliteStore {
     fn add_item(&mut self, item: &ItemName) {
         let item_name = item.to_string();
         let _ = self.get_or_insert_item(&item_name);

@@ -1,26 +1,18 @@
 use std::str::FromStr;
 
+use crate::{cli, migrate_json_db::migrate_groceries, CliError};
 use api::Api;
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
     item::{ItemName, Section},
     recipes::{Ingredients, RecipeName},
-    ReadError,
 };
-use persistence::sqlite_db::{establish_connection, SqliteStore};
-use thiserror::Error;
-
-use crate::{cli, migrate_json_db::migrate_groceries, CliError};
-
-#[derive(Error, Debug)]
-pub enum GrusterylistError {
-    #[error("Cli error: {0}")]
-    CliError(#[from] CliError),
-
-    #[error("Read error: {0}")]
-    ReadError(#[from] ReadError),
-}
+use persistence::{
+    json_db::JsonStore,
+    sqlite_db::{establish_connection, SqliteStore},
+    store::Store,
+};
 
 pub fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
@@ -29,26 +21,28 @@ pub fn run() -> Result<(), CliError> {
         unreachable!("'db' has a default setting")
     };
 
-    let mut store = match val.as_str() {
-        "sqlite" => SqliteStore::new(establish_connection()),
-        "json" => unimplemented!(),
+    let store = match val.as_str() {
+        "sqlite" => {
+            let mut store = SqliteStore::new(establish_connection());
+            if let Some(("migrate-json-db", matches)) = matches.subcommand() {
+                migrate_groceries(
+                    store.connection(),
+                    matches.get_one::<String>("path").unwrap().as_str(),
+                )?;
+            }
+            Store::from(store)
+        }
+        "json" => Store::from(JsonStore::default()),
         _ => unreachable!(),
     };
-
-    if let Some(("migrate-json-db", matches)) = matches.subcommand() {
-        migrate_groceries(
-            store.connection(),
-            matches.get_one::<String>("path").unwrap().as_str(),
-        )?;
-    }
 
     let mut api = Api::new(store);
 
     let cmd = match matches.subcommand() {
         Some(("add", matches)) => ApiCommand::Add(add(matches)?),
-        Some(("delete", matches)) => ApiCommand::Delete(delete(matches)),
-        Some(("read", matches)) => ApiCommand::Read(read(matches)),
-        Some(("update", matches)) => ApiCommand::Update(update(matches)),
+        Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
+        Some(("read", matches)) => ApiCommand::Read(read(matches)?),
+        Some(("update", matches)) => ApiCommand::Update(update(matches)?),
         _ => unreachable!(),
     };
 
@@ -58,46 +52,37 @@ pub fn run() -> Result<(), CliError> {
 }
 
 fn add(matches: &ArgMatches) -> Result<Add, CliError> {
-    if matches.contains_id("recipe") && matches.contains_id("ingredients") {
-        Ok(Add::Recipe {
-            recipe: RecipeName::from_str(matches.get_one::<String>("recipe").unwrap().as_str())
-                .unwrap(),
-            ingredients: Ingredients::try_from(
-                matches.get_one::<String>("ingredients").unwrap().as_str(),
-            )
-            .unwrap(),
-        })
-    } else if matches.contains_id("item") {
-        Ok(Add::Item {
-            name: ItemName::from(matches.get_one::<String>("item").unwrap().as_str()),
-            section: matches
+    if let (Some(recipe), Some(ingredients)) = (
+        matches.get_one::<String>("recipe"),
+        matches.get_one::<String>("ingredients"),
+    ) {
+        let (recipe, ingredients) = (
+            RecipeName::from_str(recipe)?,
+            Ingredients::from_input_string(ingredients),
+        );
+
+        Ok(Add::recipe_from_name_and_ingredients(recipe, ingredients))
+    } else if let Some(name) = matches.get_one::<String>("item") {
+        Ok(Add::item_from_name_and_section(
+            ItemName::from(name.as_str()),
+            matches
                 .get_one::<String>("section")
                 .map(|section| Section::from(section.as_str())),
-        })
-    } else if matches.contains_id("checklist-item") {
-        Ok(Add::ChecklistItem(ItemName::from(
-            matches
-                .get_one::<String>("checklist-item")
-                .unwrap()
-                .as_str(),
-        )))
+        ))
+    } else if let Some(item) = matches.get_one::<String>("checklist-item") {
+        Ok(Add::checklistitem_from_name(ItemName::from(item.as_str())))
     } else {
         match matches.subcommand() {
-            Some(("checklist", matches)) => Ok(Add::ChecklistItem(ItemName::from(
+            Some(("checklist", matches)) => Ok(Add::checklistitem_from_name(ItemName::from(
                 matches.get_one::<String>("item").unwrap().as_str(),
             ))),
             Some(("list", matches)) => {
-                if matches.contains_id("recipe") {
-                    Ok(Add::ListRecipe(
-                        RecipeName::from_str(matches.get_one::<String>("recipe").unwrap().as_str())
-                            .unwrap(),
-                    ))
-                } else if matches.contains_id("item") {
-                    Ok(Add::ListItem(ItemName::from(
-                        matches.get_one::<String>("item").unwrap().as_str(),
-                    )))
+                if let Some(name) = matches.get_one::<String>("recipe") {
+                    Ok(Add::listrecipe_from_name(RecipeName::from_str(name)?))
+                } else if let Some(name) = matches.get_one::<String>("item") {
+                    Ok(Add::listitem_from_name(ItemName::from(name.as_str())))
                 } else {
-                    Ok(Add::NewList)
+                    Ok(Add::newlist())
                 }
             }
             _ => unreachable!(),
@@ -105,25 +90,18 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
     }
 }
 
-fn delete(matches: &ArgMatches) -> Delete {
-    if matches.contains_id("recipe") {
-        Delete::Recipe(
-            RecipeName::from_str(matches.get_one::<String>("recipe").unwrap().as_str()).unwrap(),
-        )
-    } else if matches.contains_id("item") {
-        Delete::Item(ItemName::from(
-            matches.get_one::<String>("recipe").unwrap().as_str(),
-        ))
+fn delete(matches: &ArgMatches) -> Result<Delete, CliError> {
+    if let Some(name) = matches.get_one::<String>("recipe") {
+        Ok(Delete::recipe_from_name(RecipeName::from_str(
+            name.as_str(),
+        )?))
+    } else if let Some(name) = matches.get_one::<String>("recipe") {
+        Ok(Delete::item_from_name(ItemName::from(name.as_str())))
     } else {
         match matches.subcommand() {
             Some(("checklist", matches)) => {
-                if matches.contains_id("checklist-item") {
-                    Delete::ChecklistItem(ItemName::from(
-                        matches
-                            .get_one::<String>("checklist-item")
-                            .unwrap()
-                            .as_str(),
-                    ))
+                if let Some(name) = matches.get_one::<String>("checklist-item") {
+                    Ok(Delete::ChecklistItem(ItemName::from(name.as_str())))
                 } else {
                     unimplemented!()
                 }
@@ -133,32 +111,28 @@ fn delete(matches: &ArgMatches) -> Delete {
     }
 }
 
-fn read(matches: &ArgMatches) -> Read {
-    if matches.contains_id("recipe") {
-        Read::Recipe(
-            RecipeName::from_str(matches.get_one::<String>("recipe").unwrap().as_str()).unwrap(),
-        )
-    } else if matches.contains_id("item") {
-        Read::Item(ItemName::from(
-            matches.get_one::<String>("item").unwrap().as_str(),
-        ))
+fn read(matches: &ArgMatches) -> Result<Read, CliError> {
+    if let Some(name) = matches.get_one::<String>("recipe") {
+        Ok(Read::recipe_from_name(RecipeName::from_str(name.as_str())?))
+    } else if let Some(name) = matches.get_one::<String>("item") {
+        Ok(Read::item_from_name(ItemName::from(name.as_str())))
     } else {
         match matches.subcommand() {
-            Some(("checklist", _matches)) => Read::Checklist,
-            Some(("list", _matches)) => Read::List,
-            Some(("library", _matches)) => Read::Items,
-            Some(("recipes", _matches)) => Read::Recipes,
-            Some(("sections", _matches)) => Read::Sections,
-            _ => Read::All,
+            Some(("checklist", _matches)) => Ok(Read::Checklist),
+            Some(("list", _matches)) => Ok(Read::List),
+            Some(("library", _matches)) => Ok(Read::Items),
+            Some(("recipes", _matches)) => Ok(Read::Recipes),
+            Some(("sections", _matches)) => Ok(Read::Sections),
+            _ => Ok(Read::All),
         }
     }
 }
 
-fn update(matches: &ArgMatches) -> Update {
-    if matches.contains_id("recipe") {
-        Update::Recipe(
-            RecipeName::from_str(matches.get_one::<String>("recipe").unwrap().as_str()).unwrap(),
-        )
+fn update(matches: &ArgMatches) -> Result<Update, CliError> {
+    if let Some(name) = matches.get_one::<String>("recipe") {
+        Ok(Update::recipe_from_name(RecipeName::from_str(
+            name.as_str(),
+        )?))
     } else {
         unimplemented!()
     }

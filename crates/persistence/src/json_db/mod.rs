@@ -10,6 +10,8 @@ use common::{
     ReadError,
 };
 
+use crate::store::Storage;
+
 pub const ITEMS_JSON_PATH: &str = "groceries.json";
 
 pub const LIST_JSON_PATH: &str = "list.json";
@@ -115,4 +117,57 @@ pub fn add_grocery_item() -> Result<(), ReadError> {
         todo!();
     }
     Ok(())
+}
+
+impl Storage for JsonStore {
+    fn add_item(&mut self, item: &common::item::ItemName) {
+        todo!()
+    }
+
+    fn add_checklist_item(&mut self, item: &common::item::ItemName) {
+        todo!()
+    }
+
+    fn add_list_item(&mut self, item: &common::item::ItemName) {
+        todo!()
+    }
+
+    fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &common::recipes::Ingredients) {
+        todo!()
+    }
+
+    fn checklist(&mut self) -> Vec<crate::models::Item> {
+        todo!()
+    }
+
+    fn list(&mut self) -> Vec<crate::models::Item> {
+        todo!()
+    }
+
+    fn delete_checklist_item(&mut self, item: &common::item::ItemName) {
+        todo!()
+    }
+
+    fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), crate::store::StoreError> {
+        todo!()
+    }
+
+    fn items(&mut self) -> Vec<crate::models::Item> {
+        todo!()
+    }
+
+    fn recipe_ingredients(
+        &mut self,
+        recipe: &RecipeName,
+    ) -> Vec<(RecipeName, common::recipes::Ingredients)> {
+        todo!()
+    }
+
+    fn sections(&mut self) -> Vec<crate::models::Section> {
+        todo!()
+    }
+
+    fn recipes(&mut self) -> Vec<crate::models::Recipe> {
+        todo!()
+    }
 }
