@@ -2,19 +2,9 @@ use common::{
     groceriesitem::ItemName,
     recipes::{Ingredients, RecipeName},
 };
-use diesel::prelude::*;
-// use diesel_migrations::{embed_migrations, EmbeddedMigrations};
-use dotenv::dotenv;
-use std::{env, str::FromStr};
 use thiserror::Error;
 
-use crate::{
-    models::{
-        self, Item, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe, Recipe,
-        Section,
-    },
-    schema,
-};
+use crate::models::{Item, Recipe, Section};
 
 #[derive(Error, Debug)]
 pub enum StoreError {
@@ -22,314 +12,28 @@ pub enum StoreError {
     DBQuery(#[from] diesel::result::Error),
 }
 
-// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+pub trait Store {
+    fn add_item(&mut self, item: &ItemName);
 
-pub fn establish_connection() -> SqliteConnection {
-    dotenv().ok();
+    fn add_checklist_item(&mut self, item: &ItemName);
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    SqliteConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-}
+    fn add_list_item(&mut self, item: &ItemName);
 
-pub enum Store {
-    Json,
-    Sqlite(SqliteStore),
-}
+    fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &Ingredients);
 
-pub struct SqliteStore {
-    connection: SqliteConnection,
-}
+    fn checklist(&mut self) -> Vec<Item>;
 
-impl Store {
-    pub fn new_sqlite(connection: SqliteConnection) -> Self {
-        Self::Sqlite(SqliteStore { connection })
-    }
+    fn list(&mut self) -> Vec<Item>;
 
-    pub fn sqlite_connection(&mut self) -> &mut SqliteConnection {
-        match self {
-            Self::Sqlite(store) => &mut store.connection,
-            _ => unreachable!(),
-        }
-    }
+    fn delete_checklist_item(&mut self, item: &ItemName);
 
-    pub fn add_checklist_item(&mut self, item: &ItemName) {
-        match self {
-            Self::Sqlite(_) => {
-                let item_name = item.to_string();
-                let item_id = self.get_or_insert_item(&item_name);
-                let item_query = {
-                    diesel::insert_into(schema::checklist::table)
-                        .values(NewChecklistItem { item_id })
-                        .on_conflict_do_nothing()
-                };
-                item_query
-                    .execute(self.sqlite_connection())
-                    .expect("Error adding item to checklist");
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
+    fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError>;
 
-    pub fn add_item(&mut self, item: &ItemName) {
-        let item_name = item.to_string();
-        let _ = self.get_or_insert_item(&item_name);
-    }
+    fn items(&mut self) -> Vec<Item>;
 
-    pub fn add_list_item(&mut self, item: &ItemName) {
-        match self {
-            Self::Sqlite(_) => {
-                let item_name = item.to_string();
-                let item_id = self.get_or_insert_item(&item_name);
-                let item_query = diesel::insert_into(crate::schema::list::table)
-                    .values(NewListItem { item_id })
-                    .on_conflict_do_nothing();
-                item_query
-                    .execute(self.sqlite_connection())
-                    .expect("Error adding item to list");
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
+    fn recipe_ingredients(&mut self, recipe: &RecipeName) -> Vec<(RecipeName, Ingredients)>;
 
-    pub fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &Ingredients) {
-        match self {
-            Self::Sqlite(_) => {
-                let recipe_name = recipe.to_string().to_lowercase();
-                let recipe_id = self.get_or_insert_recipe(&recipe_name);
-                let item_ids: Vec<i32> = ingredients
-                    .iter()
-                    .map(|ingredient| {
-                        let item_name = ingredient.0.to_string().to_lowercase();
-                        self.get_or_insert_item(&item_name)
-                    })
-                    .collect();
+    fn sections(&mut self) -> Vec<Section>;
 
-                for item_id in item_ids {
-                    self.insert_item_recipe(item_id, recipe_id);
-                }
-            }
-            _ => unimplemented!(),
-        }
-    }
-
-    pub fn delete_checklist_item(&mut self, item: &ItemName) {
-        match self {
-            Self::Sqlite(store) => {
-                let name = item.to_string();
-                diesel::delete(
-                    schema::checklist::table.filter(
-                        schema::checklist::dsl::item_id.eq_any(
-                            schema::items::table
-                                .select(schema::items::dsl::id)
-                                .filter(schema::items::dsl::name.eq(&name)),
-                        ),
-                    ),
-                )
-                .execute(&mut store.connection)
-                .unwrap();
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError> {
-        match self {
-            Self::Sqlite(store) => {
-                let name = recipe.to_string();
-                diesel::delete(
-                    schema::items_recipes::table.filter(
-                        schema::items_recipes::dsl::recipe_id.eq_any(
-                            schema::recipes::table
-                                .select(schema::recipes::dsl::id)
-                                .filter(schema::recipes::dsl::name.eq(&name)),
-                        ),
-                    ),
-                )
-                .execute(&mut store.connection)
-                .expect("Error deleting recipe");
-                diesel::delete(schema::recipes::table.filter(schema::recipes::dsl::name.eq(name)))
-                    .execute(&mut store.connection)
-                    .unwrap();
-            }
-            Self::Json => unimplemented!(),
-        }
-
-        Ok(())
-    }
-
-    pub fn checklist(&mut self) -> Vec<Item> {
-        match self {
-            Self::Sqlite(store) => schema::items::table
-                .filter(
-                    schema::items::dsl::id
-                        .eq_any(schema::checklist::table.select(schema::checklist::dsl::item_id)),
-                )
-                .load::<Item>(&mut store.connection)
-                .expect("Error loading checklist"),
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    fn get_or_insert_recipe(&mut self, name: &str) -> i32 {
-        match self {
-            Self::Sqlite(store) => {
-                diesel::insert_into(schema::recipes::table)
-                    .values(NewRecipe { name })
-                    .on_conflict_do_nothing()
-                    .execute(&mut store.connection)
-                    .expect("Error inserting recipe");
-
-                let recipe_query =
-                    schema::recipes::table.filter(schema::recipes::dsl::name.eq(name));
-
-                recipe_query
-                    .select(schema::recipes::dsl::id)
-                    .first(&mut store.connection)
-                    .expect("Error loading recipe")
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    fn get_or_insert_item(&mut self, name: &str) -> i32 {
-        match self {
-            Self::Sqlite(store) => {
-                let item_query = diesel::insert_into(crate::schema::items::table)
-                    .values(NewItem { name })
-                    .on_conflict_do_nothing();
-                item_query
-                    .execute(&mut store.connection)
-                    .expect("Error inserting item");
-
-                let item_query = schema::items::table.filter(schema::items::dsl::name.eq(name));
-
-                item_query
-                    .select(schema::items::dsl::id)
-                    .first(&mut store.connection)
-                    .expect("Error loading item")
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    fn insert_item_recipe(&mut self, item_id: i32, recipe_id: i32) {
-        match self {
-            Self::Sqlite(store) => {
-                let item_recipe_query = diesel::insert_into(crate::schema::items_recipes::table)
-                    .values(NewItemRecipe { item_id, recipe_id })
-                    .on_conflict(schema::items_recipes::dsl::item_id)
-                    .do_update()
-                    .set(schema::items_recipes::dsl::recipe_id.eq(recipe_id));
-                item_recipe_query
-                    .execute(&mut store.connection)
-                    .expect("Error inserting new item-recipe");
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn list(&mut self) -> Vec<Item> {
-        match self {
-            Self::Sqlite(store) => schema::items::table
-                .filter(
-                    schema::items::dsl::id
-                        .eq_any(schema::list::table.select(schema::list::dsl::item_id)),
-                )
-                .load::<Item>(&mut store.connection)
-                .expect("Error loading list"),
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn load_item(&mut self, item_id: i32) -> Vec<Item> {
-        match self {
-            Self::Sqlite(store) => schema::items::table
-                .filter(schema::items::dsl::id.eq(&item_id))
-                .load::<Item>(&mut store.connection)
-                .expect("Error loading item"),
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn load_recipe(&mut self, recipe_name: &str) -> Vec<models::Recipe> {
-        match self {
-            Self::Sqlite(store) => schema::recipes::table
-                .filter(schema::recipes::dsl::name.eq(recipe_name))
-                .load::<models::Recipe>(&mut store.connection)
-                .expect("Error loading recipe"),
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn recipe_ingredients(&mut self, recipe: &RecipeName) -> Vec<(RecipeName, Ingredients)> {
-        match self {
-            Self::Sqlite(_) => {
-                let results = self.load_recipe(&recipe.0.to_string());
-
-                let mut v = Vec::<(RecipeName, Ingredients)>::with_capacity(results.len());
-
-                for recipe in results {
-                    let recipe_id = recipe.id;
-                    let recipe = RecipeName::from_str(recipe.name.as_str()).unwrap();
-
-                    let results = schema::items_recipes::table
-                        .filter(schema::items_recipes::dsl::recipe_id.eq(&recipe_id))
-                        .load::<models::ItemRecipe>(self.sqlite_connection())
-                        .expect("Error loading recipe");
-
-                    let ingredients = results
-                        .iter()
-                        .flat_map(|item_recipe| self.load_item(item_recipe.item_id))
-                        .map(|item| ItemName::from(item.name.as_str()))
-                        .collect::<Ingredients>();
-
-                    println!("Recipe: {recipe}");
-                    println!("Ingredients: {ingredients:#?}");
-                    v.push((recipe, ingredients));
-                }
-                v
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn items(&mut self) -> Vec<Item> {
-        match self {
-            Self::Sqlite(store) => {
-                use schema::items::dsl::*;
-
-                items
-                    .load::<Item>(&mut store.connection)
-                    .expect("Error loading items")
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn sections(&mut self) -> Vec<Section> {
-        match self {
-            Self::Sqlite(store) => {
-                use schema::sections::dsl::*;
-
-                sections
-                    .load::<Section>(&mut store.connection)
-                    .expect("Error loading sections")
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
-
-    pub fn recipes(&mut self) -> Vec<Recipe> {
-        match self {
-            Self::Sqlite(store) => {
-                use schema::recipes::dsl::*;
-
-                recipes
-                    .load::<models::Recipe>(&mut store.connection)
-                    .expect("Error loading recipes")
-            }
-            Self::Json => unimplemented!(),
-        }
-    }
+    fn recipes(&mut self) -> Vec<Recipe>;
 }

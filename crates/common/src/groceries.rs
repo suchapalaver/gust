@@ -8,8 +8,6 @@ use crate::{
     ReadError,
 };
 
-pub const ITEMS_JSON_PATH: &str = "groceries.json";
-
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Groceries {
     pub sections: Vec<Section>,
