@@ -8,7 +8,7 @@ use common::{
     recipes::{Ingredients, RecipeName},
     ReadError,
 };
-use persistence::store::{establish_connection, Store};
+use persistence::store::{establish_connection, SqliteStore};
 use thiserror::Error;
 
 use crate::{cli, migrate_json_db::migrate_groceries, CliError};
@@ -25,11 +25,19 @@ pub enum GrusterylistError {
 pub fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
 
-    let mut store = Store::new_sqlite(establish_connection());
+    let Some(val) = matches.get_one::<String>("db") else {
+        unreachable!()
+    };
+
+    let mut store = match val.as_str() {
+        "sqlite" => SqliteStore::new(establish_connection()),
+        "json" => unimplemented!(),
+        _ => unreachable!(),
+    };
 
     if let Some(("migrate-json-db", matches)) = matches.subcommand() {
         migrate_groceries(
-            store.sqlite_connection(),
+            store.connection(),
             matches.get_one::<String>("path").unwrap().as_str(),
         )?;
     }

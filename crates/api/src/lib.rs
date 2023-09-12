@@ -8,12 +8,12 @@ use persistence::{
 
 use colored::Colorize;
 
-pub struct Api {
-    store: Store,
+pub struct Api<S> {
+    store: S,
 }
 
-impl Api {
-    pub fn new(store: Store) -> Self {
+impl<S: Store> Api<S> {
+    pub fn new(store: S) -> Self {
         Self { store }
     }
 

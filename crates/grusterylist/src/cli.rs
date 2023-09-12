@@ -1,5 +1,6 @@
 use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
-use common::{groceries::ITEMS_JSON_PATH, ReadError};
+use common::ReadError;
+use persistence::store::ITEMS_JSON_PATH;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -190,6 +191,14 @@ pub fn cli() -> Command {
         .subcommand(read())
         .subcommand(update())
         .subcommand(migrate_json_db())
+        .arg(
+            Arg::new("db")
+                .long("database")
+                .num_args(1)
+                .value_parser(["json", "sqlite"])
+                .default_value("sqlite")
+                .help("which database to use"),
+        )
     ////////////////////////////////////////////////////////////////////////////////
     // Recipes
     /*

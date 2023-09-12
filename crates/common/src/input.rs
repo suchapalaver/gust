@@ -1,4 +1,4 @@
-use crate::{groceriesitem::Item, sections::SECTIONS};
+use crate::{groceriesitem::Item, recipes::RecipeName, sections::SECTIONS};
 use question::{Answer, Question};
 
 pub fn user_wants_to_add_item() -> bool {
@@ -7,6 +7,74 @@ pub fn user_wants_to_add_item() -> bool {
         .show_defaults()
         .confirm()
         == Answer::YES
+}
+
+pub fn user_wants_to_print_list() -> bool {
+    Question::new("Print shopping list?")
+        .default(question::Answer::NO)
+        .show_defaults()
+        .confirm()
+        == Answer::YES
+}
+
+pub fn user_wants_to_add_more_recipe_ingredients_to_list() -> bool {
+    Question::new("Add more recipe ingredients to our list?")
+        .default(question::Answer::NO)
+        .show_defaults()
+        .confirm()
+        == Answer::YES
+}
+
+pub fn user_wants_to_add_items_to_list() -> bool {
+    Question::new("Add items to list?")
+        .default(question::Answer::NO)
+        .show_defaults()
+        .confirm()
+        == Answer::YES
+}
+
+// Returns `None` in case user wishes to skip being asked further.
+pub fn user_wants_to_add_item_to_list(item: &Item) -> Option<bool> {
+    let res = Question::new(&format!(
+        "Do we need {}? (*y*, *n* for next item, *s* to skip to next section)",
+        item.name.0.to_lowercase()
+    ))
+    .acceptable(vec!["y", "n", "s"])
+    .until_acceptable()
+    .default(Answer::RESPONSE("n".to_string()))
+    .ask();
+
+    match res {
+        Some(Answer::RESPONSE(res)) if &res == "y" => Some(true),
+        Some(Answer::RESPONSE(res)) if &res == "s" => None,
+        _ => Some(false),
+    }
+}
+
+pub fn user_wants_to_save_list() -> bool {
+    Question::new("Save current list?")
+        .default(question::Answer::NO)
+        .show_defaults()
+        .confirm()
+        == Answer::YES
+}
+
+// Returns `None` in case user wishes to skip being asked further.
+pub fn user_wants_to_add_recipe_to_list(recipe: &RecipeName) -> Option<bool> {
+    let res = Question::new(&format!(
+        "Shall we add {}? (*y*, *n* for next recipe, *s* to skip to end of recipes)",
+        recipe
+    ))
+    .acceptable(vec!["y", "n", "s"])
+    .until_acceptable()
+    .default(Answer::RESPONSE("n".to_string()))
+    .ask();
+
+    match res {
+        Some(Answer::RESPONSE(res)) if &res == "y" => Some(true),
+        Some(Answer::RESPONSE(res)) if &res == "s" => None,
+        _ => Some(false),
+    }
 }
 
 pub fn item_from_user() -> String {

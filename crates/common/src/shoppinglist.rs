@@ -6,8 +6,6 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-pub const LIST_JSON_PATH: &str = "list.json";
-
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ShoppingList {
     pub checklist: Vec<Item>,

@@ -1,14 +1,16 @@
 use std::{collections::HashSet, path::Path};
 
 use common::{
-    groceries::{Groceries, ITEMS_JSON_PATH},
+    groceries::Groceries,
     groceriesitem::{Item, Section},
     helpers::ReadWrite,
     input::{item_from_user, item_matches, section_from_user},
     recipes::RecipeName,
-    shoppinglist::{ShoppingList, LIST_JSON_PATH},
+    shoppinglist::ShoppingList,
     ReadError,
 };
+
+use crate::store::{ITEMS_JSON_PATH, LIST_JSON_PATH};
 
 pub fn load_groceries_library<P: AsRef<Path> + std::marker::Copy>(
     path: P,
