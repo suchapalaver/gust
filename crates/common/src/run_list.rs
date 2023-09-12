@@ -1,6 +1,6 @@
 use crate::{
-    groceries::Groceries, groceriesitem::Item, input::user_wants_to_add_item_to_list,
-    sections::SECTIONS, shoppinglist::ShoppingList, ReadError,
+    input::user_wants_to_add_item_to_list, item::Item, items::Groceries, list::ShoppingList,
+    sections::SECTIONS, ReadError,
 };
 impl ShoppingList {
     pub fn add_groceries(&mut self, groceries: Groceries) -> Result<(), ReadError> {

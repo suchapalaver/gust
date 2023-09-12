@@ -1,7 +1,7 @@
 // pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 use common::{
-    groceriesitem::ItemName,
+    item::ItemName,
     recipes::{Ingredients, RecipeName},
 };
 use diesel::prelude::*;

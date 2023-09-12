@@ -1,6 +1,6 @@
 use crate::{
-    groceriesitem::{Item, ItemName},
     helpers::ReadWrite,
+    item::{Item, ItemName},
     recipes::RecipeName,
     ReadError,
 };
@@ -99,7 +99,7 @@ impl ShoppingList {
 
 #[cfg(test)]
 pub mod test {
-    use crate::groceriesitem::Section;
+    use crate::item::Section;
 
     use super::*;
 

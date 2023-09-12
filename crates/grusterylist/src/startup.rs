@@ -4,7 +4,7 @@ use api::Api;
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
-    groceriesitem::{ItemName, Section},
+    item::{ItemName, Section},
     recipes::{Ingredients, RecipeName},
     ReadError,
 };

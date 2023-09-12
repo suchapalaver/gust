@@ -1,13 +1,13 @@
 pub mod commands;
-pub mod groceries;
-pub mod groceriesitem;
 pub mod helpers;
 pub mod input;
+pub mod item;
+pub mod items;
+pub mod list;
 pub mod recipes;
-pub mod run_shopping_list;
+pub mod run_list;
 pub mod scraper;
 pub mod sections;
-pub mod shoppinglist;
 
 use thiserror::Error;
 

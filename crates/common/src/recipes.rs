@@ -2,7 +2,7 @@ use std::{fmt, ops::Deref, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{groceriesitem::ItemName, ReadError};
+use crate::{item::ItemName, ReadError};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
 pub struct RecipeName(pub String);

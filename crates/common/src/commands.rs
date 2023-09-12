@@ -1,5 +1,5 @@
 use crate::{
-    groceriesitem::{ItemName, Section},
+    item::{ItemName, Section},
     recipes::{Ingredients, RecipeName},
 };
 
