@@ -1,6 +1,6 @@
 use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
 use common::ReadError;
-use persistence::store::ITEMS_JSON_PATH;
+use persistence::json_db::ITEMS_JSON_PATH;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

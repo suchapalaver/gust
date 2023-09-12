@@ -8,7 +8,7 @@ use common::{
     recipes::{Ingredients, RecipeName},
     ReadError,
 };
-use persistence::store::{establish_connection, SqliteStore};
+use persistence::sqlite_db::{establish_connection, SqliteStore};
 use thiserror::Error;
 
 use crate::{cli, migrate_json_db::migrate_groceries, CliError};

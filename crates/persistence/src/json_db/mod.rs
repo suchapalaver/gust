@@ -10,7 +10,23 @@ use common::{
     ReadError,
 };
 
-use crate::store::{ITEMS_JSON_PATH, LIST_JSON_PATH};
+pub const ITEMS_JSON_PATH: &str = "groceries.json";
+
+pub const LIST_JSON_PATH: &str = "list.json";
+
+pub struct JsonStore {
+    items_path: String,
+    list_path: String,
+}
+
+impl Default for JsonStore {
+    fn default() -> Self {
+        Self {
+            items_path: ITEMS_JSON_PATH.to_string(),
+            list_path: LIST_JSON_PATH.to_string(),
+        }
+    }
+}
 
 pub fn load_groceries_library<P: AsRef<Path> + std::marker::Copy>(
     path: P,
