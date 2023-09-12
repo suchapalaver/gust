@@ -3,17 +3,17 @@ use std::fmt::{self, Display};
 use common::commands::{Add, ApiCommand, Delete, Read, Update};
 use persistence::{
     models::{ItemInfo, Section},
-    store::Store,
+    store::{Storage, Store},
 };
 
 use colored::Colorize;
 
-pub struct Api<S> {
-    store: S,
+pub struct Api {
+    store: Store,
 }
 
-impl<S: Store> Api<S> {
-    pub fn new(store: S) -> Self {
+impl Api {
+    pub fn new(store: Store) -> Self {
         Self { store }
     }
 
