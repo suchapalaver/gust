@@ -3,7 +3,7 @@ use std::path::Path;
 use common::ReadError;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 
-use persistence::{
+use crate::{
     models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
     schema,
 };
@@ -12,9 +12,9 @@ fn migrate_sections<P: AsRef<Path> + std::marker::Copy>(
     connection: &mut SqliteConnection,
     path: P,
 ) -> Result<(), ReadError> {
-    let sections = persistence::json_db::load_sections(path)?;
+    let sections = crate::json_db::load_sections(path)?;
 
-    use persistence::schema::sections;
+    use crate::schema::sections;
 
     for name in sections {
         let section = NewSection {
@@ -35,9 +35,9 @@ fn migrate_recipes<P: AsRef<Path> + std::marker::Copy>(
     connection: &mut SqliteConnection,
     path: P,
 ) -> Result<(), ReadError> {
-    let recipes = persistence::json_db::load_recipes(path)?;
+    let recipes = crate::json_db::load_recipes(path)?;
 
-    use persistence::schema::recipes;
+    use crate::schema::recipes;
 
     for recipe in recipes {
         let recipe = NewRecipe {
@@ -54,14 +54,14 @@ fn migrate_recipes<P: AsRef<Path> + std::marker::Copy>(
     Ok(())
 }
 
-pub(crate) fn migrate_groceries<P: AsRef<Path> + std::marker::Copy>(
+pub fn migrate_groceries<P: AsRef<Path> + std::marker::Copy>(
     connection: &mut SqliteConnection,
     path: P,
 ) -> Result<(), ReadError> {
     migrate_sections(connection, path)?;
     migrate_recipes(connection, path)?;
 
-    let groceries = persistence::json_db::load_groceries_collection(path)?;
+    let groceries = crate::json_db::load_groceries_collection(path)?;
     let items_table = schema::items::table;
     let recipes_table = schema::recipes::table;
     let sections_table = schema::sections::table;
