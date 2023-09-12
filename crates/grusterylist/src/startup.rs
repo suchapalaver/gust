@@ -4,13 +4,23 @@ use api::Api;
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
-    errors::CliError,
     groceriesitem::{ItemName, Section},
     recipes::{Ingredients, RecipeName},
+    ReadError,
 };
-use db::store::{establish_connection, Store};
+use persistence::store::{establish_connection, Store};
+use thiserror::Error;
 
-use crate::{cli, migrate_json_db::migrate_groceries};
+use crate::{cli, migrate_json_db::migrate_groceries, CliError};
+
+#[derive(Error, Debug)]
+pub enum GrusterylistError {
+    #[error("Cli error: {0}")]
+    CliError(#[from] CliError),
+
+    #[error("Read error: {0}")]
+    ReadError(#[from] ReadError),
+}
 
 pub fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();

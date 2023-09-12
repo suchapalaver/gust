@@ -2,10 +2,10 @@ use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    errors::{CliError, ReadError},
     groceriesitem::{Item, ItemName, Section},
     helpers::ReadWrite,
     recipes::{Ingredients, RecipeName},
+    ReadError,
 };
 
 pub const ITEMS_JSON_PATH: &str = "groceries.json";
@@ -62,8 +62,8 @@ impl Groceries {
     }
 
     // check if ingredients already in lib or add them if not
-    pub fn check_recipe_ingredients(&mut self, ingredients: &str) -> Result<(), CliError> {
-        let ingredients = Ingredients::from_input_string(ingredients)?;
+    pub fn check_recipe_ingredients(&mut self, ingredients: &str) {
+        let ingredients = Ingredients::from_input_string(ingredients);
         // add new items to groceries
         for ingredient in ingredients.iter() {
             if self.collection.iter().all(|item| &item.name != ingredient) {
@@ -95,13 +95,12 @@ impl Groceries {
                 self.add_item(item);
             }
         }
-        Ok(())
     }
 
-    pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), CliError> {
+    pub fn add_recipe(&mut self, name: &str, ingredients: &str) {
         let recipe = RecipeName(name.to_string());
 
-        let ingredients = Ingredients::from_input_string(ingredients)?;
+        let ingredients = Ingredients::from_input_string(ingredients);
 
         self.collection
             .iter_mut()
@@ -112,8 +111,6 @@ impl Groceries {
             });
 
         self.recipes.push(recipe);
-
-        Ok(())
     }
 
     pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
@@ -2214,7 +2211,7 @@ pub mod test {
         let ingredients = "kumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
 
         g.add_item(item);
-        g.add_recipe(recipe, ingredients)?;
+        g.add_recipe(recipe, ingredients);
 
         insta::assert_json_snapshot!(g, @r###"
         {
