@@ -19,53 +19,59 @@ impl<S: Store> Api<S> {
 
     pub fn execute(&mut self, command: &ApiCommand) {
         match command {
-            ApiCommand::Add(Add::ChecklistItem(name)) => self.store.add_checklist_item(name),
-            ApiCommand::Add(Add::Recipe {
-                recipe,
-                ingredients,
-            }) => self.store.add_recipe(recipe, ingredients),
-            ApiCommand::Add(Add::Item { name, .. }) => self.store.add_item(name),
-            ApiCommand::Add(Add::ListItem(name)) => self.store.add_list_item(name),
-            ApiCommand::Add(Add::ListRecipe(_recipe)) => todo!(),
-            ApiCommand::Add(Add::NewList) => todo!(),
-            ApiCommand::Delete(Delete::ChecklistItem(name)) => {
-                self.store.delete_checklist_item(name)
-            }
-            ApiCommand::Delete(Delete::ClearChecklist) => todo!(),
-            ApiCommand::Delete(Delete::ClearList) => todo!(),
-            ApiCommand::Delete(Delete::Item(_name)) => todo!(),
-            ApiCommand::Delete(Delete::ListItem(_name)) => todo!(),
-            ApiCommand::Delete(Delete::Recipe(recipe)) => self.store.delete_recipe(recipe).unwrap(),
-            ApiCommand::Read(Read::All) => {
-                let results = self.store.items();
-                display(results, ToDisplay::Items);
-            }
-            ApiCommand::Read(Read::Checklist) => {
-                let items = self.store.checklist();
-                display(items, ToDisplay::Checklist)
-            }
-            ApiCommand::Read(Read::Item(_name)) => todo!(),
-            ApiCommand::Read(Read::Items) => todo!(),
-            ApiCommand::Read(Read::List) => {
-                let cmd = ApiCommand::Read(Read::Checklist);
-                self.execute(&cmd);
-                let items = self.store.list();
-                display(items, ToDisplay::List)
-            }
-            ApiCommand::Read(Read::ListRecipes) => todo!(),
-            ApiCommand::Read(Read::Recipe(recipe)) => {
-                let _ = self.store.recipe_ingredients(recipe);
-            }
-            ApiCommand::Read(Read::Recipes) => {
-                let results = self.store.recipes();
-                display(results, ToDisplay::Recipes);
-            }
-            ApiCommand::Read(Read::Sections) => {
-                let results = self.store.sections();
-                display_sections(results, ToDisplay::Sections);
-            }
-            ApiCommand::Update(Update::Item(_name)) => todo!(),
-            ApiCommand::Update(Update::Recipe(_name)) => todo!(),
+            ApiCommand::Add(cmd) => match cmd {
+                Add::ChecklistItem(name) => self.store.add_checklist_item(name),
+                Add::Recipe {
+                    recipe,
+                    ingredients,
+                } => self.store.add_recipe(recipe, ingredients),
+                Add::Item { name, .. } => self.store.add_item(name),
+                Add::ListItem(name) => self.store.add_list_item(name),
+                Add::ListRecipe(_recipe) => todo!(),
+                Add::NewList => todo!(),
+            },
+            ApiCommand::Delete(cmd) => match cmd {
+                Delete::ChecklistItem(name) => self.store.delete_checklist_item(name),
+                Delete::ClearChecklist => todo!(),
+                Delete::ClearList => todo!(),
+                Delete::Item(_name) => todo!(),
+                Delete::ListItem(_name) => todo!(),
+                Delete::Recipe(recipe) => self.store.delete_recipe(recipe).unwrap(),
+            },
+            ApiCommand::Read(cmd) => match cmd {
+                Read::All => {
+                    let results = self.store.items();
+                    display(results, ToDisplay::Items);
+                }
+                Read::Checklist => {
+                    let items = self.store.checklist();
+                    display(items, ToDisplay::Checklist)
+                }
+                Read::Item(_name) => todo!(),
+                Read::Items => todo!(),
+                Read::List => {
+                    let cmd = ApiCommand::Read(Read::Checklist);
+                    self.execute(&cmd);
+                    let items = self.store.list();
+                    display(items, ToDisplay::List)
+                }
+                Read::ListRecipes => todo!(),
+                Read::Recipe(recipe) => {
+                    let _ = self.store.recipe_ingredients(recipe);
+                }
+                Read::Recipes => {
+                    let results = self.store.recipes();
+                    display(results, ToDisplay::Recipes);
+                }
+                Read::Sections => {
+                    let results = self.store.sections();
+                    display_sections(results, ToDisplay::Sections);
+                }
+            },
+            ApiCommand::Update(cmd) => match cmd {
+                Update::Item(_name) => todo!(),
+                Update::Recipe(_name) => todo!(),
+            },
         }
     }
 }

@@ -26,7 +26,7 @@ pub fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
 
     let Some(val) = matches.get_one::<String>("db") else {
-        unreachable!()
+        unreachable!("'db' has a default setting")
     };
 
     let mut store = match val.as_str() {
