@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{cli, migrate_json_db::migrate_groceries, CliError};
+use crate::{cli, CliError};
 use api::Api;
 use clap::ArgMatches;
 use common::{
@@ -9,7 +9,7 @@ use common::{
     recipes::{Ingredients, RecipeName},
 };
 use persistence::{
-    json_db::JsonStore,
+    json_db::{migrate_json_db::migrate_groceries, JsonStore},
     sqlite_db::{establish_connection, SqliteStore},
     store::Store,
 };

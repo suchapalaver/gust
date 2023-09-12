@@ -1,3 +1,5 @@
+pub mod migrate_json_db;
+
 use std::{collections::HashSet, path::Path};
 
 use common::{
