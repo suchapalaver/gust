@@ -1,5 +1,5 @@
 use common::{
-    groceriesitem::ItemName,
+    item::ItemName,
     recipes::{Ingredients, RecipeName},
 };
 use thiserror::Error;

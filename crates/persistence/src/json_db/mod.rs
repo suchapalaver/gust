@@ -1,12 +1,12 @@
 use std::{collections::HashSet, path::Path};
 
 use common::{
-    groceries::Groceries,
-    groceriesitem::{Item, Section},
     helpers::ReadWrite,
     input::{item_from_user, item_matches, section_from_user},
+    item::{Item, Section},
+    items::Groceries,
+    list::ShoppingList,
     recipes::RecipeName,
-    shoppinglist::ShoppingList,
     ReadError,
 };
 
