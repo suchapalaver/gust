@@ -1,4 +1,5 @@
 use crate::schema::{checklist, items, items_recipes, items_sections, list, recipes, sections};
+use common::recipes::RecipeName;
 use diesel::prelude::*;
 
 pub trait ItemInfo {
@@ -22,6 +23,12 @@ pub struct NewChecklistItem {
 pub struct Item {
     pub id: i32,
     pub name: String,
+}
+
+impl Into<common::item::Item> for Item {
+    fn into(self) -> common::item::Item {
+        common::item::Item::new(self.name)
+    }
 }
 
 impl ItemInfo for Item {
@@ -59,6 +66,12 @@ pub struct NewRecipe<'a> {
 pub struct Recipe {
     pub id: i32,
     pub name: String,
+}
+
+impl Into<RecipeName> for Recipe {
+    fn into(self) -> RecipeName {
+        RecipeName::new_unchecked(self.name)
+    }
 }
 
 impl ItemInfo for Recipe {

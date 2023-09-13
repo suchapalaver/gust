@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{item::ItemName, ReadError};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
-pub struct RecipeName(pub String);
+pub struct RecipeName(String);
 
 impl fmt::Display for RecipeName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -16,6 +16,20 @@ impl fmt::Display for RecipeName {
 impl RecipeName {
     pub fn new(s: &str) -> Result<Self, ReadError> {
         Self::from_str(s)
+    }
+
+    pub fn new_unchecked(s: impl Into<String>) -> Self {
+        Self(s.into())
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl From<&str> for RecipeName {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
     }
 }
 
@@ -28,7 +42,7 @@ impl FromStr for RecipeName {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
-pub struct Ingredients(pub Vec<ItemName>);
+pub struct Ingredients(Vec<ItemName>);
 
 impl Ingredients {
     pub(crate) fn new() -> Self {
@@ -57,9 +71,7 @@ impl FromIterator<ItemName> for Ingredients {
 
 impl From<&str> for Ingredients {
     fn from(s: &str) -> Self {
-        s.split(',')
-            .map(|item| ItemName(item.trim().to_lowercase()))
-            .collect()
+        s.split(',').map(ItemName::from).collect()
     }
 }
 

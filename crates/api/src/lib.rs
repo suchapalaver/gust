@@ -1,12 +1,18 @@
 use std::fmt::{self, Display};
 
-use common::commands::{Add, ApiCommand, Delete, Read, Update};
-use persistence::{
-    models::{ItemInfo, Section},
-    store::{Storage, Store},
+use common::{
+    commands::{Add, ApiCommand, Delete, Read, Update},
+    recipes::{Ingredients, RecipeName},
 };
+use persistence::store::{Storage, Store, StoreError};
 
-use colored::Colorize;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ApiError {
+    #[error("Store error: {0}")]
+    StoreError(#[from] StoreError),
+}
 
 pub struct Api {
     store: Store,
@@ -17,55 +23,76 @@ impl Api {
         Self { store }
     }
 
-    pub fn execute(&mut self, command: &ApiCommand) {
+    pub fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
         match command {
             ApiCommand::Add(cmd) => match cmd {
-                Add::ChecklistItem(name) => self.store.add_checklist_item(name),
+                Add::ChecklistItem(name) => {
+                    self.store.add_checklist_item(&name);
+                    todo!()
+                }
                 Add::Recipe {
                     recipe,
                     ingredients,
-                } => self.store.add_recipe(recipe, ingredients),
-                Add::Item { name, .. } => self.store.add_item(name),
-                Add::ListItem(name) => self.store.add_list_item(name),
+                } => {
+                    self.store.add_recipe(&recipe, &ingredients);
+                    todo!()
+                }
+                Add::Item { name, .. } => {
+                    self.store.add_item(&name)?;
+                    todo!()
+                }
+                Add::ListItem(name) => {
+                    self.store.add_list_item(&name);
+                    todo!()
+                }
                 Add::ListRecipe(_recipe) => todo!(),
                 Add::NewList => todo!(),
             },
             ApiCommand::Delete(cmd) => match cmd {
-                Delete::ChecklistItem(name) => self.store.delete_checklist_item(name),
+                Delete::ChecklistItem(name) => {
+                    self.store.delete_checklist_item(&name);
+                    todo!()
+                }
                 Delete::ClearChecklist => todo!(),
                 Delete::ClearList => todo!(),
                 Delete::Item(_name) => todo!(),
                 Delete::ListItem(_name) => todo!(),
-                Delete::Recipe(recipe) => self.store.delete_recipe(recipe).unwrap(),
+                Delete::Recipe(recipe) => {
+                    self.store.delete_recipe(&recipe).unwrap();
+                    todo!()
+                }
             },
             ApiCommand::Read(cmd) => match cmd {
                 Read::All => {
                     let results = self.store.items();
-                    display(results, ToDisplay::Items);
+                    todo!()
+                    // display(results, ToDisplay::Items);
+                    // Ok(())
                 }
                 Read::Checklist => {
                     let items = self.store.checklist();
-                    display(items, ToDisplay::Checklist)
+                    todo!()
+                    // display(items, ToDisplay::Checklist);
+                    // Ok(())
                 }
                 Read::Item(_name) => todo!(),
                 Read::Items => todo!(),
                 Read::List => {
                     let cmd = ApiCommand::Read(Read::Checklist);
-                    self.execute(&cmd);
+                    self.execute(cmd)?;
                     let items = self.store.list();
-                    display(items, ToDisplay::List)
+                    todo!()
                 }
                 Read::ListRecipes => todo!(),
-                Read::Recipe(recipe) => {
-                    let _ = self.store.recipe_ingredients(recipe);
-                }
-                Read::Recipes => {
-                    let results = self.store.recipes();
-                    display(results, ToDisplay::Recipes);
-                }
+                Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe) {
+                    Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
+                    Ok(_) => todo!(),
+                    Err(e) => todo!(),
+                },
+                Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes()?)),
                 Read::Sections => {
                     let results = self.store.sections();
-                    display_sections(results, ToDisplay::Sections);
+                    todo!()
                 }
             },
             ApiCommand::Update(cmd) => match cmd {
@@ -76,37 +103,53 @@ impl Api {
     }
 }
 
-enum ToDisplay {
+pub enum ApiResponse {
     Checklist,
     Items,
     List,
-    Recipes,
+    Recipes(Vec<RecipeName>),
+    RecipeIngredients(Ingredients),
     Sections,
 }
 
-impl Display for ToDisplay {
+impl Display for ApiResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Checklist => write!(f, "checklist"),
             Self::Items => write!(f, "items"),
             Self::List => write!(f, "list"),
-            Self::Recipes => write!(f, "recipes"),
+            Self::Recipes(recipes) => {
+                for recipe in recipes {
+                    writeln!(f, "{}", recipe)?;
+                }
+                Ok(())
+            }
+            Self::RecipeIngredients(ingredients) => {
+                for ingredient in ingredients.iter() {
+                    writeln!(f, "{}", ingredient)?;
+                }
+                Ok(())
+            }
             Self::Sections => write!(f, "sections"),
         }
     }
 }
 
-fn display<T: ItemInfo>(items: Vec<T>, to_display: ToDisplay) {
-    println!(
-        "{}{}",
-        to_display.to_string().blue().bold(),
-        ":".blue().bold()
-    );
-    for item in items {
-        println!(" {} {}", "-".bold().blue(), item.name().blue());
-    }
-}
+#[cfg(test)]
+mod tests {
+    use common::recipes::RecipeName;
 
-fn display_sections(items: Vec<Section>, to_display: ToDisplay) {
-    display(items, to_display)
+    use crate::ApiResponse;
+
+    #[test]
+    fn test_recipes_response_display() {
+        let recipes = ApiResponse::Recipes(vec![
+            RecipeName::from("peanut butter and jelly sandwich"),
+            RecipeName::from("cheese and apple snack"),
+        ]);
+        insta::assert_display_snapshot!(recipes, @r###"
+        peanut butter and jelly sandwich
+        cheese and apple snack
+        "###);
+    }
 }

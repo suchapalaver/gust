@@ -13,20 +13,20 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn new(name: &str) -> Self {
+    pub fn new(name: impl Into<String>) -> Self {
         Self {
-            name: ItemName(name.to_string()),
+            name: ItemName(name.into()),
             ..Default::default()
         }
     }
 
-    pub fn with_section(mut self, section: &str) -> Self {
-        self.section = Some(Section(section.to_string()));
+    pub fn with_section(mut self, section: impl Into<String>) -> Self {
+        self.section = Some(Section(section.into()));
         self
     }
 
-    pub(crate) fn matches(&self, s: &str) -> bool {
-        s.split(' ').all(|word| !self.name.0.contains(word))
+    pub(crate) fn matches(&self, s: impl Into<String>) -> bool {
+        s.into().split(' ').all(|word| !self.name.0.contains(word))
     }
 }
 
@@ -37,7 +37,7 @@ impl fmt::Display for Item {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
-pub struct ItemName(pub String);
+pub struct ItemName(String);
 
 impl std::fmt::Display for ItemName {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -51,8 +51,14 @@ impl From<&str> for ItemName {
     }
 }
 
+impl ItemName {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
-pub struct Section(pub String);
+pub struct Section(String);
 
 impl From<&str> for Section {
     fn from(value: &str) -> Self {
@@ -63,5 +69,11 @@ impl From<&str> for Section {
 impl fmt::Display for Section {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl Section {
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }

@@ -24,11 +24,8 @@ pub fn run() -> Result<(), CliError> {
     let store = match val.as_str() {
         "sqlite" => {
             let mut store = SqliteStore::new(establish_connection());
-            if let Some(("migrate-json-db", matches)) = matches.subcommand() {
-                migrate_groceries(
-                    store.connection(),
-                    matches.get_one::<String>("path").unwrap().as_str(),
-                )?;
+            if let Some(("migrate-json-db", _)) = matches.subcommand() {
+                migrate_groceries(&mut JsonStore::default(), store.connection())?;
             }
             Store::from(store)
         }
@@ -36,17 +33,15 @@ pub fn run() -> Result<(), CliError> {
         _ => unreachable!(),
     };
 
-    let mut api = Api::new(store);
-
-    let cmd = match matches.subcommand() {
+    let response = Api::new(store).execute(match matches.subcommand() {
         Some(("add", matches)) => ApiCommand::Add(add(matches)?),
         Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
         Some(("read", matches)) => ApiCommand::Read(read(matches)?),
         Some(("update", matches)) => ApiCommand::Update(update(matches)?),
         _ => unreachable!(),
-    };
+    })?;
 
-    api.execute(&cmd);
+    println!("{response}");
 
     Ok(())
 }

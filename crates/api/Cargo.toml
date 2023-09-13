@@ -12,5 +12,7 @@ repository = "https://github.com/suchapalaver/grusterylist"
 colored = { workspace = true }
 common = { path = "../common" }
 persistence = { path = "../persistence" }
+thiserror = { workspace = true }
 
 [dev-dependencies]
+insta = { workspace = true }

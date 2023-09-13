@@ -1,12 +1,14 @@
 use common::{
     item::ItemName,
+    items::Groceries,
+    list::ShoppingList,
     recipes::{Ingredients, RecipeName},
 };
 use thiserror::Error;
 
 use crate::{
     json_db::JsonStore,
-    models::{Item, Recipe, Section},
+    models::{Item, Section},
     sqlite_db::SqliteStore,
 };
 
@@ -14,6 +16,12 @@ use crate::{
 pub enum StoreError {
     #[error("DB query failed: {0}")]
     DBQuery(#[from] diesel::result::Error),
+
+    #[error("Invalid JSON file: {0}")]
+    DeserializingError(#[from] serde_json::Error),
+
+    #[error("Error reading/writing file: {0}")]
+    ReadWriteError(#[from] std::io::Error),
 }
 
 pub enum Store {
@@ -34,7 +42,7 @@ impl From<JsonStore> for Store {
 }
 
 impl Storage for Store {
-    fn add_item(&mut self, item: &ItemName) {
+    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
         todo!()
     }
 
@@ -54,10 +62,6 @@ impl Storage for Store {
         todo!()
     }
 
-    fn list(&mut self) -> Vec<Item> {
-        todo!()
-    }
-
     fn delete_checklist_item(&mut self, item: &ItemName) {
         todo!()
     }
@@ -66,25 +70,47 @@ impl Storage for Store {
         todo!()
     }
 
-    fn items(&mut self) -> Vec<Item> {
-        todo!()
+    fn items(&mut self) -> Result<Groceries, StoreError> {
+        match self {
+            Self::Json(store) => store.items(),
+            Self::Sqlite(store) => store.items(),
+        }
     }
 
-    fn recipe_ingredients(&mut self, recipe: &RecipeName) -> Vec<(RecipeName, Ingredients)> {
-        todo!()
+    fn list(&mut self) -> Result<ShoppingList, StoreError> {
+        match self {
+            Self::Json(store) => store.list(),
+            Self::Sqlite(store) => store.list(),
+        }
+    }
+
+    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError> {
+        match self {
+            Self::Json(store) => store.recipes(),
+            Self::Sqlite(store) => store.recipes(),
+        }
+    }
+
+    fn recipe_ingredients(
+        &mut self,
+        recipe: &RecipeName,
+    ) -> Result<Option<Ingredients>, StoreError> {
+        match self {
+            Self::Json(store) => store.recipe_ingredients(recipe),
+            Self::Sqlite(store) => store.recipe_ingredients(recipe),
+        }
     }
 
     fn sections(&mut self) -> Vec<Section> {
-        todo!()
-    }
-
-    fn recipes(&mut self) -> Vec<Recipe> {
-        todo!()
+        match self {
+            Self::Json(store) => store.sections(),
+            Self::Sqlite(store) => store.sections(),
+        }
     }
 }
 
 pub trait Storage {
-    fn add_item(&mut self, item: &ItemName);
+    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
 
     fn add_checklist_item(&mut self, item: &ItemName);
 
@@ -94,17 +120,20 @@ pub trait Storage {
 
     fn checklist(&mut self) -> Vec<Item>;
 
-    fn list(&mut self) -> Vec<Item>;
+    fn list(&mut self) -> Result<ShoppingList, StoreError>;
 
     fn delete_checklist_item(&mut self, item: &ItemName);
 
     fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError>;
 
-    fn items(&mut self) -> Vec<Item>;
+    fn items(&mut self) -> Result<Groceries, StoreError>;
 
-    fn recipe_ingredients(&mut self, recipe: &RecipeName) -> Vec<(RecipeName, Ingredients)>;
+    fn recipe_ingredients(
+        &mut self,
+        recipe: &RecipeName,
+    ) -> Result<Option<Ingredients>, StoreError>;
 
     fn sections(&mut self) -> Vec<Section>;
 
-    fn recipes(&mut self) -> Vec<Recipe>;
+    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError>;
 }
