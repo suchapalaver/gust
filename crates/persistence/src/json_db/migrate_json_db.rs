@@ -1,25 +1,21 @@
-use std::path::Path;
-
-use common::ReadError;
+use common::sections::SECTIONS;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 
 use crate::{
     models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
     schema,
+    store::{Storage, StoreError},
 };
 
-fn migrate_sections<P: AsRef<Path> + std::marker::Copy>(
-    connection: &mut SqliteConnection,
-    path: P,
-) -> Result<(), ReadError> {
-    let sections = crate::json_db::load_sections(path)?;
+use super::JsonStore;
+
+pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
+    let sections = SECTIONS;
 
     use crate::schema::sections;
 
     for name in sections {
-        let section = NewSection {
-            name: &name.to_string(),
-        };
+        let section = NewSection { name };
 
         diesel::insert_into(sections::table)
             .values(&section)
@@ -31,11 +27,11 @@ fn migrate_sections<P: AsRef<Path> + std::marker::Copy>(
     Ok(())
 }
 
-fn migrate_recipes<P: AsRef<Path> + std::marker::Copy>(
+fn migrate_recipes(
+    json: &mut JsonStore,
     connection: &mut SqliteConnection,
-    path: P,
-) -> Result<(), ReadError> {
-    let recipes = crate::json_db::load_recipes(path)?;
+) -> Result<(), StoreError> {
+    let recipes = json.recipes()?;
 
     use crate::schema::recipes;
 
@@ -54,19 +50,19 @@ fn migrate_recipes<P: AsRef<Path> + std::marker::Copy>(
     Ok(())
 }
 
-pub fn migrate_groceries<P: AsRef<Path> + std::marker::Copy>(
+pub fn migrate_groceries(
+    json: &mut JsonStore,
     connection: &mut SqliteConnection,
-    path: P,
-) -> Result<(), ReadError> {
-    migrate_sections(connection, path)?;
-    migrate_recipes(connection, path)?;
+) -> Result<(), StoreError> {
+    migrate_sections(connection)?;
+    migrate_recipes(json, connection)?;
 
-    let groceries = crate::json_db::load_groceries_collection(path)?;
+    let groceries = json.items()?;
     let items_table = schema::items::table;
     let recipes_table = schema::recipes::table;
     let sections_table = schema::sections::table;
 
-    for item in groceries {
+    for item in groceries.collection {
         // add the item to the item table
         let new_item = NewItem {
             name: &item.name.to_string(),

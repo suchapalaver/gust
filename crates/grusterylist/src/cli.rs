@@ -1,15 +1,22 @@
+use api::ApiError;
 use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
 use common::ReadError;
-use persistence::json_db::ITEMS_JSON_PATH;
+use persistence::{json_db::ITEMS_JSON_PATH, store::StoreError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum CliError {
+    #[error("Api error: {0}")]
+    ApiError(#[from] ApiError),
+
     #[error("Invalid input: {0}")]
     ParseInputError(String),
 
     #[error("Read error: {0}")]
     ReadError(#[from] ReadError),
+
+    #[error("Store error: {0}")]
+    StoreError(#[from] StoreError),
 }
 
 fn ingredient() -> Arg {
@@ -196,7 +203,7 @@ pub fn cli() -> Command {
                 .long("database")
                 .num_args(1)
                 .value_parser(["json", "sqlite"])
-                .default_value("sqlite")
+                .default_value("json")
                 .help("which database to use"),
         )
     ////////////////////////////////////////////////////////////////////////////////

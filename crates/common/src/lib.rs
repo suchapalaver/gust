@@ -1,5 +1,4 @@
 pub mod commands;
-pub mod helpers;
 pub mod input;
 pub mod item;
 pub mod items;
@@ -14,14 +13,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ReadError {
-    #[error("Invalid JSON file: {0}")]
-    DeserializingError(#[from] serde_json::Error),
-
     #[error("Invalid JSON: {0}")]
     Json(Value),
-
-    #[error("Error reading/writing file: {0}")]
-    ReadWriteError(#[from] std::io::Error),
 
     #[error("Item not found")]
     ItemNotFound,

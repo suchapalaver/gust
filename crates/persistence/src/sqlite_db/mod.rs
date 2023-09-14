@@ -2,18 +2,19 @@
 
 use common::{
     item::ItemName,
+    items::Groceries,
+    list::ShoppingList,
     recipes::{Ingredients, RecipeName},
 };
 use diesel::prelude::*;
 // use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 use diesel::SqliteConnection;
 use dotenv::dotenv;
-use std::{env, str::FromStr};
+use std::env;
 
 use crate::{
     models::{
-        self, Item, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe, Recipe,
-        Section,
+        self, Item, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe, Section,
     },
     schema,
     store::{Storage, StoreError},
@@ -98,9 +99,10 @@ impl SqliteStore {
 }
 
 impl Storage for SqliteStore {
-    fn add_item(&mut self, item: &ItemName) {
+    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
         let item_name = item.to_string();
         let _ = self.get_or_insert_item(&item_name);
+        Ok(())
     }
 
     fn add_checklist_item(&mut self, item: &ItemName) {
@@ -133,7 +135,7 @@ impl Storage for SqliteStore {
         let item_ids: Vec<i32> = ingredients
             .iter()
             .map(|ingredient| {
-                let item_name = ingredient.0.to_string().to_lowercase();
+                let item_name = ingredient.as_str().to_lowercase();
                 self.get_or_insert_item(&item_name)
             })
             .collect();
@@ -153,14 +155,17 @@ impl Storage for SqliteStore {
             .expect("Error loading checklist")
     }
 
-    fn list(&mut self) -> Vec<Item> {
-        schema::items::table
+    fn list(&mut self) -> Result<ShoppingList, StoreError> {
+        Ok(schema::items::table
             .filter(
                 schema::items::dsl::id
                     .eq_any(schema::list::table.select(schema::list::dsl::item_id)),
             )
             .load::<Item>(self.connection())
             .expect("Error loading list")
+            .into_iter()
+            .map(|item| item.into())
+            .collect())
     }
 
     fn delete_checklist_item(&mut self, item: &ItemName) {
@@ -197,22 +202,27 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
-    fn items(&mut self) -> Vec<Item> {
+    fn items(&mut self) -> Result<Groceries, StoreError> {
         use schema::items::dsl::*;
 
-        items
+        Ok(items
             .load::<Item>(self.connection())
             .expect("Error loading items")
+            .into_iter()
+            .map(|i| i.into())
+            .collect())
     }
 
-    fn recipe_ingredients(&mut self, recipe: &RecipeName) -> Vec<(RecipeName, Ingredients)> {
-        let results = self.load_recipe(&recipe.0.to_string());
+    fn recipe_ingredients(
+        &mut self,
+        recipe: &RecipeName,
+    ) -> Result<Option<Ingredients>, StoreError> {
+        let results = self.load_recipe(recipe.as_str());
 
-        let mut v = Vec::<(RecipeName, Ingredients)>::with_capacity(results.len());
+        let mut v = Vec::<Ingredients>::with_capacity(results.len());
 
         for recipe in results {
             let recipe_id = recipe.id;
-            let recipe = RecipeName::from_str(recipe.name.as_str()).unwrap();
 
             let results = schema::items_recipes::table
                 .filter(schema::items_recipes::dsl::recipe_id.eq(&recipe_id))
@@ -225,11 +235,10 @@ impl Storage for SqliteStore {
                 .map(|item| ItemName::from(item.name.as_str()))
                 .collect::<Ingredients>();
 
-            println!("Recipe: {recipe}");
-            println!("Ingredients: {ingredients:#?}");
-            v.push((recipe, ingredients));
+            v.push(ingredients);
         }
-        v
+
+        Ok(v.into_iter().take(1).next())
     }
 
     fn sections(&mut self) -> Vec<Section> {
@@ -240,11 +249,14 @@ impl Storage for SqliteStore {
             .expect("Error loading sections")
     }
 
-    fn recipes(&mut self) -> Vec<Recipe> {
+    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError> {
         use schema::recipes::dsl::*;
 
-        recipes
+        Ok(recipes
             .load::<models::Recipe>(self.connection())
             .expect("Error loading recipes")
+            .into_iter()
+            .map(|r| r.into())
+            .collect())
     }
 }

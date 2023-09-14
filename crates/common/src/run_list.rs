@@ -14,20 +14,17 @@ impl ShoppingList {
                 .map(|section| {
                     let mut a: Vec<Item> = list_items
                         .iter()
-                        .filter(|groceriesitem| groceriesitem.section.is_some())
-                        .filter(|groceriesitem| {
-                            groceriesitem.section.as_ref().unwrap().0 == section
-                        })
+                        .filter(|item| item.section.is_some())
+                        .filter(|item| item.section.as_ref().unwrap().as_str() == section)
                         .cloned()
                         .collect();
 
                     let b: Vec<Item> = groceries
                         .collection
                         .iter()
-                        .filter(|groceriesitem| groceriesitem.section.is_some())
-                        .filter(|groceriesitem| {
-                            groceriesitem.section.as_ref().unwrap().0 == section
-                                && !a.contains(groceriesitem)
+                        .filter(|item| item.section.is_some())
+                        .filter(|item| {
+                            item.section.as_ref().unwrap().as_str() == section && !a.contains(item)
                         })
                         .cloned()
                         .collect();
@@ -38,27 +35,27 @@ impl ShoppingList {
         };
         for section in groceries_by_section {
             if !section.is_empty() {
-                for groceriesitem in &section {
-                    if !self.items.contains(groceriesitem)
-                        && groceriesitem.recipes.is_some()
-                        && groceriesitem
+                for item in &section {
+                    if !self.items.contains(item)
+                        && item.recipes.is_some()
+                        && item
                             .recipes
                             .as_ref()
                             .unwrap()
                             .iter()
                             .any(|recipe| self.recipes.contains(recipe))
                     {
-                        self.add_groceries_item(groceriesitem.clone());
+                        self.add_item(item.clone());
                     }
                 }
-                for groceriesitem in section {
-                    if !self.items.contains(&groceriesitem) {
-                        let res = user_wants_to_add_item_to_list(&groceriesitem);
+                for item in section {
+                    if !self.items.contains(&item) {
+                        let res = user_wants_to_add_item_to_list(&item);
 
                         match res {
                             Some(true) => {
-                                if !self.items.contains(&groceriesitem) {
-                                    self.add_groceries_item(groceriesitem.clone());
+                                if !self.items.contains(&item) {
+                                    self.add_item(item.clone());
                                 }
                             }
                             Some(false) => continue,

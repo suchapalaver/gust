@@ -13,5 +13,11 @@ common = { path = "../common" }
 diesel = { workspace = true }
 diesel_migrations = { workspace = true }
 dotenv = { workspace = true }
+serde = { workspace = true }
+serde_derive = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+assert_fs = { workspace = true }
+insta = { workspace = true }
