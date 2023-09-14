@@ -12,7 +12,9 @@ use common::{
     items::Items,
     list::ShoppingList,
     recipes::{Ingredients, RecipeName},
+    Load,
 };
+use serde::Deserialize;
 
 use crate::store::{Storage, StoreError};
 
@@ -114,15 +116,11 @@ impl Storage for JsonStore {
     }
 
     fn items(&mut self) -> Result<Items, StoreError> {
-        let file = File::open(&self.items_path)?;
-        let reader = BufReader::new(file);
-        Ok(serde_json::from_reader(reader)?)
+        Ok(Items::from_json(&self.items_path)?)
     }
 
     fn list(&mut self) -> Result<ShoppingList, StoreError> {
-        let file = File::open(&self.list_path)?;
-        let reader = BufReader::new(file);
-        Ok(serde_json::from_reader(reader)?)
+        Ok(ShoppingList::from_json(&self.items_path)?)
     }
 
     fn recipe_ingredients(

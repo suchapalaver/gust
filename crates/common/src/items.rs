@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     item::{Item, ItemName, Section},
     recipes::{Ingredients, RecipeName},
-    ReadError,
+    Load, ReadError,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
@@ -14,6 +14,10 @@ pub struct Items {
     pub sections: Vec<Section>,
     pub collection: Vec<Item>,
     pub recipes: Vec<RecipeName>,
+}
+
+impl Load for Items {
+    type T = Items;
 }
 
 impl FromIterator<Item> for Items {

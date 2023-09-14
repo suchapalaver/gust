@@ -3,6 +3,7 @@ use common::{
     items::Items,
     list::ShoppingList,
     recipes::{Ingredients, RecipeName},
+    LoadError,
 };
 use thiserror::Error;
 
@@ -18,6 +19,9 @@ pub enum StoreError {
 
     #[error("Error reading/writing file: {0}")]
     ReadWriteError(#[from] std::io::Error),
+
+    #[error("Load error: {0}")]
+    LoadError(#[from] LoadError),
 }
 
 pub enum Store {
