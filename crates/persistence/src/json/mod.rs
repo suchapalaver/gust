@@ -8,16 +8,13 @@ use std::{
 
 use common::{
     input::item_matches,
-    item::Item,
-    items::Groceries,
+    item::{Item, Section},
+    items::Items,
     list::ShoppingList,
     recipes::{Ingredients, RecipeName},
 };
 
-use crate::{
-    models::{self},
-    store::{Storage, StoreError},
-};
+use crate::store::{Storage, StoreError};
 
 pub const ITEMS_JSON_PATH: &str = "groceries.json";
 
@@ -104,7 +101,7 @@ impl Storage for JsonStore {
         todo!()
     }
 
-    fn checklist(&mut self) -> Result<Vec<models::Item>, StoreError> {
+    fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
         todo!()
     }
 
@@ -116,7 +113,7 @@ impl Storage for JsonStore {
         todo!()
     }
 
-    fn items(&mut self) -> Result<Groceries, StoreError> {
+    fn items(&mut self) -> Result<Items, StoreError> {
         let file = File::open(&self.items_path)?;
         let reader = BufReader::new(file);
         Ok(serde_json::from_reader(reader)?)
@@ -140,7 +137,7 @@ impl Storage for JsonStore {
         ))
     }
 
-    fn sections(&mut self) -> Result<Vec<models::Section>, StoreError> {
+    fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
         todo!()
     }
 
@@ -191,7 +188,7 @@ pub mod test {
         Ok(file)
     }
 
-    fn items() -> Groceries {
+    fn items() -> Items {
         let file = test_json_file().unwrap();
         let mut store = Store::Json(
             JsonStore::new().with_items_path(file.path().as_os_str().to_str().unwrap()),
@@ -202,7 +199,7 @@ pub mod test {
 
     #[test]
     fn test_groceries_default() -> Result<(), Box<dyn std::error::Error>> {
-        let default_items = Groceries::default();
+        let default_items = Items::default();
         insta::assert_json_snapshot!(default_items, @r#"
       {
         "sections": [],
@@ -216,7 +213,7 @@ pub mod test {
     #[test]
     fn test_save_items() -> Result<(), Box<dyn std::error::Error>> {
         let mut store = JsonStore::new().with_items_path("test_groceries.json");
-        let items = Groceries::default();
+        let items = Items::default();
         insta::assert_json_snapshot!(items, @r#"
     {
       "sections": [],

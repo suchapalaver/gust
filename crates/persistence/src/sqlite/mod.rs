@@ -2,7 +2,7 @@
 
 use common::{
     item::ItemName,
-    items::Groceries,
+    items::Items,
     list::ShoppingList,
     recipes::{Ingredients, RecipeName},
 };
@@ -14,7 +14,8 @@ use std::env;
 
 use crate::{
     models::{
-        self, Item, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe, Section,
+        self, Item, ItemInfo, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe,
+        Section,
     },
     schema,
     store::{Storage, StoreError},
@@ -150,13 +151,16 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
-    fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
+    fn checklist(&mut self) -> Result<Vec<common::item::Item>, StoreError> {
         Ok(schema::items::table
             .filter(
                 schema::items::dsl::id
                     .eq_any(schema::checklist::table.select(schema::checklist::dsl::item_id)),
             )
-            .load::<Item>(self.connection())?)
+            .load::<Item>(self.connection())?
+            .into_iter()
+            .map(|item| item.into())
+            .collect())
     }
 
     fn list(&mut self) -> Result<ShoppingList, StoreError> {
@@ -206,7 +210,7 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
-    fn items(&mut self) -> Result<Groceries, StoreError> {
+    fn items(&mut self) -> Result<Items, StoreError> {
         use schema::items::dsl::*;
 
         Ok(items
@@ -245,10 +249,14 @@ impl Storage for SqliteStore {
         Ok(v.into_iter().take(1).next())
     }
 
-    fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
+    fn sections(&mut self) -> Result<Vec<common::item::Section>, StoreError> {
         use schema::sections::dsl::*;
 
-        Ok(sections.load::<Section>(self.connection())?)
+        Ok(sections
+            .load::<Section>(self.connection())?
+            .into_iter()
+            .map(|sec| sec.name().into())
+            .collect())
     }
 
     fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError> {

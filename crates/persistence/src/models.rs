@@ -99,6 +99,12 @@ impl ItemInfo for Section {
     }
 }
 
+impl From<Section> for common::sections::Section {
+    fn from(value: Section) -> common::sections::Section {
+        common::sections::Section::new(value.name)
+    }
+}
+
 #[derive(Insertable)]
 #[diesel(table_name = items_recipes)]
 pub struct NewItemRecipe {

@@ -1,9 +1,9 @@
 use crate::{
-    input::user_wants_to_add_item_to_list, item::Item, items::Groceries, list::ShoppingList,
+    input::user_wants_to_add_item_to_list, item::Item, items::Items, list::ShoppingList,
     sections::SECTIONS, ReadError,
 };
 impl ShoppingList {
-    pub fn add_groceries(&mut self, groceries: Groceries) -> Result<(), ReadError> {
+    pub fn add_groceries(&mut self, groceries: Items) -> Result<(), ReadError> {
         // move everything off list to temp list
         let list_items: Vec<Item> = self.items.drain(..).collect();
         assert!(self.items.is_empty());
