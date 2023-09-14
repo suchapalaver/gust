@@ -25,9 +25,9 @@ pub struct Item {
     pub name: String,
 }
 
-impl Into<common::item::Item> for Item {
-    fn into(self) -> common::item::Item {
-        common::item::Item::new(self.name)
+impl From<Item> for common::item::Item {
+    fn from(item: Item) -> common::item::Item {
+        common::item::Item::new(item.name)
     }
 }
 
@@ -68,9 +68,9 @@ pub struct Recipe {
     pub name: String,
 }
 
-impl Into<RecipeName> for Recipe {
-    fn into(self) -> RecipeName {
-        RecipeName::new_unchecked(self.name)
+impl From<Recipe> for RecipeName {
+    fn from(recipe: Recipe) -> RecipeName {
+        RecipeName::new_unchecked(recipe.name)
     }
 }
 
