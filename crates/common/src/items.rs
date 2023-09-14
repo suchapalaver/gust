@@ -10,15 +10,15 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
-pub struct Groceries {
+pub struct Items {
     pub sections: Vec<Section>,
     pub collection: Vec<Item>,
     pub recipes: Vec<RecipeName>,
 }
 
-impl FromIterator<Item> for Groceries {
+impl FromIterator<Item> for Items {
     fn from_iter<I: IntoIterator<Item = Item>>(iter: I) -> Self {
-        let mut c = Groceries::new();
+        let mut c = Items::new();
 
         for i in iter {
             c.add_item(i);
@@ -27,7 +27,7 @@ impl FromIterator<Item> for Groceries {
     }
 }
 
-impl Groceries {
+impl Items {
     pub fn new() -> Self {
         Self::default()
     }

@@ -1,16 +1,12 @@
 use common::{
-    item::ItemName,
-    items::Groceries,
+    item::{Item, ItemName, Section},
+    items::Items,
     list::ShoppingList,
     recipes::{Ingredients, RecipeName},
 };
 use thiserror::Error;
 
-use crate::{
-    json::JsonStore,
-    models::{Item, Section},
-    sqlite::SqliteStore,
-};
+use crate::{json::JsonStore, sqlite::SqliteStore};
 
 #[derive(Error, Debug)]
 pub enum StoreError {
@@ -95,7 +91,7 @@ impl Storage for Store {
         }
     }
 
-    fn items(&mut self) -> Result<Groceries, StoreError> {
+    fn items(&mut self) -> Result<Items, StoreError> {
         match self {
             Self::Json(store) => store.items(),
             Self::Sqlite(store) => store.items(),
@@ -153,7 +149,7 @@ pub trait Storage {
 
     fn list(&mut self) -> Result<ShoppingList, StoreError>;
 
-    fn items(&mut self) -> Result<Groceries, StoreError>;
+    fn items(&mut self) -> Result<Items, StoreError>;
 
     fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError>;
 

@@ -28,7 +28,7 @@ pub enum Add {
 }
 
 impl Add {
-    pub fn checklistitem_from_name(name: ItemName) -> Self {
+    pub fn checklist_item_from_name(name: ItemName) -> Self {
         Self::ChecklistItem(name)
     }
 
@@ -36,15 +36,15 @@ impl Add {
         Self::Item { name, section }
     }
 
-    pub fn listitem_from_name(name: ItemName) -> Self {
+    pub fn list_item_from_name(name: ItemName) -> Self {
         Self::ListItem(name)
     }
 
-    pub fn listrecipe_from_name(name: RecipeName) -> Self {
+    pub fn list_recipe_from_name(name: RecipeName) -> Self {
         Self::ListRecipe(name)
     }
 
-    pub fn newlist() -> Self {
+    pub fn new_list() -> Self {
         Self::NewList
     }
 
@@ -81,7 +81,6 @@ pub enum Read {
     All,
     Checklist,
     Item(ItemName),
-    Items,
     List,
     ListRecipes,
     Recipe(RecipeName),

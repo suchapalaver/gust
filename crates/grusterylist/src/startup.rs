@@ -67,19 +67,19 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
                 .map(|section| Section::from(section.as_str())),
         ))
     } else if let Some(item) = matches.get_one::<String>("checklist-item") {
-        Ok(Add::checklistitem_from_name(ItemName::from(item.as_str())))
+        Ok(Add::checklist_item_from_name(ItemName::from(item.as_str())))
     } else {
         match matches.subcommand() {
-            Some(("checklist", matches)) => Ok(Add::checklistitem_from_name(ItemName::from(
+            Some(("checklist", matches)) => Ok(Add::checklist_item_from_name(ItemName::from(
                 matches.get_one::<String>("item").unwrap().as_str(),
             ))),
             Some(("list", matches)) => {
                 if let Some(name) = matches.get_one::<String>("recipe") {
-                    Ok(Add::listrecipe_from_name(RecipeName::from_str(name)?))
+                    Ok(Add::list_recipe_from_name(RecipeName::from_str(name)?))
                 } else if let Some(name) = matches.get_one::<String>("item") {
-                    Ok(Add::listitem_from_name(ItemName::from(name.as_str())))
+                    Ok(Add::list_item_from_name(ItemName::from(name.as_str())))
                 } else {
-                    Ok(Add::newlist())
+                    Ok(Add::new_list())
                 }
             }
             _ => unreachable!(),
@@ -117,7 +117,7 @@ fn read(matches: &ArgMatches) -> Result<Read, CliError> {
         match matches.subcommand() {
             Some(("checklist", _matches)) => Ok(Read::Checklist),
             Some(("list", _matches)) => Ok(Read::List),
-            Some(("library", _matches)) => Ok(Read::Items),
+            Some(("library", _matches)) => Ok(Read::All),
             Some(("recipes", _matches)) => Ok(Read::Recipes),
             Some(("sections", _matches)) => Ok(Read::Sections),
             _ => Ok(Read::All),
@@ -134,18 +134,3 @@ fn update(matches: &ArgMatches) -> Result<Update, CliError> {
         unimplemented!()
     }
 }
-//     Some(("groceries", _)) => Ok(run_groceries::run()?),
-//     Some(("list", _)) => Ok(run_shopping_list::run()?),
-//     Some(("migrate-json-groceries-to-db", _)) => Ok(migrate::migrate_groceries()?),
-//     Some(("recipes", sync_matches)) => Ok(run_recipes::run(sync_matches)?),
-//     Some(("show-items-in-db", _)) => {
-//         show::show_items();
-//         Ok(())
-//     }
-//     Some(("show-list-sections", _)) => {
-//         show::show_sections();
-//         Ok(())
-//     }
-//     _ => unreachable!(),
-// }
-// }

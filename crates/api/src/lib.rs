@@ -2,6 +2,9 @@ use std::fmt::{self, Display};
 
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
+    item::{Item, ItemName, Section},
+    items::Items,
+    list::ShoppingList,
     recipes::{Ingredients, RecipeName},
 };
 use persistence::store::{Storage, Store, StoreError};
@@ -27,31 +30,31 @@ impl Api {
         match command {
             ApiCommand::Add(cmd) => match cmd {
                 Add::ChecklistItem(name) => {
-                    self.store.add_checklist_item(&name);
-                    todo!()
+                    self.store.add_checklist_item(&name)?;
+                    Ok(ApiResponse::ItemAdded(name))
                 }
                 Add::Recipe {
                     recipe,
                     ingredients,
                 } => {
-                    self.store.add_recipe(&recipe, &ingredients);
-                    todo!()
+                    self.store.add_recipe(&recipe, &ingredients)?;
+                    Ok(ApiResponse::RecipeAdded(recipe))
                 }
                 Add::Item { name, .. } => {
                     self.store.add_item(&name)?;
-                    todo!()
+                    Ok(ApiResponse::ItemAdded(name))
                 }
                 Add::ListItem(name) => {
-                    self.store.add_list_item(&name);
-                    todo!()
+                    self.store.add_list_item(&name)?;
+                    Ok(ApiResponse::ListItemAdded(name))
                 }
                 Add::ListRecipe(_recipe) => todo!(),
                 Add::NewList => todo!(),
             },
             ApiCommand::Delete(cmd) => match cmd {
                 Delete::ChecklistItem(name) => {
-                    self.store.delete_checklist_item(&name);
-                    todo!()
+                    self.store.delete_checklist_item(&name)?;
+                    Ok(ApiResponse::ChecklistItemDeleted(name))
                 }
                 Delete::ClearChecklist => todo!(),
                 Delete::ClearList => todo!(),
@@ -64,24 +67,19 @@ impl Api {
             },
             ApiCommand::Read(cmd) => match cmd {
                 Read::All => {
-                    let results = self.store.items();
-                    todo!()
-                    // display(results, ToDisplay::Items);
-                    // Ok(())
+                    let results = self.store.items()?;
+                    Ok(ApiResponse::Items(results))
                 }
                 Read::Checklist => {
-                    let items = self.store.checklist();
-                    todo!()
-                    // display(items, ToDisplay::Checklist);
-                    // Ok(())
+                    let items = self.store.checklist()?;
+                    Ok(ApiResponse::Checklist(items))
                 }
                 Read::Item(_name) => todo!(),
-                Read::Items => todo!(),
                 Read::List => {
                     let cmd = ApiCommand::Read(Read::Checklist);
                     self.execute(cmd)?;
-                    let items = self.store.list();
-                    todo!()
+                    let list = self.store.list()?;
+                    Ok(ApiResponse::List(list))
                 }
                 Read::ListRecipes => todo!(),
                 Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe) {
@@ -93,8 +91,8 @@ impl Api {
                 },
                 Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes()?)),
                 Read::Sections => {
-                    let results = self.store.sections();
-                    todo!()
+                    let results = self.store.sections()?;
+                    Ok(ApiResponse::Sections(results))
                 }
             },
             ApiCommand::Update(cmd) => match cmd {
@@ -106,21 +104,43 @@ impl Api {
 }
 
 pub enum ApiResponse {
-    Checklist,
-    Items,
-    List,
+    Checklist(Vec<Item>),
+    ChecklistItemDeleted(ItemName),
+    Items(Items),
+    ItemAdded(ItemName),
+    List(ShoppingList),
+    ListItemAdded(ItemName),
     NothingReturned(ApiCommand),
     Recipes(Vec<RecipeName>),
+    RecipeAdded(RecipeName),
     RecipeIngredients(Ingredients),
-    Sections,
+    Sections(Vec<Section>),
 }
 
 impl Display for ApiResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Checklist => write!(f, "checklist"),
-            Self::Items => write!(f, "items"),
-            Self::List => write!(f, "list"),
+            Self::Checklist(items) => {
+                for item in items {
+                    writeln!(f, "{}", item)?;
+                }
+                Ok(())
+            }
+            Self::ChecklistItemDeleted(name) => write!(f, "Checklist item deleted: {name}"),
+            Self::Items(items) => {
+                for item in &items.collection {
+                    writeln!(f, "{}", item)?;
+                }
+                Ok(())
+            }
+            Self::ItemAdded(name) => write!(f, "Item added: {name}"),
+            Self::List(list) => {
+                for item in &list.items {
+                    writeln!(f, "{}", item)?;
+                }
+                Ok(())
+            }
+            Self::ListItemAdded(name) => write!(f, "Item added to list: {name}"),
             Self::NothingReturned(cmd) => write!(f, "Nothing returned for command: {:?}.", cmd),
             Self::Recipes(recipes) => {
                 for recipe in recipes {
@@ -128,13 +148,19 @@ impl Display for ApiResponse {
                 }
                 Ok(())
             }
+            Self::RecipeAdded(name) => write!(f, "Recipe added: {name}"),
             Self::RecipeIngredients(ingredients) => {
                 for ingredient in ingredients.iter() {
                     writeln!(f, "{}", ingredient)?;
                 }
                 Ok(())
             }
-            Self::Sections => write!(f, "sections"),
+            Self::Sections(sections) => {
+                for section in sections {
+                    writeln!(f, "{}", section)?;
+                }
+                Ok(())
+            }
         }
     }
 }
