@@ -28,77 +28,93 @@ impl Api {
 
     pub fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
         match command {
-            ApiCommand::Add(cmd) => match cmd {
-                Add::ChecklistItem(name) => {
-                    self.store.add_checklist_item(&name)?;
-                    Ok(ApiResponse::ItemAdded(name))
-                }
-                Add::Recipe {
-                    recipe,
-                    ingredients,
-                } => {
-                    self.store.add_recipe(&recipe, &ingredients)?;
-                    Ok(ApiResponse::RecipeAdded(recipe))
-                }
-                Add::Item { name, .. } => {
-                    self.store.add_item(&name)?;
-                    Ok(ApiResponse::ItemAdded(name))
-                }
-                Add::ListItem(name) => {
-                    self.store.add_list_item(&name)?;
-                    Ok(ApiResponse::ListItemAdded(name))
-                }
-                Add::ListRecipe(_recipe) => todo!(),
-                Add::NewList => todo!(),
+            ApiCommand::Add(cmd) => self.add(cmd),
+            ApiCommand::Delete(cmd) => self.delete(cmd),
+            ApiCommand::Read(cmd) => self.read(cmd),
+            ApiCommand::Update(cmd) => self.update(cmd),
+        }
+    }
+
+    fn add(&mut self, cmd: Add) -> Result<ApiResponse, ApiError> {
+        match cmd {
+            Add::ChecklistItem(name) => {
+                self.store.add_checklist_item(&name)?;
+                Ok(ApiResponse::ItemAdded(name))
+            }
+            Add::Recipe {
+                recipe,
+                ingredients,
+            } => {
+                self.store.add_recipe(&recipe, &ingredients)?;
+                Ok(ApiResponse::RecipeAdded(recipe))
+            }
+            Add::Item { name, .. } => {
+                self.store.add_item(&name)?;
+                Ok(ApiResponse::ItemAdded(name))
+            }
+            Add::ListItem(name) => {
+                self.store.add_list_item(&name)?;
+                Ok(ApiResponse::ListItemAdded(name))
+            }
+            Add::ListRecipe(_recipe) => todo!(),
+            Add::NewList => todo!(),
+        }
+    }
+
+    fn read(&mut self, cmd: Read) -> Result<ApiResponse, ApiError> {
+        match cmd {
+            Read::All => {
+                let results = self.store.items()?;
+                Ok(ApiResponse::Items(results))
+            }
+            Read::Checklist => {
+                let items = self.store.checklist()?;
+                Ok(ApiResponse::Checklist(items))
+            }
+            Read::Item(_name) => todo!(),
+            Read::List => {
+                let cmd = ApiCommand::Read(Read::Checklist);
+                self.execute(cmd)?;
+                let list = self.store.list()?;
+                Ok(ApiResponse::List(list))
+            }
+            Read::ListRecipes => todo!(),
+            Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe) {
+                Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
+                Ok(None) => Ok(ApiResponse::NothingReturned(ApiCommand::Read(
+                    Read::Recipe(recipe),
+                ))),
+                Err(e) => Err(e.into()),
             },
-            ApiCommand::Delete(cmd) => match cmd {
-                Delete::ChecklistItem(name) => {
-                    self.store.delete_checklist_item(&name)?;
-                    Ok(ApiResponse::ChecklistItemDeleted(name))
-                }
-                Delete::ClearChecklist => todo!(),
-                Delete::ClearList => todo!(),
-                Delete::Item(_name) => todo!(),
-                Delete::ListItem(_name) => todo!(),
-                Delete::Recipe(recipe) => {
-                    self.store.delete_recipe(&recipe).unwrap();
-                    todo!()
-                }
-            },
-            ApiCommand::Read(cmd) => match cmd {
-                Read::All => {
-                    let results = self.store.items()?;
-                    Ok(ApiResponse::Items(results))
-                }
-                Read::Checklist => {
-                    let items = self.store.checklist()?;
-                    Ok(ApiResponse::Checklist(items))
-                }
-                Read::Item(_name) => todo!(),
-                Read::List => {
-                    let cmd = ApiCommand::Read(Read::Checklist);
-                    self.execute(cmd)?;
-                    let list = self.store.list()?;
-                    Ok(ApiResponse::List(list))
-                }
-                Read::ListRecipes => todo!(),
-                Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe) {
-                    Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
-                    Ok(None) => Ok(ApiResponse::NothingReturned(ApiCommand::Read(
-                        Read::Recipe(recipe),
-                    ))),
-                    Err(e) => Err(e.into()),
-                },
-                Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes()?)),
-                Read::Sections => {
-                    let results = self.store.sections()?;
-                    Ok(ApiResponse::Sections(results))
-                }
-            },
-            ApiCommand::Update(cmd) => match cmd {
-                Update::Item(_name) => todo!(),
-                Update::Recipe(_name) => todo!(),
-            },
+            Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes()?)),
+            Read::Sections => {
+                let results = self.store.sections()?;
+                Ok(ApiResponse::Sections(results))
+            }
+        }
+    }
+
+    fn update(&mut self, cmd: Update) -> Result<ApiResponse, ApiError> {
+        match cmd {
+            Update::Item(_name) => todo!(),
+            Update::Recipe(_name) => todo!(),
+        }
+    }
+
+    fn delete(&mut self, cmd: Delete) -> Result<ApiResponse, ApiError> {
+        match cmd {
+            Delete::ChecklistItem(name) => {
+                self.store.delete_checklist_item(&name)?;
+                Ok(ApiResponse::ChecklistItemDeleted(name))
+            }
+            Delete::ClearChecklist => todo!(),
+            Delete::ClearList => todo!(),
+            Delete::Item(_name) => todo!(),
+            Delete::ListItem(_name) => todo!(),
+            Delete::Recipe(recipe) => {
+                self.store.delete_recipe(&recipe).unwrap();
+                todo!()
+            }
         }
     }
 }
