@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::{
     item::{Item, ItemName},
     recipes::RecipeName,
-    ReadError,
+    Load, ReadError,
 };
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +12,10 @@ pub struct ShoppingList {
     pub checklist: Vec<Item>,
     pub recipes: Vec<RecipeName>,
     pub items: Vec<Item>,
+}
+
+impl Load for ShoppingList {
+    type T = ShoppingList;
 }
 
 impl FromIterator<Item> for ShoppingList {
