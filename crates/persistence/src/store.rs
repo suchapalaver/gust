@@ -7,9 +7,9 @@ use common::{
 use thiserror::Error;
 
 use crate::{
-    json_db::JsonStore,
+    json::JsonStore,
     models::{Item, Section},
-    sqlite_db::SqliteStore,
+    sqlite::SqliteStore,
 };
 
 #[derive(Error, Debug)]

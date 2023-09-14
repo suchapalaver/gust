@@ -14,7 +14,7 @@ CREATE TABLE items (
 CREATE TABLE items_recipes (
 	"item_id"	INTEGER NOT NULL,
 	"recipe_id"	INTEGER NOT NULL,
-	PRIMARY KEY("item_id", "recipe_id"), -- Composite primary key
+    PRIMARY KEY("item_id", "recipe_id"), -- Composite primary key
 	FOREIGN KEY("item_id") REFERENCES "items"("id"),
 	FOREIGN KEY("recipe_id") REFERENCES "recipes"("id")
 );

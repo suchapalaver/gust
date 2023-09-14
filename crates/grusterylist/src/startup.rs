@@ -9,8 +9,8 @@ use common::{
     recipes::{Ingredients, RecipeName},
 };
 use persistence::{
-    json_db::{migrate_json_db::migrate_groceries, JsonStore},
-    sqlite_db::{establish_connection, SqliteStore},
+    json::{migrate::migrate_groceries, JsonStore},
+    sqlite::{establish_connection, SqliteStore},
     store::Store,
 };
 
@@ -26,6 +26,8 @@ pub fn run() -> Result<(), CliError> {
             let mut store = SqliteStore::new(establish_connection());
             if let Some(("migrate-json-db", _)) = matches.subcommand() {
                 migrate_groceries(&mut JsonStore::default(), store.connection())?;
+                println!("Migration complete");
+                return Ok(());
             }
             Store::from(store)
         }
@@ -134,7 +136,7 @@ fn update(matches: &ArgMatches) -> Result<Update, CliError> {
 }
 //     Some(("groceries", _)) => Ok(run_groceries::run()?),
 //     Some(("list", _)) => Ok(run_shopping_list::run()?),
-//     Some(("migrate-json-groceries-to-db", _)) => Ok(migrate_json_db::migrate_groceries()?),
+//     Some(("migrate-json-groceries-to-db", _)) => Ok(migrate::migrate_groceries()?),
 //     Some(("recipes", sync_matches)) => Ok(run_recipes::run(sync_matches)?),
 //     Some(("show-items-in-db", _)) => {
 //         show::show_items();
