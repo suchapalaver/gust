@@ -1,7 +1,7 @@
 use api::ApiError;
 use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
 use common::ReadError;
-use persistence::{json_db::ITEMS_JSON_PATH, store::StoreError};
+use persistence::{json::ITEMS_JSON_PATH, store::StoreError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -181,10 +181,10 @@ fn update() -> Command {
         )
 }
 
-fn migrate_json_db() -> Command {
+fn migrate() -> Command {
     Command::new("migrate-json-db")
         .subcommand_required(false)
-        .about("migrate a JSON databse to Postgres")
+        .about("migrate JSON store to Sqlite database")
         .arg(path().default_value(ITEMS_JSON_PATH))
 }
 
@@ -197,7 +197,7 @@ pub fn cli() -> Command {
         .subcommand(delete())
         .subcommand(read())
         .subcommand(update())
-        .subcommand(migrate_json_db())
+        .subcommand(migrate())
         .arg(
             Arg::new("db")
                 .long("database")

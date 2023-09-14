@@ -9,7 +9,7 @@ use crate::{
 
 use super::JsonStore;
 
-pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
+fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
     let sections = SECTIONS;
 
     use crate::schema::sections;
@@ -86,19 +86,19 @@ pub fn migrate_groceries(
 
         if let Some(item_recipes) = item.recipes {
             // log the item_id in items_recipes
-            for r in item_recipes {
+            for recipe in item_recipes {
                 let new_recipe = NewRecipe {
-                    name: &r.to_string(),
+                    name: &recipe.to_string(),
                 };
 
                 diesel::insert_into(schema::recipes::table)
                     .values(&new_recipe)
                     .on_conflict_do_nothing()
                     .execute(connection)
-                    .unwrap_or_else(|_| panic!("Error inserting recipe {r}"));
+                    .unwrap_or_else(|_| panic!("Error inserting recipe {recipe}"));
 
                 let results = recipes_table
-                    .filter(schema::recipes::dsl::name.eq(r.to_string()))
+                    .filter(schema::recipes::dsl::name.eq(recipe.to_string()))
                     .load::<models::Recipe>(connection)
                     .expect("Error loading recipes");
 

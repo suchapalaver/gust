@@ -90,11 +90,13 @@ impl SqliteStore {
             .expect("Error loading item")
     }
 
-    pub fn load_recipe(&mut self, recipe_name: &str) -> Vec<models::Recipe> {
+    pub fn load_recipe(
+        &mut self,
+        recipe_name: &str,
+    ) -> Result<Vec<models::Recipe>, diesel::result::Error> {
         schema::recipes::table
             .filter(schema::recipes::dsl::name.eq(recipe_name))
             .load::<models::Recipe>(self.connection())
-            .expect("Error loading recipe")
     }
 }
 
@@ -217,7 +219,7 @@ impl Storage for SqliteStore {
         &mut self,
         recipe: &RecipeName,
     ) -> Result<Option<Ingredients>, StoreError> {
-        let results = self.load_recipe(recipe.as_str());
+        let results = self.load_recipe(recipe.as_str())?;
 
         let mut v = Vec::<Ingredients>::with_capacity(results.len());
 
@@ -253,8 +255,7 @@ impl Storage for SqliteStore {
         use schema::recipes::dsl::*;
 
         Ok(recipes
-            .load::<models::Recipe>(self.connection())
-            .expect("Error loading recipes")
+            .load::<models::Recipe>(self.connection())?
             .into_iter()
             .map(|r| r.into())
             .collect())

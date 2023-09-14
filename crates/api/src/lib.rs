@@ -86,8 +86,10 @@ impl Api {
                 Read::ListRecipes => todo!(),
                 Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe) {
                     Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
-                    Ok(_) => todo!(),
-                    Err(e) => todo!(),
+                    Ok(None) => Ok(ApiResponse::NothingReturned(ApiCommand::Read(
+                        Read::Recipe(recipe),
+                    ))),
+                    Err(e) => Err(e.into()),
                 },
                 Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes()?)),
                 Read::Sections => {
@@ -107,6 +109,7 @@ pub enum ApiResponse {
     Checklist,
     Items,
     List,
+    NothingReturned(ApiCommand),
     Recipes(Vec<RecipeName>),
     RecipeIngredients(Ingredients),
     Sections,
@@ -118,6 +121,7 @@ impl Display for ApiResponse {
             Self::Checklist => write!(f, "checklist"),
             Self::Items => write!(f, "items"),
             Self::List => write!(f, "list"),
+            Self::NothingReturned(cmd) => write!(f, "Nothing returned for command: {:?}.", cmd),
             Self::Recipes(recipes) => {
                 for recipe in recipes {
                     writeln!(f, "{}", recipe)?;

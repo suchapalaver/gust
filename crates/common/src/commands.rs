@@ -3,6 +3,7 @@ use crate::{
     recipes::{Ingredients, RecipeName},
 };
 
+#[derive(Debug)]
 pub enum ApiCommand {
     Add(Add),
     Delete(Delete),
@@ -10,6 +11,7 @@ pub enum ApiCommand {
     Update(Update),
 }
 
+#[derive(Debug)]
 pub enum Add {
     ChecklistItem(ItemName),
     Item {
@@ -54,6 +56,7 @@ impl Add {
     }
 }
 
+#[derive(Debug)]
 pub enum Delete {
     ChecklistItem(ItemName),
     ClearChecklist,
@@ -73,6 +76,7 @@ impl Delete {
     }
 }
 
+#[derive(Debug)]
 pub enum Read {
     All,
     Checklist,
@@ -95,6 +99,7 @@ impl Read {
     }
 }
 
+#[derive(Debug)]
 pub enum Update {
     Item(ItemName),
     Recipe(RecipeName),
