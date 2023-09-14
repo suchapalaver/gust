@@ -16,7 +16,7 @@ use common::{
 
 use crate::{
     models::{self},
-    store::{self, Storage, StoreError},
+    store::{Storage, StoreError},
 };
 
 pub const ITEMS_JSON_PATH: &str = "groceries.json";
@@ -88,27 +88,31 @@ impl Storage for JsonStore {
         Ok(())
     }
 
-    fn add_checklist_item(&mut self, _item: &common::item::ItemName) {
+    fn add_checklist_item(&mut self, _item: &common::item::ItemName) -> Result<(), StoreError> {
         todo!()
     }
 
-    fn add_list_item(&mut self, _item: &common::item::ItemName) {
+    fn add_list_item(&mut self, _item: &common::item::ItemName) -> Result<(), StoreError> {
         todo!()
     }
 
-    fn add_recipe(&mut self, _recipe: &RecipeName, _ingredients: &common::recipes::Ingredients) {
+    fn add_recipe(
+        &mut self,
+        _recipe: &RecipeName,
+        _ingredients: &common::recipes::Ingredients,
+    ) -> Result<(), StoreError> {
         todo!()
     }
 
-    fn checklist(&mut self) -> Vec<models::Item> {
+    fn checklist(&mut self) -> Result<Vec<models::Item>, StoreError> {
         todo!()
     }
 
-    fn delete_checklist_item(&mut self, _item: &common::item::ItemName) {
+    fn delete_checklist_item(&mut self, _item: &common::item::ItemName) -> Result<(), StoreError> {
         todo!()
     }
 
-    fn delete_recipe(&mut self, _recipe: &RecipeName) -> Result<(), store::StoreError> {
+    fn delete_recipe(&mut self, _recipe: &RecipeName) -> Result<(), StoreError> {
         todo!()
     }
 
@@ -136,7 +140,7 @@ impl Storage for JsonStore {
         ))
     }
 
-    fn sections(&mut self) -> Vec<models::Section> {
+    fn sections(&mut self) -> Result<Vec<models::Section>, StoreError> {
         todo!()
     }
 
@@ -194,14 +198,6 @@ pub mod test {
         );
 
         store.items().unwrap()
-    }
-
-    fn list() -> ShoppingList {
-        let file = test_json_file().unwrap();
-        let mut store =
-            Store::Json(JsonStore::new().with_list_path(file.path().as_os_str().to_str().unwrap()));
-
-        store.list().unwrap()
     }
 
     #[test]

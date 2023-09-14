@@ -43,31 +43,56 @@ impl From<JsonStore> for Store {
 
 impl Storage for Store {
     fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
-        todo!()
+        match self {
+            Self::Json(store) => store.add_item(item),
+            Self::Sqlite(store) => store.add_item(item),
+        }
     }
 
-    fn add_checklist_item(&mut self, item: &ItemName) {
-        todo!()
+    fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+        match self {
+            Self::Json(store) => store.add_checklist_item(item),
+            Self::Sqlite(store) => store.add_checklist_item(item),
+        }
     }
 
-    fn add_list_item(&mut self, item: &ItemName) {
-        todo!()
+    fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+        match self {
+            Self::Json(store) => store.add_list_item(item),
+            Self::Sqlite(store) => store.add_list_item(item),
+        }
     }
 
-    fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &Ingredients) {
-        todo!()
+    fn add_recipe(
+        &mut self,
+        recipe: &RecipeName,
+        ingredients: &Ingredients,
+    ) -> Result<(), StoreError> {
+        match self {
+            Self::Json(store) => store.add_recipe(recipe, ingredients),
+            Self::Sqlite(store) => store.add_recipe(recipe, ingredients),
+        }
     }
 
-    fn checklist(&mut self) -> Vec<Item> {
-        todo!()
+    fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
+        match self {
+            Self::Json(store) => store.checklist(),
+            Self::Sqlite(store) => store.checklist(),
+        }
     }
 
-    fn delete_checklist_item(&mut self, item: &ItemName) {
-        todo!()
+    fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+        match self {
+            Self::Json(store) => store.delete_checklist_item(item),
+            Self::Sqlite(store) => store.delete_checklist_item(item),
+        }
     }
 
     fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError> {
-        todo!()
+        match self {
+            Self::Json(store) => store.delete_recipe(recipe),
+            Self::Sqlite(store) => store.delete_recipe(recipe),
+        }
     }
 
     fn items(&mut self) -> Result<Groceries, StoreError> {
@@ -101,7 +126,7 @@ impl Storage for Store {
         }
     }
 
-    fn sections(&mut self) -> Vec<Section> {
+    fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
         match self {
             Self::Json(store) => store.sections(),
             Self::Sqlite(store) => store.sections(),
@@ -110,30 +135,40 @@ impl Storage for Store {
 }
 
 pub trait Storage {
+    // Create
     fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
 
-    fn add_checklist_item(&mut self, item: &ItemName);
+    fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
 
-    fn add_list_item(&mut self, item: &ItemName);
+    fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
 
-    fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &Ingredients);
+    fn add_recipe(
+        &mut self,
+        recipe: &RecipeName,
+        ingredients: &Ingredients,
+    ) -> Result<(), StoreError>;
 
-    fn checklist(&mut self) -> Vec<Item>;
+    // Read
+    fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
 
     fn list(&mut self) -> Result<ShoppingList, StoreError>;
 
-    fn delete_checklist_item(&mut self, item: &ItemName);
-
-    fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError>;
-
     fn items(&mut self) -> Result<Groceries, StoreError>;
+
+    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError>;
 
     fn recipe_ingredients(
         &mut self,
         recipe: &RecipeName,
     ) -> Result<Option<Ingredients>, StoreError>;
 
-    fn sections(&mut self) -> Vec<Section>;
+    fn sections(&mut self) -> Result<Vec<Section>, StoreError>;
 
-    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError>;
+    // Update
+    // ...
+
+    // Delete
+    fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
+
+    fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError>;
 }

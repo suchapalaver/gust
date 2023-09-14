@@ -107,7 +107,7 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
-    fn add_checklist_item(&mut self, item: &ItemName) {
+    fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
         let item_name = item.to_string();
         let item_id = self.get_or_insert_item(&item_name);
         let item_query = {
@@ -115,23 +115,25 @@ impl Storage for SqliteStore {
                 .values(NewChecklistItem { item_id })
                 .on_conflict_do_nothing()
         };
-        item_query
-            .execute(self.connection())
-            .expect("Error adding item to checklist");
+        item_query.execute(self.connection())?;
+        Ok(())
     }
 
-    fn add_list_item(&mut self, item: &ItemName) {
+    fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
         let item_name = item.to_string();
         let item_id = self.get_or_insert_item(&item_name);
         let item_query = diesel::insert_into(crate::schema::list::table)
             .values(NewListItem { item_id })
             .on_conflict_do_nothing();
-        item_query
-            .execute(self.connection())
-            .expect("Error adding item to list");
+        item_query.execute(self.connection())?;
+        Ok(())
     }
 
-    fn add_recipe(&mut self, recipe: &RecipeName, ingredients: &Ingredients) {
+    fn add_recipe(
+        &mut self,
+        recipe: &RecipeName,
+        ingredients: &Ingredients,
+    ) -> Result<(), StoreError> {
         let recipe_name = recipe.to_string().to_lowercase();
         let recipe_id = self.get_or_insert_recipe(&recipe_name);
         let item_ids: Vec<i32> = ingredients
@@ -145,16 +147,16 @@ impl Storage for SqliteStore {
         for item_id in item_ids {
             self.insert_item_recipe(item_id, recipe_id);
         }
+        Ok(())
     }
 
-    fn checklist(&mut self) -> Vec<Item> {
-        schema::items::table
+    fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
+        Ok(schema::items::table
             .filter(
                 schema::items::dsl::id
                     .eq_any(schema::checklist::table.select(schema::checklist::dsl::item_id)),
             )
-            .load::<Item>(self.connection())
-            .expect("Error loading checklist")
+            .load::<Item>(self.connection())?)
     }
 
     fn list(&mut self) -> Result<ShoppingList, StoreError> {
@@ -170,7 +172,7 @@ impl Storage for SqliteStore {
             .collect())
     }
 
-    fn delete_checklist_item(&mut self, item: &ItemName) {
+    fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
         let name = item.to_string();
         diesel::delete(
             schema::checklist::table.filter(
@@ -181,8 +183,8 @@ impl Storage for SqliteStore {
                 ),
             ),
         )
-        .execute(self.connection())
-        .unwrap();
+        .execute(self.connection())?;
+        Ok(())
     }
 
     fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError> {
@@ -243,12 +245,10 @@ impl Storage for SqliteStore {
         Ok(v.into_iter().take(1).next())
     }
 
-    fn sections(&mut self) -> Vec<Section> {
+    fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
         use schema::sections::dsl::*;
 
-        sections
-            .load::<Section>(self.connection())
-            .expect("Error loading sections")
+        Ok(sections.load::<Section>(self.connection())?)
     }
 
     fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError> {
