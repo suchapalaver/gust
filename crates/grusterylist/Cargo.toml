@@ -14,7 +14,6 @@ persistence = { path = "../persistence" }
 clap = { workspace = true }
 common = { path = "../common" }
 diesel = { workspace = true }
-diesel_migrations = { workspace = true }
 question = { workspace = true }
 reqwest = { workspace = true }
 scraper = { workspace = true }

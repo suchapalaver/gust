@@ -9,8 +9,6 @@ readme = "README.md"
 repository = "https://github.com/suchapalaver/grusterylist"
 
 [dependencies]
-diesel = { workspace = true }
-diesel_migrations = { workspace = true }
 question = { workspace = true }
 reqwest = { workspace = true }
 scraper = { workspace = true }
