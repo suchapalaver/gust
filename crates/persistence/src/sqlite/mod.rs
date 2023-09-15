@@ -4,7 +4,8 @@ use common::{
     list::List,
     recipes::{Ingredients, RecipeName},
 };
-use diesel::{prelude::*, SqliteConnection};
+use diesel::{prelude::*, sqlite::Sqlite, SqliteConnection};
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use dotenv::dotenv;
 use std::env;
 
@@ -23,6 +24,18 @@ pub fn establish_connection() -> SqliteConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     SqliteConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
+
+pub fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<(), StoreError> {
+    // This will run the necessary migrations.
+    //
+    // See the documentation for `MigrationHarness` for
+    // all available methods.
+    connection.run_pending_migrations(MIGRATIONS)?;
+
+    Ok(())
 }
 
 pub struct SqliteStore {

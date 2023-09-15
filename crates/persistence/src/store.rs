@@ -7,6 +7,8 @@ use common::{
 };
 use thiserror::Error;
 
+use std::error::Error;
+
 use crate::{json::JsonStore, sqlite::SqliteStore};
 
 #[derive(Error, Debug)]
@@ -16,6 +18,9 @@ pub enum StoreError {
 
     #[error("Invalid JSON file: {0}")]
     DeserializingError(#[from] serde_json::Error),
+
+    #[error("Migration error: {0}")]
+    MigrationError(#[from] Box<dyn Error + Send + Sync>),
 
     #[error("Error reading/writing file: {0}")]
     ReadWriteError(#[from] std::io::Error),

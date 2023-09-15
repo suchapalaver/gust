@@ -11,6 +11,7 @@ repository = "https://github.com/suchapalaver/grusterylist"
 [dependencies]
 common = { path = "../common" }
 diesel = { workspace = true }
+diesel_migrations = { workspace = true }
 dotenv = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
