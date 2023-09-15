@@ -12,3 +12,14 @@ To read from the persisted migrated data:
 ```bash
 docker run --rm -v grusterylist_data:/app grusterylist --database sqlite read recipes
 ```
+
+To use an existing JSON store and migrate it to SQLite:
+
+```bash
+docker run --rm \
+-v grusterylist_data:/app \
+-v /host/machine/absolute/path/to/file.json:/app/groceries.json \
+grusterylist \
+--database sqlite \
+migrate-json-db
+```
