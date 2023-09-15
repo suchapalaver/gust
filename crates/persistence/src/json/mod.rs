@@ -2,19 +2,18 @@ pub mod migrate;
 
 use std::{
     collections::HashSet,
-    fs::{self, File},
-    io::BufReader,
+    fs::{self},
+    path::{Path, PathBuf},
 };
 
 use common::{
     input::item_matches,
     item::{Item, Section},
     items::Items,
-    list::ShoppingList,
+    list::List,
     recipes::{Ingredients, RecipeName},
     Load,
 };
-use serde::Deserialize;
 
 use crate::store::{Storage, StoreError};
 
@@ -23,15 +22,15 @@ pub const ITEMS_JSON_PATH: &str = "groceries.json";
 pub const LIST_JSON_PATH: &str = "list.json";
 
 pub struct JsonStore {
-    items_path: String,
-    list_path: String,
+    items: PathBuf,
+    list: PathBuf,
 }
 
 impl Default for JsonStore {
     fn default() -> Self {
         Self {
-            items_path: ITEMS_JSON_PATH.to_string(),
-            list_path: LIST_JSON_PATH.to_string(),
+            items: PathBuf::from(ITEMS_JSON_PATH),
+            list: PathBuf::from(LIST_JSON_PATH),
         }
     }
 }
@@ -41,26 +40,26 @@ impl JsonStore {
         Self::default()
     }
 
-    pub fn with_items_path(mut self, items_path: impl Into<String>) -> Self {
-        self.items_path = items_path.into();
+    pub fn with_items_path(mut self, path: &Path) -> Self {
+        self.items = path.to_path_buf();
         self
     }
 
-    pub fn with_list_path(mut self, list_path: impl Into<String>) -> Self {
-        self.list_path = list_path.into();
+    pub fn with_list_path(mut self, path: &Path) -> Self {
+        self.list = path.to_path_buf();
         self
     }
 
     pub fn save_items(&self, object: impl serde::Serialize) -> Result<(), StoreError> {
         let s = serde_json::to_string(&object)?;
 
-        Ok(fs::write(&self.items_path, s)?)
+        Ok(fs::write(&self.items, s)?)
     }
     // TODO: I don't think it makes much sense to have these saved as separate JSON files.
     pub fn save_list(&self, object: impl serde::Serialize) -> Result<(), StoreError> {
         let s = serde_json::to_string(&object)?;
 
-        Ok(fs::write(&self.list_path, s)?)
+        Ok(fs::write(&self.list, s)?)
     }
 }
 
@@ -116,11 +115,12 @@ impl Storage for JsonStore {
     }
 
     fn items(&mut self) -> Result<Items, StoreError> {
-        Ok(Items::from_json(&self.items_path)?)
+        Ok(Items::from_json(&self.items)?)
     }
 
-    fn list(&mut self) -> Result<ShoppingList, StoreError> {
-        Ok(ShoppingList::from_json(&self.items_path)?)
+    fn list(&mut self) -> Result<List, StoreError> {
+        let list = List::from_json(&self.list)?;
+        Ok(list)
     }
 
     fn recipe_ingredients(
@@ -188,10 +188,7 @@ pub mod test {
 
     fn items() -> Items {
         let file = test_json_file().unwrap();
-        let mut store = Store::Json(
-            JsonStore::new().with_items_path(file.path().as_os_str().to_str().unwrap()),
-        );
-
+        let mut store = Store::Json(JsonStore::new().with_items_path(file.path()));
         store.items().unwrap()
     }
 
@@ -210,7 +207,7 @@ pub mod test {
 
     #[test]
     fn test_save_items() -> Result<(), Box<dyn std::error::Error>> {
-        let mut store = JsonStore::new().with_items_path("test_groceries.json");
+        let mut store = JsonStore::new().with_items_path(&PathBuf::from("test_groceries.json"));
         let items = Items::default();
         insta::assert_json_snapshot!(items, @r#"
     {
@@ -228,7 +225,7 @@ pub mod test {
       "recipes": []
     }
     "#);
-        std::fs::remove_file(store.items_path)?;
+        std::fs::remove_file(store.items)?;
         Ok(())
     }
 
@@ -2957,8 +2954,7 @@ pub mod test {
     #[test]
     fn test_delete_item_from_list() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_checklist_json_file().unwrap();
-        let mut store =
-            Store::Json(JsonStore::new().with_list_path(file.path().as_os_str().to_str().unwrap()));
+        let mut store = Store::Json(JsonStore::new().with_list_path(file.path()));
 
         let mut shopping_list = store.list().unwrap();
         let item = Item {
@@ -3176,7 +3172,7 @@ pub mod test {
 
     fn create_test_checklist_json_file(
     ) -> Result<assert_fs::NamedTempFile, Box<dyn std::error::Error>> {
-        let file = assert_fs::NamedTempFile::new("test.json")?;
+        let file = assert_fs::NamedTempFile::new("test3.json")?;
         file.write_str(
             r#"
             {"checklist":[],"recipes":["tomato pasta"],"items":[{"name":"garlic","section":"fresh","is_ingredient":true,"recipes":["sheet pan salmon with broccoli","crispy tofu with cashews and blistered snap peas","chicken breasts with lemon","hummus","tomato pasta","crispy sheet-pan noodles","flue flighter chicken stew","sheet-pan chicken with jammy tomatoes","swordfish pasta"]},{"name":"tomatoes","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"basil","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"lemons","section":"fresh","is_ingredient":true,"recipes":["chicken breasts with lemon","hummus","sheet-pan chicken with jammy tomatoes","flue flighter chicken stew"]},{"name":"pasta","section":"pantry","is_ingredient":true,"recipes":["tomato pasta","swordfish pasta"]},{"name":"olive oil","section":"pantry","is_ingredient":true,"recipes":["sheet pan salmon with broccoli","chicken breasts with lemon","hummus","tomato pasta","sheet-pan chicken with jammy tomatoes","turkey meatballs","swordfish pasta"]},{"name":"short grain brown rice","section":"pantry","is_ingredient":true,"recipes":["sheet pan salmon with broccoli","flue flighter chicken stew"]},{"name":"parmigiana","section":"dairy","is_ingredient":true,"recipes":["tomato pasta","turkey meatballs"]},{"name":"eggs","section":"dairy","is_ingredient":true,"recipes":["oatmeal chocolate chip cookies","fried eggs for breakfast","turkey meatballs"]},{"name":"sausages","section":"protein","is_ingredient":true,"recipes":[]},{"name":"dumplings","section":"freezer","is_ingredient":false,"recipes":[]}]}
@@ -3185,10 +3181,16 @@ pub mod test {
         Ok(file)
     }
 
-    fn checklist() -> ShoppingList {
+    fn checklist() -> List {
         let file = create_test_checklist_json_file().unwrap();
-        let mut store =
-            Store::Json(JsonStore::new().with_list_path(file.path().as_os_str().to_str().unwrap()));
+        println!("{file:?}");
+        let store = JsonStore::new().with_list_path(file.path());
+        println!();
+        let list = List::from_json(file.path()).unwrap();
+        println!("{list:?}");
+        println!();
+        println!("{:?}", store.list);
+        let mut store = Store::Json(store);
         store.list().unwrap()
     }
 

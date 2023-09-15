@@ -4,7 +4,7 @@ use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
     item::{Item, ItemName, Section},
     items::Items,
-    list::ShoppingList,
+    list::List,
     recipes::{Ingredients, RecipeName},
 };
 use persistence::store::{Storage, Store, StoreError};
@@ -124,7 +124,7 @@ pub enum ApiResponse {
     ChecklistItemDeleted(ItemName),
     Items(Items),
     ItemAdded(ItemName),
-    List(ShoppingList),
+    List(List),
     ListItemAdded(ItemName),
     NothingReturned(ApiCommand),
     Recipes(Vec<RecipeName>),

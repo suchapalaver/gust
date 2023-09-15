@@ -1,7 +1,7 @@
 use common::{
     item::{Item, ItemName, Section},
     items::Items,
-    list::ShoppingList,
+    list::List,
     recipes::{Ingredients, RecipeName},
     LoadError,
 };
@@ -102,7 +102,7 @@ impl Storage for Store {
         }
     }
 
-    fn list(&mut self) -> Result<ShoppingList, StoreError> {
+    fn list(&mut self) -> Result<List, StoreError> {
         match self {
             Self::Json(store) => store.list(),
             Self::Sqlite(store) => store.list(),
@@ -151,7 +151,7 @@ pub trait Storage {
     // Read
     fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
 
-    fn list(&mut self) -> Result<ShoppingList, StoreError>;
+    fn list(&mut self) -> Result<List, StoreError>;
 
     fn items(&mut self) -> Result<Items, StoreError>;
 
