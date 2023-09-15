@@ -24,6 +24,7 @@ pub fn run() -> Result<(), CliError> {
     let store = match val.as_str() {
         "sqlite" => {
             let mut store = SqliteStore::new(establish_connection());
+            persistence::sqlite::run_migrations(store.connection())?;
             if let Some(("migrate-json-db", _)) = matches.subcommand() {
                 migrate_groceries(&mut JsonStore::default(), store.connection())?;
                 println!("Migration complete");
