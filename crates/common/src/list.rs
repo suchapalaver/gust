@@ -8,19 +8,19 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct ShoppingList {
+pub struct List {
     pub checklist: Vec<Item>,
     pub recipes: Vec<RecipeName>,
     pub items: Vec<Item>,
 }
 
-impl Load for ShoppingList {
-    type T = ShoppingList;
+impl Load for List {
+    type T = List;
 }
 
-impl FromIterator<Item> for ShoppingList {
+impl FromIterator<Item> for List {
     fn from_iter<I: IntoIterator<Item = Item>>(iter: I) -> Self {
-        let mut c = ShoppingList::new();
+        let mut c = List::new();
 
         for i in iter {
             c.add_item(i);
@@ -29,7 +29,7 @@ impl FromIterator<Item> for ShoppingList {
     }
 }
 
-impl ShoppingList {
+impl List {
     pub fn new() -> Self {
         Self::default()
     }

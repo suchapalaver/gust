@@ -3,12 +3,10 @@
 use common::{
     item::ItemName,
     items::Items,
-    list::ShoppingList,
+    list::List,
     recipes::{Ingredients, RecipeName},
 };
-use diesel::prelude::*;
-// use diesel_migrations::{embed_migrations, EmbeddedMigrations};
-use diesel::SqliteConnection;
+use diesel::{prelude::*, SqliteConnection};
 use dotenv::dotenv;
 use std::env;
 
@@ -163,7 +161,7 @@ impl Storage for SqliteStore {
             .collect())
     }
 
-    fn list(&mut self) -> Result<ShoppingList, StoreError> {
+    fn list(&mut self) -> Result<List, StoreError> {
         Ok(schema::items::table
             .filter(
                 schema::items::dsl::id
