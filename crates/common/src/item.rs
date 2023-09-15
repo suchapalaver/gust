@@ -3,13 +3,17 @@ use std::fmt;
 
 use crate::recipes::RecipeName;
 
+/// An item used in recipes or bought separately
+///
+/// # Arguments
+/// * `name` - name of the item
+/// * `section` - section in which item is found ("fresh", "frozen", etc.)
+/// * `recipes` - list of recipes of which the item is an ingredient
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Item {
-    pub name: ItemName,           // e.g. "apples"
-    pub section: Option<Section>, // e.g. "fresh"
-    pub recipes: Option<Vec<RecipeName>>, // list of recipes: "apple pie", "cheese plate", ...
-                                  // pub on_list: bool,
-                                  // pub on_checklist: bool,
+    pub name: ItemName,
+    pub section: Option<Section>,
+    pub recipes: Option<Vec<RecipeName>>,
 }
 
 impl Item {

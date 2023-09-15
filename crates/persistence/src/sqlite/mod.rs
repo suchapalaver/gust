@@ -1,5 +1,3 @@
-// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
-
 use common::{
     item::ItemName,
     items::Items,
