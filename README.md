@@ -1,4 +1,4 @@
-# `gust`: Rust-Powered Grocery List Creator
+# `gust`: rust-powered grocery list creator
 
 use `gust` to add recipes and grocery items to a local database,
 making putting together shopping lists super quick.
@@ -13,7 +13,7 @@ cargo run -- --help
 ```
 
 ---
-## Docs
+## docs
 
 ### [cli](./docs/cli.md)
 
