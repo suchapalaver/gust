@@ -9,9 +9,9 @@ cargo run -- --help
 The CLI help menu should look something like this:
 
 ```text
-grusterylist: makes grocery lists, written in rust
+gust: makes grocery lists, written in rust
 
-Usage: grusterylist [OPTIONS] <COMMAND>
+Usage: gust [OPTIONS] <COMMAND>
 
 Commands:
   add              add stuff

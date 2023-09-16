@@ -1,12 +1,12 @@
 [package]
-name = "grusterylist"
+name = "gust"
 version = "0.1.0"
 edition = "2021"
 authors = ["https://github.com/suchapalaver"]
 license = "MIT"
 description = "A tool to make grocery lists written in Rust"
 readme = "README.md"
-repository = "https://github.com/suchapalaver/grusterylist"
+repository = "https://github.com/suchapalaver/gust"
 
 [dependencies]
 api = { path = "../api" }

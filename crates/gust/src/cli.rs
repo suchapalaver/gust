@@ -189,8 +189,8 @@ fn migrate() -> Command {
 }
 
 pub fn cli() -> Command {
-    Command::new("grusterylist")
-        .about("grusterylist: makes grocery lists, written in rust")
+    Command::new("gust")
+        .about("gust: makes grocery lists, written in rust")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(add())
