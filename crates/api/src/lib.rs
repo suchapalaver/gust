@@ -157,7 +157,7 @@ impl Display for ApiResponse {
             Self::FetchedRecipe((recipe, ingredients)) => {
                 writeln!(f, "\n{}:", recipe)?;
                 for ingredient in ingredients.iter() {
-                    writeln!(f, "{}:", ingredient)?;
+                    writeln!(f, "{}", ingredient)?;
                 }
                 Ok(())
             }
