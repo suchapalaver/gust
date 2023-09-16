@@ -11,4 +11,4 @@ COPY . .
 
 RUN cargo build --release
 
-ENTRYPOINT ["./target/release/grusterylist"]
+ENTRYPOINT ["./target/release/gust"]

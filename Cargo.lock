@@ -586,7 +586,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "grusterylist"
+name = "gust"
 version = "0.1.0"
 dependencies = [
  "api",

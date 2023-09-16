@@ -1,6 +1,6 @@
-# `grusterylist`: makes grocery lists, written in Rust
+# `gust`: makes grocery lists, written in Rust
 
-use `grusterylist` to add recipes and grocery items to a local database,
+use `gust` to add recipes and grocery items to a local database,
 making putting together shopping lists super quick.
 
 ## getting started
