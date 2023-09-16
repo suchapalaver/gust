@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     item::{Item, ItemName, Section},
-    recipes::{Ingredients, RecipeName},
+    recipes::{Ingredients, Recipe},
     Load, ReadError,
 };
 
@@ -13,7 +13,7 @@ use crate::{
 pub struct Items {
     pub sections: Vec<Section>,
     pub collection: Vec<Item>,
-    pub recipes: Vec<RecipeName>,
+    pub recipes: Vec<Recipe>,
 }
 
 impl Load for Items {
@@ -73,7 +73,7 @@ impl Items {
             .into_iter()
     }
 
-    pub fn recipes(&self) -> impl Iterator<Item = &RecipeName> {
+    pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
         self.recipes.iter()
     }
 
@@ -114,7 +114,7 @@ impl Items {
     }
 
     pub fn add_recipe(&mut self, name: &str, ingredients: &str) {
-        let recipe = RecipeName::from_str(name).unwrap();
+        let recipe = Recipe::from_str(name).unwrap();
 
         let ingredients = Ingredients::from_input_string(ingredients);
 
@@ -156,7 +156,7 @@ impl Items {
                 item.recipes
                     .as_ref()
                     .unwrap()
-                    .contains(&RecipeName::from_str(recipe).unwrap())
+                    .contains(&Recipe::from_str(recipe).unwrap())
             })
             .collect::<Vec<_>>()
             .into_iter()

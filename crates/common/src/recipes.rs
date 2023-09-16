@@ -5,15 +5,15 @@ use serde::{Deserialize, Serialize};
 use crate::{item::ItemName, ReadError};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
-pub struct RecipeName(String);
+pub struct Recipe(String);
 
-impl fmt::Display for RecipeName {
+impl fmt::Display for Recipe {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl RecipeName {
+impl Recipe {
     pub fn new(s: &str) -> Result<Self, ReadError> {
         Self::from_str(s)
     }
@@ -27,13 +27,13 @@ impl RecipeName {
     }
 }
 
-impl From<&str> for RecipeName {
+impl From<&str> for Recipe {
     fn from(s: &str) -> Self {
         Self(s.to_string())
     }
 }
 
-impl FromStr for RecipeName {
+impl FromStr for Recipe {
     type Err = ReadError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

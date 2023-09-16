@@ -1,5 +1,5 @@
 use crate::schema::{checklist, items, items_recipes, items_sections, list, recipes, sections};
-use common::recipes::RecipeName;
+use common::recipes::Recipe;
 use diesel::prelude::*;
 
 pub trait ItemInfo {
@@ -63,18 +63,18 @@ pub struct NewRecipe<'a> {
 
 #[derive(Queryable)]
 #[diesel(table_name = recipes)]
-pub struct Recipe {
+pub struct RecipeModel {
     pub id: i32,
     pub name: String,
 }
 
-impl From<Recipe> for RecipeName {
-    fn from(recipe: Recipe) -> RecipeName {
-        RecipeName::new_unchecked(recipe.name)
+impl From<RecipeModel> for Recipe {
+    fn from(recipe: RecipeModel) -> Recipe {
+        Recipe::new_unchecked(recipe.name)
     }
 }
 
-impl ItemInfo for Recipe {
+impl ItemInfo for RecipeModel {
     fn name(&self) -> &str {
         &self.name
     }

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{
     item::{Item, ItemName},
-    recipes::RecipeName,
+    recipes::Recipe,
     Load, ReadError,
 };
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct List {
     pub checklist: Vec<Item>,
-    pub recipes: Vec<RecipeName>,
+    pub recipes: Vec<Recipe>,
     pub items: Vec<Item>,
 }
 
@@ -90,7 +90,7 @@ impl List {
         Ok(())
     }
 
-    pub fn add_recipe(&mut self, recipe: RecipeName) {
+    pub fn add_recipe(&mut self, recipe: Recipe) {
         self.recipes.push(recipe)
     }
 
@@ -98,7 +98,7 @@ impl List {
         if let Ok(i) = self
             .recipes
             .iter()
-            .position(|x| x == &RecipeName::from_str(name).unwrap())
+            .position(|x| x == &Recipe::from_str(name).unwrap())
             .ok_or(ReadError::ItemNotFound)
         {
             self.recipes.remove(i);

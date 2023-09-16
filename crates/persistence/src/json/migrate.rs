@@ -99,7 +99,7 @@ pub fn migrate_groceries(
 
                 let results = recipes_table
                     .filter(schema::recipes::dsl::name.eq(recipe.to_string()))
-                    .load::<models::Recipe>(connection)
+                    .load::<models::RecipeModel>(connection)
                     .expect("Error loading recipes");
 
                 assert_eq!(results.len(), 1);
@@ -120,7 +120,7 @@ pub fn migrate_groceries(
             // log the item_id in items_sections
             let results = sections_table
                 .filter(schema::sections::dsl::name.eq(item_section.to_string()))
-                .load::<models::Recipe>(connection)
+                .load::<models::Section>(connection)
                 .expect("Error loading recipes");
 
             assert_eq!(results.len(), 1);

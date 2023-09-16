@@ -11,7 +11,7 @@ use common::{
     item::{Item, Section},
     items::Items,
     list::List,
-    recipes::{Ingredients, RecipeName},
+    recipes::{Ingredients, Recipe},
     Load,
 };
 
@@ -96,7 +96,7 @@ impl Storage for JsonStore {
 
     fn add_recipe(
         &mut self,
-        _recipe: &RecipeName,
+        _recipe: &Recipe,
         _ingredients: &common::recipes::Ingredients,
     ) -> Result<(), StoreError> {
         todo!()
@@ -110,7 +110,7 @@ impl Storage for JsonStore {
         todo!()
     }
 
-    fn delete_recipe(&mut self, _recipe: &RecipeName) -> Result<(), StoreError> {
+    fn delete_recipe(&mut self, _recipe: &Recipe) -> Result<(), StoreError> {
         todo!()
     }
 
@@ -123,10 +123,7 @@ impl Storage for JsonStore {
         Ok(list)
     }
 
-    fn recipe_ingredients(
-        &mut self,
-        recipe: &RecipeName,
-    ) -> Result<Option<Ingredients>, StoreError> {
+    fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
         let lib = self.items()?;
         Ok(Some(
             lib.recipe_ingredients(&recipe.to_string())
@@ -139,8 +136,8 @@ impl Storage for JsonStore {
         todo!()
     }
 
-    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError> {
-        let mut recipes: HashSet<RecipeName> = HashSet::new();
+    fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+        let mut recipes: HashSet<Recipe> = HashSet::new();
 
         {
             let groceries = self.items()?;
@@ -2251,7 +2248,7 @@ pub mod test {
         let item = Item {
             name: ItemName::from("cumquats"),
             section: Some(Section::from("fresh")),
-            recipes: Some(vec![RecipeName::from("cumquat chutney")]),
+            recipes: Some(vec![Recipe::from("cumquat chutney")]),
         };
         let recipe = "cumquat chutney";
 
@@ -3454,9 +3451,9 @@ pub mod test {
         let item = Item {
             name: ItemName::from("cumquats"),
             section: Some(Section::from("fresh")),
-            recipes: Some(vec![RecipeName::from("cumquat chutney")]),
+            recipes: Some(vec![Recipe::from("cumquat chutney")]),
         };
-        let recipe = RecipeName::from("cumquat chutney");
+        let recipe = Recipe::from("cumquat chutney");
         list.add_item(item);
         list.add_recipe(recipe);
         insta::assert_json_snapshot!(list, @r###"

@@ -6,15 +6,16 @@ use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
     item::{ItemName, Section},
-    recipes::{Ingredients, RecipeName},
+    recipes::{Ingredients, Recipe},
 };
 use persistence::{
     json::{migrate::migrate_groceries, JsonStore},
     sqlite::{establish_connection, SqliteStore},
     store::Store,
 };
+use url::Url;
 
-pub fn run() -> Result<(), CliError> {
+pub async fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
 
     let Some(val) = matches.get_one::<String>("db") else {
@@ -36,13 +37,16 @@ pub fn run() -> Result<(), CliError> {
         _ => unreachable!(),
     };
 
-    let response = Api::new(store).execute(match matches.subcommand() {
-        Some(("add", matches)) => ApiCommand::Add(add(matches)?),
-        Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
-        Some(("read", matches)) => ApiCommand::Read(read(matches)?),
-        Some(("update", matches)) => ApiCommand::Update(update(matches)?),
-        _ => unreachable!(),
-    })?;
+    let response = Api::new(store)
+        .execute(match matches.subcommand() {
+            Some(("add", matches)) => ApiCommand::Add(add(matches)?),
+            Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
+            Some(("fetch", matches)) => fetch(matches)?,
+            Some(("read", matches)) => ApiCommand::Read(read(matches)?),
+            Some(("update", matches)) => ApiCommand::Update(update(matches)?),
+            _ => unreachable!(),
+        })
+        .await?;
 
     println!("{response}");
 
@@ -55,7 +59,7 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
         matches.get_one::<String>("ingredients"),
     ) {
         let (recipe, ingredients) = (
-            RecipeName::from_str(recipe)?,
+            Recipe::from_str(recipe)?,
             Ingredients::from_input_string(ingredients),
         );
 
@@ -76,7 +80,7 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
             ))),
             Some(("list", matches)) => {
                 if let Some(name) = matches.get_one::<String>("recipe") {
-                    Ok(Add::list_recipe_from_name(RecipeName::from_str(name)?))
+                    Ok(Add::list_recipe_from_name(Recipe::from_str(name)?))
                 } else if let Some(name) = matches.get_one::<String>("item") {
                     Ok(Add::list_item_from_name(ItemName::from(name.as_str())))
                 } else {
@@ -90,9 +94,7 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
 
 fn delete(matches: &ArgMatches) -> Result<Delete, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
-        Ok(Delete::recipe_from_name(RecipeName::from_str(
-            name.as_str(),
-        )?))
+        Ok(Delete::recipe_from_name(Recipe::from_str(name.as_str())?))
     } else if let Some(name) = matches.get_one::<String>("recipe") {
         Ok(Delete::item_from_name(ItemName::from(name.as_str())))
     } else {
@@ -109,9 +111,17 @@ fn delete(matches: &ArgMatches) -> Result<Delete, CliError> {
     }
 }
 
+fn fetch(matches: &ArgMatches) -> Result<ApiCommand, url::ParseError> {
+    let Some(url) = matches.get_one::<String>("url") else {
+        unreachable!("Providing a URL is required")
+    };
+    let url = Url::parse(url)?;
+    Ok(ApiCommand::FetchRecipe(url))
+}
+
 fn read(matches: &ArgMatches) -> Result<Read, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
-        Ok(Read::recipe_from_name(RecipeName::from_str(name.as_str())?))
+        Ok(Read::recipe_from_name(Recipe::from_str(name.as_str())?))
     } else if let Some(name) = matches.get_one::<String>("item") {
         Ok(Read::item_from_name(ItemName::from(name.as_str())))
     } else {
@@ -128,9 +138,7 @@ fn read(matches: &ArgMatches) -> Result<Read, CliError> {
 
 fn update(matches: &ArgMatches) -> Result<Update, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
-        Ok(Update::recipe_from_name(RecipeName::from_str(
-            name.as_str(),
-        )?))
+        Ok(Update::recipe_from_name(Recipe::from_str(name.as_str())?))
     } else {
         unimplemented!()
     }

@@ -1,4 +1,4 @@
-use crate::{item::Item, recipes::RecipeName, sections::SECTIONS};
+use crate::{item::Item, recipes::Recipe, sections::SECTIONS};
 use question::{Answer, Question};
 
 pub fn user_wants_to_add_item() -> bool {
@@ -60,7 +60,7 @@ pub fn user_wants_to_save_list() -> bool {
 }
 
 // Returns `None` in case user wishes to skip being asked further.
-pub fn user_wants_to_add_recipe_to_list(recipe: &RecipeName) -> Option<bool> {
+pub fn user_wants_to_add_recipe_to_list(recipe: &Recipe) -> Option<bool> {
     let res = Question::new(&format!(
         "Shall we add {}? (*y*, *n* for next recipe, *s* to skip to end of recipes)",
         recipe
