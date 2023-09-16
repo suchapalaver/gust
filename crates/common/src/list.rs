@@ -95,13 +95,14 @@ impl List {
     }
 
     pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
-        if let Ok(i) = self
+        let recipe = Recipe::from_str(name)?;
+        if let Ok(index) = self
             .recipes
             .iter()
-            .position(|x| x == &Recipe::from_str(name).unwrap())
+            .position(|x| x == &recipe)
             .ok_or(ReadError::ItemNotFound)
         {
-            self.recipes.remove(i);
+            self.recipes.remove(index);
         }
         Ok(())
     }

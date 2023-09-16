@@ -63,11 +63,13 @@ impl Items {
     pub fn items(&self) -> impl Iterator<Item = &Item> {
         self.sections
             .iter()
-            .flat_map(|sec| {
-                self.collection
-                    .iter()
-                    .filter(|x| x.section.is_some())
-                    .filter(|x| x.section.as_ref().unwrap().as_str().contains(sec.as_str()))
+            .flat_map(|section| {
+                self.collection.iter().filter(|item| {
+                    let Some(item_section) = &item.section else {
+                        return false;
+                    };
+                    item_section.as_str().contains(section.as_str())
+                })
             })
             .collect::<Vec<_>>()
             .into_iter()
@@ -113,8 +115,8 @@ impl Items {
         }
     }
 
-    pub fn add_recipe(&mut self, name: &str, ingredients: &str) {
-        let recipe = Recipe::from_str(name).unwrap();
+    pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
+        let recipe = Recipe::from_str(name)?;
 
         let ingredients = Ingredients::from_input_string(ingredients);
 
@@ -127,6 +129,7 @@ impl Items {
             });
 
         self.recipes.push(recipe);
+        Ok(())
     }
 
     pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
@@ -148,17 +151,21 @@ impl Items {
         Ok(())
     }
 
-    pub fn recipe_ingredients(&self, recipe: &str) -> impl Iterator<Item = &Item> {
-        self.collection
+    pub fn recipe_ingredients(
+        &self,
+        recipe: &str,
+    ) -> Result<impl Iterator<Item = &Item>, ReadError> {
+        let recipe = Recipe::from_str(recipe)?;
+        Ok(self
+            .collection
             .iter()
-            .filter(|item| item.recipes.is_some())
             .filter(|item| {
-                item.recipes
-                    .as_ref()
-                    .unwrap()
-                    .contains(&Recipe::from_str(recipe).unwrap())
+                let Some(recipes) = &item.recipes else {
+                    return false;
+                };
+                recipes.contains(&recipe)
             })
             .collect::<Vec<_>>()
-            .into_iter()
+            .into_iter())
     }
 }

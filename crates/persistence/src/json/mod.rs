@@ -124,9 +124,9 @@ impl Storage for JsonStore {
     }
 
     fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
-        let lib = self.items()?;
         Ok(Some(
-            lib.recipe_ingredients(&recipe.to_string())
+            self.items()?
+                .recipe_ingredients(&recipe.to_string())?
                 .map(|item| item.name.clone())
                 .collect(),
         ))
@@ -2255,7 +2255,7 @@ pub mod test {
         let ingredients = "kumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
 
         items.add_item(item);
-        items.add_recipe(recipe, ingredients);
+        items.add_recipe(recipe, ingredients)?;
 
         insta::assert_json_snapshot!(items, @r###"
         {
@@ -3180,13 +3180,7 @@ pub mod test {
 
     fn checklist() -> List {
         let file = create_test_checklist_json_file().unwrap();
-        println!("{file:?}");
         let store = JsonStore::new().with_list_path(file.path());
-        println!();
-        let list = List::from_json(file.path()).unwrap();
-        println!("{list:?}");
-        println!();
-        println!("{:?}", store.list);
         let mut store = Store::Json(store);
         store.list().unwrap()
     }

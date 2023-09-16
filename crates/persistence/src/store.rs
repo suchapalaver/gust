@@ -3,7 +3,7 @@ use common::{
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
-    LoadError,
+    LoadError, ReadError,
 };
 use thiserror::Error;
 
@@ -19,14 +19,17 @@ pub enum StoreError {
     #[error("Invalid JSON file: {0}")]
     DeserializingError(#[from] serde_json::Error),
 
+    #[error("Load error: {0}")]
+    LoadError(#[from] LoadError),
+
     #[error("Migration error: {0}")]
     MigrationError(#[from] Box<dyn Error + Send + Sync>),
 
+    #[error("Read error: {0}")]
+    ReadError(#[from] ReadError),
+
     #[error("Error reading/writing file: {0}")]
     ReadWriteError(#[from] std::io::Error),
-
-    #[error("Load error: {0}")]
-    LoadError(#[from] LoadError),
 }
 
 pub enum Store {
