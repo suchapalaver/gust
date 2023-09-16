@@ -32,8 +32,11 @@ To use an existing JSON store and migrate it to SQLite:
 ```bash
 docker run --rm \
 -v gust_data:/app \
--v /host/machine/absolute/path/to/file.json:/app/groceries.json \
+-v /host/machine/absolute/path/to/groceries.json:/app/groceries.json \
+-v /host/machine/absolute/path/to/list.json:/app/list.json \
 gust \
 --database sqlite \
 migrate-json-db
 ```
+
+Note that for now it has to be `groceries.json` and `list.json`.

@@ -122,9 +122,11 @@ impl Api {
         }
     }
 
-    async fn fetch_recipe(&self, url: Url) -> Result<ApiResponse, ApiError> {
+    async fn fetch_recipe(&mut self, url: Url) -> Result<ApiResponse, ApiError> {
         let fetcher = Fetcher::from(url);
         let (recipe, ingredients) = fetcher.fetch_recipe().await?;
+
+        self.store.add_recipe(&recipe, &ingredients)?;
         Ok(ApiResponse::FetchedRecipe((recipe, ingredients)))
     }
 }
