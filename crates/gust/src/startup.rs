@@ -76,7 +76,10 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
     } else {
         match matches.subcommand() {
             Some(("checklist", matches)) => Ok(Add::checklist_item_from_name(ItemName::from(
-                matches.get_one::<String>("item").unwrap().as_str(),
+                matches
+                    .get_one::<String>("item")
+                    .expect("item required")
+                    .as_str(),
             ))),
             Some(("list", matches)) => {
                 if let Some(name) = matches.get_one::<String>("recipe") {

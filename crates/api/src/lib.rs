@@ -116,7 +116,7 @@ impl Api {
             Delete::Item(_name) => todo!(),
             Delete::ListItem(_name) => todo!(),
             Delete::Recipe(recipe) => {
-                self.store.delete_recipe(&recipe).unwrap();
+                self.store.delete_recipe(&recipe)?;
                 todo!()
             }
         }

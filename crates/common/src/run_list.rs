@@ -15,16 +15,25 @@ impl List {
                     let mut a: Vec<Item> = list_items
                         .iter()
                         .filter(|item| item.section.is_some())
-                        .filter(|item| item.section.as_ref().unwrap().as_str() == section)
+                        .filter(|item| {
+                            if let Some(item_sec) = &item.section {
+                                item_sec.as_str() == section
+                            } else {
+                                false
+                            }
+                        })
                         .cloned()
                         .collect();
 
                     let b: Vec<Item> = groceries
                         .collection
                         .iter()
-                        .filter(|item| item.section.is_some())
                         .filter(|item| {
-                            item.section.as_ref().unwrap().as_str() == section && !a.contains(item)
+                            if let Some(item_sec) = &item.section {
+                                item_sec.as_str() == section && !a.contains(item)
+                            } else {
+                                false
+                            }
                         })
                         .cloned()
                         .collect();
@@ -36,16 +45,12 @@ impl List {
         for section in groceries_by_section {
             if !section.is_empty() {
                 for item in &section {
-                    if !self.items.contains(item)
-                        && item.recipes.is_some()
-                        && item
-                            .recipes
-                            .as_ref()
-                            .unwrap()
-                            .iter()
-                            .any(|recipe| self.recipes.contains(recipe))
-                    {
-                        self.add_item(item.clone());
+                    if !self.items.contains(item) {
+                        if let Some(recipes) = &item.recipes {
+                            if recipes.iter().any(|recipe| self.recipes.contains(recipe)) {
+                                self.add_item(item.clone());
+                            }
+                        }
                     }
                 }
                 for item in section {
