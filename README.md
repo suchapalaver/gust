@@ -1,4 +1,4 @@
-# `gust`: makes grocery lists, written in Rust
+# `gust`: Rust-Powered Grocery List Creator
 
 use `gust` to add recipes and grocery items to a local database,
 making putting together shopping lists super quick.
