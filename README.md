@@ -13,14 +13,20 @@ cargo run -- --help
 
 ## Docs
 
-- [cli](./docs/cli.md)
-    - [help](./docs/cli.md#help)
-    - [fetching recipes](./docs/cli.md#fetching-recipes)
-- [database](./docs/database.md)
-    - [storage options](./docs/database.md#storage-options)
-        - [json](./docs/database.md#json)
-        - [sqlite](./docs/database.md#sqlite)
-- [docker](./docs/docker.md)
+### [cli](./docs/cli.md)
+
+- [help](./docs/cli.md#help)
+- [fetching recipes](./docs/cli.md#fetching-recipes)
+
+### [database](./docs/database.md)
+
+- [storage options](./docs/database.md#storage-options)
+  - [json](./docs/database.md#json)
+  - [sqlite](./docs/database.md#sqlite)
+
+### [docker](./docs/docker.md)
+  - [data volumes](./docker.md#creating-a-gust_data-volume)
+  - [migrating from JSON to SQLite](./docker.md#migrate-a-json-gust-store-to-sqlite)
 
 ## example - querying recipes
 
