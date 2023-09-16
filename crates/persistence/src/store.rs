@@ -2,7 +2,7 @@ use common::{
     item::{Item, ItemName, Section},
     items::Items,
     list::List,
-    recipes::{Ingredients, RecipeName},
+    recipes::{Ingredients, Recipe},
     LoadError,
 };
 use thiserror::Error;
@@ -68,11 +68,7 @@ impl Storage for Store {
         }
     }
 
-    fn add_recipe(
-        &mut self,
-        recipe: &RecipeName,
-        ingredients: &Ingredients,
-    ) -> Result<(), StoreError> {
+    fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.add_recipe(recipe, ingredients),
             Self::Sqlite(store) => store.add_recipe(recipe, ingredients),
@@ -93,7 +89,7 @@ impl Storage for Store {
         }
     }
 
-    fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError> {
+    fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.delete_recipe(recipe),
             Self::Sqlite(store) => store.delete_recipe(recipe),
@@ -114,17 +110,14 @@ impl Storage for Store {
         }
     }
 
-    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError> {
+    fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
         match self {
             Self::Json(store) => store.recipes(),
             Self::Sqlite(store) => store.recipes(),
         }
     }
 
-    fn recipe_ingredients(
-        &mut self,
-        recipe: &RecipeName,
-    ) -> Result<Option<Ingredients>, StoreError> {
+    fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
         match self {
             Self::Json(store) => store.recipe_ingredients(recipe),
             Self::Sqlite(store) => store.recipe_ingredients(recipe),
@@ -147,11 +140,7 @@ pub trait Storage {
 
     fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
 
-    fn add_recipe(
-        &mut self,
-        recipe: &RecipeName,
-        ingredients: &Ingredients,
-    ) -> Result<(), StoreError>;
+    fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError>;
 
     // Read
     fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
@@ -160,12 +149,9 @@ pub trait Storage {
 
     fn items(&mut self) -> Result<Items, StoreError>;
 
-    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError>;
+    fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError>;
 
-    fn recipe_ingredients(
-        &mut self,
-        recipe: &RecipeName,
-    ) -> Result<Option<Ingredients>, StoreError>;
+    fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError>;
 
     fn sections(&mut self) -> Result<Vec<Section>, StoreError>;
 
@@ -175,5 +161,5 @@ pub trait Storage {
     // Delete
     fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
 
-    fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError>;
+    fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
 }

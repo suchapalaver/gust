@@ -1,12 +1,15 @@
+use url::Url;
+
 use crate::{
     item::{ItemName, Section},
-    recipes::{Ingredients, RecipeName},
+    recipes::{Ingredients, Recipe},
 };
 
 #[derive(Debug)]
 pub enum ApiCommand {
     Add(Add),
     Delete(Delete),
+    FetchRecipe(Url),
     Read(Read),
     Update(Update),
 }
@@ -19,10 +22,10 @@ pub enum Add {
         section: Option<Section>,
     },
     ListItem(ItemName),
-    ListRecipe(RecipeName),
+    ListRecipe(Recipe),
     NewList,
     Recipe {
-        recipe: RecipeName,
+        recipe: Recipe,
         ingredients: Ingredients,
     },
 }
@@ -40,7 +43,7 @@ impl Add {
         Self::ListItem(name)
     }
 
-    pub fn list_recipe_from_name(name: RecipeName) -> Self {
+    pub fn list_recipe_from_name(name: Recipe) -> Self {
         Self::ListRecipe(name)
     }
 
@@ -48,7 +51,7 @@ impl Add {
         Self::NewList
     }
 
-    pub fn recipe_from_name_and_ingredients(recipe: RecipeName, ingredients: Ingredients) -> Self {
+    pub fn recipe_from_name_and_ingredients(recipe: Recipe, ingredients: Ingredients) -> Self {
         Self::Recipe {
             recipe,
             ingredients,
@@ -63,7 +66,7 @@ pub enum Delete {
     ClearList,
     Item(ItemName),
     ListItem(ItemName),
-    Recipe(RecipeName),
+    Recipe(Recipe),
 }
 
 impl Delete {
@@ -71,7 +74,7 @@ impl Delete {
         Self::Item(name)
     }
 
-    pub fn recipe_from_name(name: RecipeName) -> Self {
+    pub fn recipe_from_name(name: Recipe) -> Self {
         Self::Recipe(name)
     }
 }
@@ -83,7 +86,7 @@ pub enum Read {
     Item(ItemName),
     List,
     ListRecipes,
-    Recipe(RecipeName),
+    Recipe(Recipe),
     Recipes,
     Sections,
 }
@@ -93,7 +96,7 @@ impl Read {
         Self::Item(name)
     }
 
-    pub fn recipe_from_name(name: RecipeName) -> Self {
+    pub fn recipe_from_name(name: Recipe) -> Self {
         Self::Recipe(name)
     }
 }
@@ -101,11 +104,11 @@ impl Read {
 #[derive(Debug)]
 pub enum Update {
     Item(ItemName),
-    Recipe(RecipeName),
+    Recipe(Recipe),
 }
 
 impl Update {
-    pub fn recipe_from_name(name: RecipeName) -> Self {
+    pub fn recipe_from_name(name: Recipe) -> Self {
         Self::Recipe(name)
     }
 }

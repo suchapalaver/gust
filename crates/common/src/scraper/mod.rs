@@ -2,6 +2,8 @@ use scraper::{Html, Selector};
 use thiserror::Error;
 use url::Url;
 
+use crate::recipes::{Ingredients, Recipe};
+
 #[derive(Error, Debug)]
 pub enum FetchError {
     #[error("CSS selector failed to select anything")]
@@ -25,7 +27,9 @@ impl From<Url> for Fetcher {
     fn from(url: Url) -> Self {
         match url.host_str() {
             Some("www.bbc.co.uk") => Self::new(Site::BBC, url),
-            _ => unimplemented!(),
+            _ => unimplemented!(
+                "'gust' currently only supports requests for recipes from the BBC Food website."
+            ),
         }
     }
 }
@@ -35,11 +39,14 @@ impl Fetcher {
         Self { site, url }
     }
 
-    pub async fn fetch_recipe(&self) -> Result<(String, Vec<String>), FetchError> {
+    pub async fn fetch_recipe(&self) -> Result<(Recipe, Ingredients), FetchError> {
         let document = self.fetch_html().await?;
         Ok((
-            self.fetch_recipe_name(&document)?,
-            self.fetch_recipe_ingredients(&document)?,
+            self.fetch_recipe_name(&document)?.as_str().into(),
+            self.fetch_recipe_ingredients(&document)?
+                .into_iter()
+                .map(|i| i.as_str().into())
+                .collect(),
         ))
     }
 

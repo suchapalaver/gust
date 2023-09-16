@@ -14,7 +14,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    items_recipes (item_id) {
+    items_recipes (item_id, recipe_id) {
         item_id -> Integer,
         recipe_id -> Integer,
     }

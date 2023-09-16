@@ -5,14 +5,19 @@ use common::{
     item::{Item, ItemName, Section},
     items::Items,
     list::List,
-    recipes::{Ingredients, RecipeName},
+    recipes::{Ingredients, Recipe},
+    scraper::{FetchError, Fetcher},
 };
 use persistence::store::{Storage, Store, StoreError};
 
 use thiserror::Error;
+use url::Url;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
+    #[error("Fetch error: {0}")]
+    FetchError(#[from] FetchError),
+
     #[error("Store error: {0}")]
     StoreError(#[from] StoreError),
 }
@@ -26,11 +31,12 @@ impl Api {
         Self { store }
     }
 
-    pub fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
+    pub async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
         match command {
             ApiCommand::Add(cmd) => self.add(cmd),
             ApiCommand::Delete(cmd) => self.delete(cmd),
-            ApiCommand::Read(cmd) => self.read(cmd),
+            ApiCommand::FetchRecipe(url) => self.fetch_recipe(url).await,
+            ApiCommand::Read(cmd) => self.read(cmd).await,
             ApiCommand::Update(cmd) => self.update(cmd),
         }
     }
@@ -61,7 +67,7 @@ impl Api {
         }
     }
 
-    fn read(&mut self, cmd: Read) -> Result<ApiResponse, ApiError> {
+    async fn read(&mut self, cmd: Read) -> Result<ApiResponse, ApiError> {
         match cmd {
             Read::All => {
                 let results = self.store.items()?;
@@ -73,8 +79,6 @@ impl Api {
             }
             Read::Item(_name) => todo!(),
             Read::List => {
-                let cmd = ApiCommand::Read(Read::Checklist);
-                self.execute(cmd)?;
                 let list = self.store.list()?;
                 Ok(ApiResponse::List(list))
             }
@@ -117,6 +121,12 @@ impl Api {
             }
         }
     }
+
+    async fn fetch_recipe(&self, url: Url) -> Result<ApiResponse, ApiError> {
+        let fetcher = Fetcher::from(url);
+        let (recipe, ingredients) = fetcher.fetch_recipe().await?;
+        Ok(ApiResponse::FetchedRecipe((recipe, ingredients)))
+    }
 }
 
 pub enum ApiResponse {
@@ -127,8 +137,9 @@ pub enum ApiResponse {
     List(List),
     ListItemAdded(ItemName),
     NothingReturned(ApiCommand),
-    Recipes(Vec<RecipeName>),
-    RecipeAdded(RecipeName),
+    Recipes(Vec<Recipe>),
+    RecipeAdded(Recipe),
+    FetchedRecipe((Recipe, Ingredients)),
     RecipeIngredients(Ingredients),
     Sections(Vec<Section>),
 }
@@ -143,6 +154,13 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::ChecklistItemDeleted(name) => write!(f, "Checklist item deleted: {name}"),
+            Self::FetchedRecipe((recipe, ingredients)) => {
+                writeln!(f, "\n{}:", recipe)?;
+                for ingredient in ingredients.iter() {
+                    writeln!(f, "{}:", ingredient)?;
+                }
+                Ok(())
+            }
             Self::Items(items) => {
                 for item in &items.collection {
                     writeln!(f, "{}", item)?;
@@ -183,15 +201,15 @@ impl Display for ApiResponse {
 
 #[cfg(test)]
 mod tests {
-    use common::recipes::RecipeName;
+    use common::recipes::Recipe;
 
     use crate::ApiResponse;
 
     #[test]
     fn test_recipes_response_display() {
         let recipes = ApiResponse::Recipes(vec![
-            RecipeName::from("peanut butter and jelly sandwich"),
-            RecipeName::from("cheese and apple snack"),
+            Recipe::from("peanut butter and jelly sandwich"),
+            Recipe::from("cheese and apple snack"),
         ]);
         insta::assert_display_snapshot!(recipes, @r###"
         peanut butter and jelly sandwich

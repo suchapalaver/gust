@@ -2,7 +2,7 @@ use common::{
     item::ItemName,
     items::Items,
     list::List,
-    recipes::{Ingredients, RecipeName},
+    recipes::{Ingredients, Recipe},
 };
 use diesel::{prelude::*, sqlite::Sqlite, SqliteConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
@@ -103,10 +103,10 @@ impl SqliteStore {
     pub fn load_recipe(
         &mut self,
         recipe_name: &str,
-    ) -> Result<Vec<models::Recipe>, diesel::result::Error> {
+    ) -> Result<Vec<models::RecipeModel>, diesel::result::Error> {
         schema::recipes::table
             .filter(schema::recipes::dsl::name.eq(recipe_name))
-            .load::<models::Recipe>(self.connection())
+            .load::<models::RecipeModel>(self.connection())
     }
 }
 
@@ -139,11 +139,7 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
-    fn add_recipe(
-        &mut self,
-        recipe: &RecipeName,
-        ingredients: &Ingredients,
-    ) -> Result<(), StoreError> {
+    fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
         let recipe_name = recipe.to_string().to_lowercase();
         let recipe_id = self.get_or_insert_recipe(&recipe_name);
         let item_ids: Vec<i32> = ingredients
@@ -200,7 +196,7 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
-    fn delete_recipe(&mut self, recipe: &RecipeName) -> Result<(), StoreError> {
+    fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
         let name = recipe.to_string();
         diesel::delete(
             schema::items_recipes::table.filter(
@@ -230,10 +226,7 @@ impl Storage for SqliteStore {
             .collect())
     }
 
-    fn recipe_ingredients(
-        &mut self,
-        recipe: &RecipeName,
-    ) -> Result<Option<Ingredients>, StoreError> {
+    fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
         let results = self.load_recipe(recipe.as_str())?;
 
         let mut v = Vec::<Ingredients>::with_capacity(results.len());
@@ -268,11 +261,11 @@ impl Storage for SqliteStore {
             .collect())
     }
 
-    fn recipes(&mut self) -> Result<Vec<RecipeName>, StoreError> {
+    fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
         use schema::recipes::dsl::*;
 
         Ok(recipes
-            .load::<models::Recipe>(self.connection())?
+            .load::<models::RecipeModel>(self.connection())?
             .into_iter()
             .map(|r| r.into())
             .collect())

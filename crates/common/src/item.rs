@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use crate::recipes::RecipeName;
+use crate::recipes::Recipe;
 
 /// An item used in recipes or bought separately
 ///
@@ -13,7 +13,7 @@ use crate::recipes::RecipeName;
 pub struct Item {
     pub name: ItemName,
     pub section: Option<Section>,
-    pub recipes: Option<Vec<RecipeName>>,
+    pub recipes: Option<Vec<Recipe>>,
 }
 
 impl Item {

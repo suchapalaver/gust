@@ -17,6 +17,9 @@ pub enum CliError {
 
     #[error("Store error: {0}")]
     StoreError(#[from] StoreError),
+
+    #[error("URL parse error: {0}")]
+    UrlParseError(#[from] url::ParseError),
 }
 
 fn ingredient() -> Arg {
@@ -75,6 +78,17 @@ fn section() -> Arg {
         .value_hint(ValueHint::Unknown)
         .value_parser(NonEmptyStringValueParser::new())
         .help("provides item's section")
+}
+
+fn url() -> Arg {
+    Arg::new("url")
+        .long("url")
+        .required(true)
+        .value_hint(ValueHint::Url)
+        .value_parser(NonEmptyStringValueParser::new())
+        .help(
+            "URL for recipe, e.g. 'https://www.bbc.co.uk/food/recipes/scrambledeggandtoast_75736'",
+        )
 }
 
 fn clear_checklist() -> Command {
@@ -140,6 +154,13 @@ fn delete() -> Command {
         .subcommand(list().subcommand(clear_list()).arg(recipe()).arg(item()))
 }
 
+fn fetch() -> Command {
+    Command::new("fetch")
+        .subcommand_required(false)
+        .about("fetch recipes from a URL")
+        .arg(url())
+}
+
 fn read() -> Command {
     Command::new("read")
         .subcommand_required(false)
@@ -190,11 +211,12 @@ fn migrate() -> Command {
 
 pub fn cli() -> Command {
     Command::new("gust")
-        .about("gust: makes grocery lists, written in rust")
+        .about("gust: rust-powered grocery list creator")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(add())
         .subcommand(delete())
+        .subcommand(fetch())
         .subcommand(read())
         .subcommand(update())
         .subcommand(migrate())
