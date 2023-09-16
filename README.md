@@ -3,6 +3,7 @@
 use `gust` to add recipes and grocery items to a local database,
 making putting together shopping lists super quick.
 
+---
 ## getting started
 
 For help menu:
@@ -11,6 +12,7 @@ For help menu:
 cargo run -- --help    
 ```
 
+---
 ## Docs
 
 ### [cli](./docs/cli.md)
@@ -28,6 +30,7 @@ cargo run -- --help
   - [data volumes](./docker.md#creating-a-gust_data-volume)
   - [migrating from JSON to SQLite](./docker.md#migrate-a-json-gust-store-to-sqlite)
 
+---
 ## example - querying recipes
 
 We can query the recipes we have in our sqlite database like this:
