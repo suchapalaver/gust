@@ -21,7 +21,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    items_sections (item_id) {
+    items_sections (item_id, section_id) {
         item_id -> Integer,
         section_id -> Integer,
     }
