@@ -11,4 +11,6 @@ COPY . .
 
 RUN cargo build --release
 
+RUN chmod +x target
+
 ENTRYPOINT ["./target/release/gust"]
