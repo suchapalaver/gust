@@ -82,15 +82,15 @@ impl SqliteStore {
             .expect("Error loading recipe")
     }
 
-    fn insert_item_recipe(&mut self, item_id: i32, recipe_id: i32) {
-        let item_recipe_query = diesel::insert_into(crate::schema::items_recipes::table)
+    fn insert_item_recipe(
+        &mut self,
+        item_id: i32,
+        recipe_id: i32,
+    ) -> Result<(), diesel::result::Error> {
+        diesel::insert_into(crate::schema::items_recipes::table)
             .values(NewItemRecipe { item_id, recipe_id })
-            .on_conflict(schema::items_recipes::dsl::item_id)
-            .do_update()
-            .set(schema::items_recipes::dsl::recipe_id.eq(recipe_id));
-        item_recipe_query
-            .execute(self.connection())
-            .expect("Error inserting new item-recipe");
+            .execute(self.connection())?;
+        Ok(())
     }
 
     pub fn load_item(&mut self, item_id: i32) -> Vec<Item> {
@@ -151,7 +151,7 @@ impl Storage for SqliteStore {
             .collect();
 
         for item_id in item_ids {
-            self.insert_item_recipe(item_id, recipe_id);
+            self.insert_item_recipe(item_id, recipe_id)?;
         }
         Ok(())
     }
