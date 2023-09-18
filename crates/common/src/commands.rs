@@ -10,6 +10,7 @@ pub enum ApiCommand {
     Add(Add),
     Delete(Delete),
     FetchRecipe(Url),
+    MigrateJsonDbToSqlite,
     Read(Read),
     Update(Update),
 }

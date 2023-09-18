@@ -5,14 +5,21 @@ use common::{
     recipes::{Ingredients, Recipe},
     LoadError, ReadError,
 };
+use diesel::ConnectionError;
 use thiserror::Error;
 
 use std::error::Error;
 
-use crate::{json::JsonStore, sqlite::SqliteStore};
+use crate::{
+    json::{migrate::migrate_groceries, JsonStore},
+    sqlite::{self, establish_connection, SqliteStore},
+};
 
 #[derive(Error, Debug)]
 pub enum StoreError {
+    #[error("Error connecting to SQLite database: {0}")]
+    ConnectionError(#[from] ConnectionError),
+
     #[error("DB query failed: {0}")]
     DBQuery(#[from] diesel::result::Error),
 
@@ -46,6 +53,36 @@ impl From<SqliteStore> for Store {
 impl From<JsonStore> for Store {
     fn from(store: JsonStore) -> Self {
         Self::Json(store)
+    }
+}
+
+impl Store {
+    pub fn new(store: &str) -> Result<Self, StoreError> {
+        match store {
+            "sqlite" => {
+                let mut store = SqliteStore::new(establish_connection()?);
+                sqlite::run_migrations(store.connection())?;
+                Ok(Store::from(store))
+            }
+            "json" => Ok(Store::from(JsonStore::default())),
+
+            _ => unreachable!("Store types are currently limited to 'sqlite' and 'json'."),
+        }
+    }
+
+    // We need to deconstruct the `enum` anyway, and so while we do, we handle
+    // migrating regardless of which database store has been set via CLI options.
+    pub fn migrate_json_store_to_sqlite(&mut self) -> Result<(), StoreError> {
+        match self {
+            Self::Json(store) => migrate_groceries(
+                store,
+                SqliteStore::new(establish_connection()?).connection(),
+            )?,
+            Self::Sqlite(store) => {
+                migrate_groceries(&mut JsonStore::default(), store.connection())?
+            }
+        }
+        Ok(())
     }
 }
 

@@ -1,11 +1,11 @@
 pub mod commands;
+pub mod fetcher;
 pub mod input;
 pub mod item;
 pub mod items;
 pub mod list;
 pub mod recipes;
 pub mod run_list;
-pub mod scraper;
 pub mod sections;
 
 use std::{

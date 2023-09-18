@@ -14,7 +14,7 @@ To run the application, creating a volume called `gust_data`,
 and migrating data from an existing `groceries.json` JSON store, use:
 
 ```bash
-docker run --rm -v gust_data:/app gust --database sqlite migrate-json-db
+docker run --rm -v gust_data:/app gust --database sqlite migrate-json-store
 ```
 
 ### Reading from a `gust_data` Volume
@@ -36,7 +36,7 @@ docker run --rm \
 -v /host/machine/absolute/path/to/list.json:/app/list.json \
 gust \
 --database sqlite \
-migrate-json-db
+migrate-json-store
 ```
 
 Note that for now it has to be `groceries.json` and `list.json`.
