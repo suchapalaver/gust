@@ -1,0 +1,531 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="785.4167px" preserveAspectRatio="none" style="width:471px;height:785px;background:#00000000;" version="1.1" viewBox="0 0 471 785" width="471.875px" zoomAndPan="magnify"><defs><linearGradient id="gv45b48t4v2p40" x1="50%" x2="50%" y1="0%" y2="100%"><stop offset="0%" stop-color="#33B2E2"/><stop offset="100%" stop-color="#009FDB"/></linearGradient></defs><g><!--MD5=[6a5744ceb0ebae6a7aa4f9a3c8365b92]
+cluster gust--><g id="cluster_gust"><path d="M27.0833,16.6667 L81.25,16.6667 A15.625,15.625 0 0 1 91.6667,27.0833 L98.9583,63.8346 L402.0833,63.8346 A10.4167,10.4167 0 0 1 412.5,74.2513 L412.5,566.6667 A10.4167,10.4167 0 0 1 402.0833,577.0833 L27.0833,577.0833 A10.4167,10.4167 0 0 1 16.6667,566.6667 L16.6667,27.0833 A10.4167,10.4167 0 0 1 27.0833,16.6667 " fill="none" style="stroke:#33B2E2;stroke-width:2.0833333333333335;"/><line style="stroke:#33B2E2;stroke-width:2.0833333333333335;" x1="16.6667" x2="98.9583" y1="63.8346" y2="63.8346"/><text fill="#009FDB" font-family="&quot;Verdana&quot;" font-size="20.8333" font-weight="bold" lengthAdjust="spacing" textLength="52.0833" x="29.1667" y="46.4213">gust</text></g><!--MD5=[451249b15ad16006555a752a1e1d294a]
+entity API {\n  + Fetcher\n  + Store\n}--><g id="elem_API {\n  + Fetcher\n  + Store\n}"><rect fill="url(#gv45b48t4v2p40)" height="106.1198" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="131.25" x="71.875" y="328.125"/><rect fill="url(#gv45b48t4v2p40)" height="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="15.625" x="182.2917" y="333.3333"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="180.2083" y="335.4167"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="180.2083" y="339.5833"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="32.2917" x="95.8333" y="368.8944">API {</text><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="64.5833" x="104.1667" y="383.4452">+ Fetcher</text><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="50" x="104.1667" y="397.996">+ Store</text><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="8.3333" x="95.8333" y="412.5468">}</text></g><!--MD5=[c8f4784429f35a14c52053a7fb861ebc]
+entity Store (JSON | SQLite)--><g id="elem_Store (JSON | SQLite)"><rect fill="url(#gv45b48t4v2p40)" height="62.4674" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="191.6667" x="35.4167" y="497.9167"/><rect fill="url(#gv45b48t4v2p40)" height="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="15.625" x="206.25" y="503.125"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="204.1667" y="505.2083"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="204.1667" y="509.375"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="133.3333" x="59.375" y="538.6861">Store (JSON | SQLite)</text></g><!--MD5=[df6a39b053164d23cc3ecae9c3484a54]
+entity CLI--><g id="elem_CLI"><rect fill="url(#gv45b48t4v2p40)" height="62.4674" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="76.0417" x="223.4375" y="84.375"/><rect fill="url(#gv45b48t4v2p40)" height="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="15.625" x="278.6458" y="89.5833"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="276.5625" y="91.6667"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="276.5625" y="95.8333"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="17.7083" x="247.3958" y="125.1444">CLI</text></g><!--MD5=[1016729ca33fdfaaeea77dd556211a0f]
+entity common types\n and methods--><g id="elem_common types\n and methods"><rect fill="url(#gv45b48t4v2p40)" height="77.0182" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="153.125" x="33.8542" y="77.0833"/><rect fill="url(#gv45b48t4v2p40)" height="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="15.625" x="166.1458" y="82.2917"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="164.0625" y="84.375"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="164.0625" y="88.5417"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="94.7917" x="57.8125" y="117.8528">common types</text><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="86.4583" x="61.9792" y="132.4036">and methods</text></g><!--MD5=[63c34b235068ff4dee52e17fc2444b52]
+entity Recipe Fetcher--><g id="elem_Recipe Fetcher"><rect fill="url(#gv45b48t4v2p40)" height="62.4674" rx="10.4167" ry="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="156.25" x="239.5833" y="350"/><rect fill="url(#gv45b48t4v2p40)" height="10.4167" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="15.625" x="375" y="355.2083"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="372.9167" y="357.2917"/><rect fill="url(#gv45b48t4v2p40)" height="2.0833" style="stroke:#33B2E2;stroke-width:1.0416666666666667;" width="4.1667" x="372.9167" y="361.4583"/><text fill="#FFFFFF" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="97.9167" x="263.5417" y="390.7694">Recipe Fetcher</text></g><!--MD5=[7c6cc8532223f11e77b82be6cbdb2ea3]
+entity ext--><g id="elem_ext"><ellipse cx="317.7083" cy="734.375" fill="#D95555" rx="8.3333" ry="8.3333" style="stroke:#CF2A2A;stroke-width:1.0416666666666667;"/><text fill="#5A5A5A" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="284.375" x="175.5208" y="772.0194">cooking sites (e.g. NYT Cooking , BBC Food)</text></g><!--MD5=[a03fc07620c0ba91ce79d5e77f14bd4c]
+link API {\n  + Fetcher\n  + Store\n} to Store (JSON | SQLite)--><g id="link_API {\n  + Fetcher\n  + Store\n}_Store (JSON | SQLite)"><path d="M134.7246,447.0198 C134.7246,447.0198 133.0775,485.3761 133.0775,485.3761 " fill="none" id="API {\n  + Fetcher\n  + Store\n}-Store (JSON | SQLite)" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="none" points="132.5417,497.8646,136.9724,491.7989,133.0775,485.3761,128.6467,491.4417,132.5417,497.8646" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="none" points="135.2604,434.5313,130.8297,440.5969,134.7246,447.0198,139.1553,440.9541,135.2604,434.5313" style="stroke:#009FDB;stroke-width:3.125;"/></g><!--MD5=[7403fbbe237f6cb9decb027074f88677]
+link CLI to API {\n  + Fetcher\n  + Store\n}--><g id="link_CLI_API {\n  + Fetcher\n  + Store\n}"><path d="M244.9896,151.6875 C224.4583,195.3333 189.0938,270.5313 164.5521,322.6875 " fill="none" id="CLI-API {\n  + Fetcher\n  + Store\n}" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="#009FDB" points="162.2188,327.6563,169.9776,320.9442,164.4343,322.9426,162.4358,317.3993,162.2188,327.6563" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="#009FDB" points="247.2396,146.8958,239.4726,153.5984,245.0183,151.6067,247.01,157.1525,247.2396,146.8958" style="stroke:#009FDB;stroke-width:3.125;"/><text fill="#5A5A5A" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="94.7917" x="223.9583" y="238.6861">API commands</text><text fill="#5A5A5A" font-family="&quot;Verdana&quot;" font-size="12.5" lengthAdjust="spacing" textLength="83.3333" x="229.6875" y="253.2369">&amp; responses</text></g><!--MD5=[de1903918e7d3dd03ddb5f756a64f3d6]
+link common types\n and methods to API {\n  + Fetcher\n  + Store\n}--><g id="link_common types\n and methods_API {\n  + Fetcher\n  + Store\n}"><path d="M114.3021,154.4271 C118.9792,199.9688 126.875,276.7813 132.1354,327.9792 " fill="none" id="common types\n and methods-API {\n  + Fetcher\n  + Store\n}" style="stroke:#009FDB;stroke-width:3.125;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[5b5f3141c856753c61fa6673ef37495d]
+link common types\n and methods to CLI--><g id="link_common types\n and methods_CLI"><path d="M187.1146,115.625 C199.2188,115.625 211.3125,115.625 223.4167,115.625 " fill="none" id="common types\n and methods-CLI" style="stroke:#009FDB;stroke-width:3.125;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[25eb7b77048729980c0fa21b7ab1581b]
+link common types\n and methods to Store (JSON | SQLite)--><g id="link_common types\n and methods_Store (JSON | SQLite)"><path d="M91.2708,154.4167 C63.2188,215.0417 17.9271,337.1458 53.125,434.375 C61.8542,458.4792 79.7813,480.7396 96.2708,497.5208 " fill="none" id="common types\n and methods-Store (JSON | SQLite)" style="stroke:#009FDB;stroke-width:3.125;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[3c7bba63ea1641fb12d3a746afca7df6]
+link API {\n  + Fetcher\n  + Store\n} to Recipe Fetcher--><g id="link_API {\n  + Fetcher\n  + Store\n}_Recipe Fetcher"><path d="M215.8229,381.25 C215.8229,381.25 227.0104,381.25 227.0104,381.25 " fill="none" id="API {\n  + Fetcher\n  + Store\n}-Recipe Fetcher" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="none" points="239.5104,381.25,233.2604,377.0833,227.0104,381.25,233.2604,385.4167,239.5104,381.25" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="none" points="203.3229,381.25,209.5729,385.4167,215.8229,381.25,209.5729,377.0833,203.3229,381.25" style="stroke:#009FDB;stroke-width:3.125;"/></g><!--MD5=[4e805712f5db31a6ad84ad33b2462089]
+link Recipe Fetcher to ext--><g id="link_Recipe Fetcher_ext"><path d="M317.7083,418.0208 C317.7083,494.1042 317.7083,669.2292 317.7083,719.5729 " fill="none" id="Recipe Fetcher-ext" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="#009FDB" points="317.7083,724.8229,321.875,715.4479,317.7083,719.6146,313.5417,715.4479,317.7083,724.8229" style="stroke:#009FDB;stroke-width:3.125;"/><polygon fill="#009FDB" points="317.7083,412.5208,313.5417,421.8958,317.7083,417.7292,321.875,421.8958,317.7083,412.5208" style="stroke:#009FDB;stroke-width:3.125;"/></g><!--MD5=[a1ad32358300c599928a3835c852f474]
+@startuml design
+
+!theme bluegray
+skinparam classFontColor darkSlateGray
+
+package "gust" {
+  [API {\n  + Fetcher\n  + Store\n}] o-down-o [Store (JSON | SQLite)]
+  [CLI] <- - -> [API {\n  + Fetcher\n  + Store\n}] : API commands\n& responses
+  [common types\n and methods] .right. [API {\n  + Fetcher\n  + Store\n}]
+  [common types\n and methods] .right. [CLI]
+  [common types\n and methods] .right. [Store (JSON | SQLite)]
+  [API {\n  + Fetcher\n  + Store\n}] o-right-o [Recipe Fetcher]
+}
+interface "cooking sites (e.g. NYT Cooking , BBC Food)" as ext
+[Recipe Fetcher] <- -down- -> ext
+
+@enduml
+
+@startuml design
+
+
+
+
+skinparam backgroundColor transparent
+skinparam useBetaStyle false
+
+
+
+
+
+
+
+
+<style>
+  root {
+    BackgroundColor transparent
+    FontColor #fff
+    HyperLinkColor $ORANGE
+    LineColor #007faf
+    LineThickness 1
+    Margin 10
+    Padding 6
+    Shadowing 0.0
+  }
+  node {
+   Padding 15
+   roundcorner 20
+   BackgroundColor #009fdb-#007faf
+  }
+  caption {
+    LineThickness 0
+  }
+  footer {
+    LineThickness 0
+  }
+  groupHeader {
+    BackgroundColor #f2f2f2
+    FontColor #0568ae
+    FontStyle bold
+  }
+  header {
+    LineThickness 0
+  }
+  referenceHeader {
+    BackgroundColor transparent
+    FontColor #5a5a5a
+    FontStyle bold
+  }
+  separator {
+    BackgroundColor #5a5a5a
+    FontColor transparent
+    FontStyle bold
+  }
+  title {
+	FontSize 20
+	BorderRoundCorner            8
+	BorderThickness 	         1
+	BackgroundColor  #f5f5f5-#f2f2f2
+	FontColor #009fdb
+	BorderColor #f2f2f2
+  }
+  nwdiagDiagram {
+	network {
+		
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+    
+		LineColor #009fdb
+		LineThickness 1.0
+		FontColor #007faf
+	}
+	server {
+		
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	}
+	arrow {
+		FontColor #007faf
+		LineColor #007faf
+	}
+	group {
+		BackGroundColor #d2d2d2
+		LineColor $LIGHT_DARK
+		LineThickness 2.0
+		Margin 5
+		Padding 5
+	}
+  }
+  ganttDiagram {
+	task {
+		
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+		LineColor #009fdb
+		Margin 10
+		Padding 6
+	}
+	note {
+		FontColor #fff
+		LineColor #04538b
+		BackGroundColor #0568ae
+	}
+	separator {
+		LineColor #f2f2f2
+		BackGroundColor #f2f2f2-#c2c2c2
+		FontColor #5a5a5a
+	}
+	milestone {
+		FontColor #0568ae
+		FontSize 16
+		FontStyle italic
+		BackGroundColor #f2f2f2
+		LineColor #c2c2c2
+	}
+	timeline {
+		BackgroundColor #f2f2f2
+		FontColor #5a5a5a
+	}
+	closed {
+		BackgroundColor #bb5d00
+		FontColor #fff
+	}
+  }
+</style>
+skinparam defaultFontName        "Verdana"
+skinparam defaultFontSize        12
+skinparam dpi                    100
+skinparam shadowing              false
+skinparam roundcorner            20
+skinparam ParticipantPadding     30
+skinparam BoxPadding             40
+skinparam Padding                8
+skinparam ArrowColor             #959595
+skinparam stereotype {
+    CBackgroundColor #f5f5f5
+    CBorderColor #c2c2c2
+    ABackgroundColor #c4ca33
+    ABorderColor #919700
+    IBackgroundColor #d95555
+    IBorderColor #a62222
+    EBackgroundColor #ee9033
+    EBorderColor #bb5d00
+    NBackgroundColor #3786be
+    NBorderColor #04538b
+}
+skinparam title {
+	FontColor	                 #009fdb
+	BorderColor	                 #c2c2c2
+	FontSize	    	         20
+	BorderRoundCorner            8
+	BorderThickness 	         1
+	BackgroundColor              #f5f5f5-#f2f2f2
+}
+
+
+skinparam legend {
+	BackgroundColor #f2f2f2
+	BorderColor #c2c2c2
+	FontColor #5a5a5a
+}
+
+skinparam swimlane {
+	BorderColor #0568ae
+	BorderThickness 2
+	TitleBackgroundColor  #f5f5f5-#f2f2f2
+	TitleFontColor #009fdb
+}
+
+
+skinparam activity {
+	FontColor #fff
+	BorderColor #009fdb
+	BackgroundColor #33b2e2-#009fdb
+	BarColor #b5bd00
+	StartColor #0568ae
+	EndColor #0568ae
+	DiamondBackgroundColor #f5f5f5-#c2c2c2
+  	DiamondBorderColor #c2c2c2
+	DiamondFontColor #5a5a5a
+}
+
+
+skinparam participant {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	ParticipantBorderThickness 2
+}
+
+
+skinparam actor {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	FontColor #009fdb
+}
+
+
+skinparam arrow {
+	Thickness 3
+	Color #009fdb
+	FontColor #5a5a5a
+}
+
+
+skinparam sequence {
+	BorderColor #009fdb
+	TitleFontColor #009fdb
+	BackgroundColor transparent
+	StartColor #009fdb
+	EndColor #009fdb
+	BoxBackgroundColor #d2d2d2
+	BoxBorderColor #959595
+	BoxFontColor #5a5a5a
+	DelayFontColor #5a5a5a
+	LifeLineBorderColor #c2c2c2
+	LifeLineBorderThickness 2
+	LifeLineBackgroundColor #f5f5f5
+	GroupBorderColor #959595
+	GroupFontColor #5a5a5a
+	GroupHeaderFontColor #0568ae
+	DividerBackgroundColor #fff-#d2d2d2
+    DividerBorderColor #959595
+    DividerBorderThickness 2
+    DividerFontColor #5a5a5a
+	ReferenceBackgroundColor transparent
+	ReferenceBorderColor #959595
+	ReferenceFontColor #5a5a5a
+	ReferenceHeaderFontColor #0568ae
+	StereotypeFontColor #fff
+}
+
+
+skinparam partition {
+	BorderColor #009fdb
+	FontColor #009fdb
+	BackgroundColor transparent
+}
+
+
+skinparam collections {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+}
+
+
+skinparam control {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	FontColor #009fdb
+}
+
+
+skinparam entity {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	FontColor #009fdb
+}
+
+
+skinparam boundary {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	FontColor #009fdb
+}
+
+
+skinparam agent {
+	BackgroundColor #orange
+	BorderColor #999999
+	FontColor #333333
+}
+
+
+skinparam note {
+	BorderThickness 1
+	BackgroundColor #3786be-#0568ae
+	BorderColor #0568ae
+	FontColor #fff
+}
+
+
+skinparam artifact {
+	BackgroundColor #fff-#d2d2d2
+	BorderColor #c2c2c2
+	FontColor #5a5a5a
+}
+
+
+skinparam component {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+}
+
+
+skinparam interface {
+	BackgroundColor  #d95555
+	BorderColor  #cf2a2a
+	FontColor #5a5a5a
+}
+
+
+skinparam storage {
+	BackgroundColor #ee9033-#ea7400
+  	BorderColor #ea7400
+	FontColor #fff
+}
+
+
+skinparam node {
+	BackgroundColor #f5f5f5-#f2f2f2
+	BorderColor #c2c2c2
+	FontColor #009fdb
+}
+
+
+skinparam cloud {
+	BackgroundColor #F2FCFE-#eeeeee
+	BorderColor #F2FCFE
+	FontColor #009fdb
+}
+
+
+skinparam database {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	BorderColor #007faf
+}
+
+
+skinparam class {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	HeaderBackgroundColor #33b2e2-#009fdb
+	StereotypeFontColor #5a5a5a
+	BorderThickness 1
+	AttributeFontColor #d2d2d2
+	AttributeFontSize 11
+}
+
+
+skinparam object {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	StereotypeFontColor #5a5a5a
+	BorderThickness 1
+	AttributeFontColor #d2d2d2
+	AttributeFontSize 11
+}
+
+
+skinparam usecase {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	BorderThickness 2
+	StereotypeFontColor #009fdb
+}
+
+
+skinparam rectangle {
+		FontColor #5a5a5a
+	BorderColor #c2c2c2
+	BackgroundColor #fff-#fefefe
+	BorderThickness 2
+	StereotypeFontColor #009fdb
+}
+
+
+skinparam package {
+	FontColor #009fdb
+	BorderColor #33b2e2
+	BackgroundColor transparent
+	BorderThickness 2
+}
+
+
+skinparam folder {
+	BackgroundColor #fff-#f5f5f5
+  	BorderColor #ea7400
+	FontColor #ea7400
+	BorderThickness 2
+}
+
+
+skinparam frame {
+	BackgroundColor #fff-#f5f5f5
+  	BorderColor #0568ae
+	FontColor #0568ae
+	BorderThickness 2
+}
+
+
+skinparam state {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+	BorderColor #007faf
+	StartColor #0568ae
+	EndColor #0568ae
+	AttributeFontColor #d2d2d2
+	AttributeFontSize 11
+}
+
+
+skinparam queue {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+}
+
+
+skinparam card {
+	BackgroundColor #3786be-#0568ae
+	BorderColor #0568ae
+	FontColor #fff
+}
+
+
+skinparam file {
+	BackgroundColor #f5f5f5-#f2f2f2
+	BorderColor #0568ae
+	FontColor #5a5a5a
+
+}
+
+
+skinparam stack {
+	
+	FontColor #fff
+	BorderColor #33b2e2
+	BackgroundColor #33b2e2-#009fdb
+
+}
+skinparam classFontColor darkSlateGray
+
+package "gust" {
+  [API {\n  + Fetcher\n  + Store\n}] o-down-o [Store (JSON | SQLite)]
+  [CLI] <- - -> [API {\n  + Fetcher\n  + Store\n}] : API commands\n& responses
+  [common types\n and methods] .right. [API {\n  + Fetcher\n  + Store\n}]
+  [common types\n and methods] .right. [CLI]
+  [common types\n and methods] .right. [Store (JSON | SQLite)]
+  [API {\n  + Fetcher\n  + Store\n}] o-right-o [Recipe Fetcher]
+}
+interface "cooking sites (e.g. NYT Cooking , BBC Food)" as ext
+[Recipe Fetcher] <- -down- -> ext
+
+@enduml
+
+PlantUML version 1.2022.7(Mon Aug 22 13:01:30 EDT 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

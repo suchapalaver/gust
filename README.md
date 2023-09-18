@@ -13,6 +13,11 @@ cargo run -- --help
 ```
 
 ---
+## overview
+
+![`gust` design diagram](./docs/diagrams/design.svg)
+
+---
 ## docs
 
 ### [cli](./docs/cli.md)
