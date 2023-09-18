@@ -596,7 +596,6 @@ dependencies = [
  "common",
  "diesel",
  "insta",
- "persistence",
  "question",
  "reqwest",
  "scraper",

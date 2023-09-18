@@ -8,45 +8,27 @@ use common::{
     item::{ItemName, Section},
     recipes::{Ingredients, Recipe},
 };
-use persistence::{
-    json::{migrate::migrate_groceries, JsonStore},
-    sqlite::{establish_connection, SqliteStore},
-    store::Store,
-};
 use url::Url;
 
 pub async fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
 
-    let Some(val) = matches.get_one::<String>("db") else {
-        unreachable!("'db' has a default setting")
-    };
-
-    let store = match val.as_str() {
-        "sqlite" => {
-            let mut store = SqliteStore::new(establish_connection());
-            persistence::sqlite::run_migrations(store.connection())?;
-            if let Some(("migrate-json-db", _)) = matches.subcommand() {
-                migrate_groceries(&mut JsonStore::default(), store.connection())?;
-                println!("Migration complete");
-                return Ok(());
-            }
-            Store::from(store)
-        }
-        "json" => Store::from(JsonStore::default()),
+    let response = Api::new(
+        matches
+            .get_one::<String>("store")
+            .expect("'store' has a default setting")
+            .as_str(),
+    )?
+    .execute(match matches.subcommand() {
+        Some(("add", matches)) => ApiCommand::Add(add(matches)?),
+        Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
+        Some(("fetch", matches)) => fetch(matches)?,
+        Some(("read", matches)) => ApiCommand::Read(read(matches)?),
+        Some(("update", matches)) => ApiCommand::Update(update(matches)?),
+        Some(("migrate-json-store", _)) => ApiCommand::MigrateJsonDbToSqlite,
         _ => unreachable!(),
-    };
-
-    let response = Api::new(store)
-        .execute(match matches.subcommand() {
-            Some(("add", matches)) => ApiCommand::Add(add(matches)?),
-            Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
-            Some(("fetch", matches)) => fetch(matches)?,
-            Some(("read", matches)) => ApiCommand::Read(read(matches)?),
-            Some(("update", matches)) => ApiCommand::Update(update(matches)?),
-            _ => unreachable!(),
-        })
-        .await?;
+    })
+    .await?;
 
     println!("{response}");
 

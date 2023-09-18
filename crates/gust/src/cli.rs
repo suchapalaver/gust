@@ -1,7 +1,6 @@
 use api::ApiError;
 use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
 use common::ReadError;
-use persistence::{json::ITEMS_JSON_PATH, store::StoreError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -14,9 +13,6 @@ pub enum CliError {
 
     #[error("Read error: {0}")]
     ReadError(#[from] ReadError),
-
-    #[error("Store error: {0}")]
-    StoreError(#[from] StoreError),
 
     #[error("URL parse error: {0}")]
     UrlParseError(#[from] url::ParseError),
@@ -55,13 +51,6 @@ fn item() -> Arg {
         .value_hint(ValueHint::Unknown)
         .value_parser(NonEmptyStringValueParser::new())
         .help("item name")
-}
-
-fn path() -> Arg {
-    Arg::new("path")
-        .long("path")
-        .value_hint(ValueHint::FilePath)
-        .help("provides path for shopping list")
 }
 
 fn recipe() -> Arg {
@@ -203,10 +192,9 @@ fn update() -> Command {
 }
 
 fn migrate() -> Command {
-    Command::new("migrate-json-db")
+    Command::new("migrate-json-store")
         .subcommand_required(false)
         .about("migrate JSON store to Sqlite database")
-        .arg(path().default_value(ITEMS_JSON_PATH))
 }
 
 pub fn cli() -> Command {
@@ -221,7 +209,7 @@ pub fn cli() -> Command {
         .subcommand(update())
         .subcommand(migrate())
         .arg(
-            Arg::new("db")
+            Arg::new("store")
                 .long("database")
                 .num_args(1)
                 .value_parser(["json", "sqlite"])

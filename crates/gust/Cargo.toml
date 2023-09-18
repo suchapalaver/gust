@@ -10,7 +10,6 @@ repository = "https://github.com/suchapalaver/gust"
 
 [dependencies]
 api = { path = "../api" }
-persistence = { path = "../persistence" }
 clap = { workspace = true }
 common = { path = "../common" }
 diesel = { workspace = true }

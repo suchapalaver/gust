@@ -92,7 +92,7 @@ impl Fetcher {
 mod tests {
     use url::Url;
 
-    use crate::scraper::Fetcher;
+    use crate::fetcher::Fetcher;
 
     fn url() -> Url {
         Url::parse("https://www.bbc.co.uk/food/recipes/scrambledeggandtoast_75736").unwrap()

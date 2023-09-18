@@ -18,12 +18,11 @@ use crate::{
     store::{Storage, StoreError},
 };
 
-pub fn establish_connection() -> SqliteConnection {
+pub fn establish_connection() -> Result<SqliteConnection, StoreError> {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    SqliteConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    Ok(SqliteConnection::establish(&database_url)?)
 }
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");

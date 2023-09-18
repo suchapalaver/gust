@@ -20,11 +20,11 @@ Commands:
   delete           delete stuff
   read             read stuff
   update           update stuff
-  migrate-json-db  migrate JSON store to Sqlite database
+  migrate-json-store  migrate JSON store to Sqlite database
   help             Print this message or the help of the given subcommand(s)
 
 Options:
-      --database <db>  which database to use [default: json] [possible values: json, sqlite]
+      --database <store>  which database to use [default: json] [possible values: json, sqlite]
   -h, --help           Print help
 ```
 

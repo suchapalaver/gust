@@ -2,11 +2,11 @@ use std::fmt::{self, Display};
 
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
+    fetcher::{FetchError, Fetcher},
     item::{Item, ItemName, Section},
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
-    scraper::{FetchError, Fetcher},
 };
 use persistence::store::{Storage, Store, StoreError};
 
@@ -27,8 +27,9 @@ pub struct Api {
 }
 
 impl Api {
-    pub fn new(store: Store) -> Self {
-        Self { store }
+    pub fn new(store: &str) -> Result<Self, ApiError> {
+        let store = Store::new(store)?;
+        Ok(Self { store })
     }
 
     pub async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
@@ -36,6 +37,7 @@ impl Api {
             ApiCommand::Add(cmd) => self.add(cmd),
             ApiCommand::Delete(cmd) => self.delete(cmd),
             ApiCommand::FetchRecipe(url) => self.fetch_recipe(url).await,
+            ApiCommand::MigrateJsonDbToSqlite => self.migrate_json_store_to_sqlite(),
             ApiCommand::Read(cmd) => self.read(cmd).await,
             ApiCommand::Update(cmd) => self.update(cmd),
         }
@@ -129,11 +131,17 @@ impl Api {
         self.store.add_recipe(&recipe, &ingredients)?;
         Ok(ApiResponse::FetchedRecipe((recipe, ingredients)))
     }
+
+    fn migrate_json_store_to_sqlite(&mut self) -> Result<ApiResponse, ApiError> {
+        self.store.migrate_json_store_to_sqlite()?;
+        Ok(ApiResponse::JsonToSqlite)
+    }
 }
 
 pub enum ApiResponse {
     Checklist(Vec<Item>),
     ChecklistItemDeleted(ItemName),
+    JsonToSqlite,
     Items(Items),
     ItemAdded(ItemName),
     List(List),
@@ -170,6 +178,7 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::ItemAdded(name) => write!(f, "Item added: {name}"),
+            Self::JsonToSqlite => write!(f, "JSON to SQLite data store migration successful"),
             Self::List(list) => {
                 for item in &list.items {
                     writeln!(f, "{}", item)?;
