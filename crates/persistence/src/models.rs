@@ -84,25 +84,25 @@ impl From<Section> for common::sections::Section {
 #[derive(Queryable)]
 #[diesel(table_name = checklist)]
 pub struct ChecklistItem {
-    pub item_id: i32,
+    pub id: i32,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name = checklist)]
 pub struct NewChecklistItem {
-    pub item_id: i32,
+    pub id: i32,
 }
 
 #[derive(Queryable)]
 #[diesel(table_name = list)]
 pub struct ListItem {
-    pub item_id: i32,
+    pub id: i32,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name = list)]
 pub struct NewListItem {
-    pub item_id: i32,
+    pub id: i32,
 }
 
 #[derive(Insertable)]

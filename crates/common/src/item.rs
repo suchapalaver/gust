@@ -24,6 +24,10 @@ impl Item {
         }
     }
 
+    pub fn name(&self) -> &ItemName {
+        &self.name
+    }
+
     pub fn with_section(mut self, section: impl Into<String>) -> Self {
         self.section = Some(Section(section.into()));
         self

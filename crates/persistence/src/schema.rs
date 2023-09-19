@@ -1,8 +1,8 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    checklist (item_id) {
-        item_id -> Integer,
+    checklist (id) {
+        id -> Integer,
     }
 }
 
@@ -28,8 +28,8 @@ diesel::table! {
 }
 
 diesel::table! {
-    list (item_id) {
-        item_id -> Integer,
+    list (id) {
+        id -> Integer,
     }
 }
 
@@ -47,12 +47,12 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(checklist -> items (item_id));
+diesel::joinable!(checklist -> items (id));
 diesel::joinable!(items_recipes -> items (item_id));
 diesel::joinable!(items_recipes -> recipes (recipe_id));
 diesel::joinable!(items_sections -> items (item_id));
 diesel::joinable!(items_sections -> sections (section_id));
-diesel::joinable!(list -> items (item_id));
+diesel::joinable!(list -> items (id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     checklist,
