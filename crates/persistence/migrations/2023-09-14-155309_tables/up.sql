@@ -14,15 +14,15 @@ CREATE TABLE sections (
 );
 
 CREATE TABLE checklist (
-    item_id INTEGER NOT NULL,
-    PRIMARY KEY (item_id),
-    FOREIGN KEY (item_id) REFERENCES items (id)
+    id INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (id) REFERENCES items (id)
 );
 
 CREATE TABLE list (
-    item_id INTEGER NOT NULL,
-    PRIMARY KEY (item_id),
-    FOREIGN KEY (item_id) REFERENCES items (id)
+    id INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (id) REFERENCES items (id)
 );
 
 CREATE TABLE items_recipes (

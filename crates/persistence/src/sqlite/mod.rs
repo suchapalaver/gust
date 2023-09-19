@@ -50,20 +50,17 @@ impl SqliteStore {
         &mut self.connection
     }
 
-    fn get_or_insert_item(&mut self, name: &str) -> i32 {
-        let item_query = diesel::insert_into(crate::schema::items::table)
+    fn get_or_insert_item(&mut self, name: &str) -> Result<i32, StoreError> {
+        diesel::insert_into(schema::items::table)
             .values(NewItem { name })
-            .on_conflict_do_nothing();
-        item_query
-            .execute(self.connection())
-            .expect("Error inserting item");
+            .on_conflict_do_nothing()
+            .execute(self.connection())?;
 
         let item_query = schema::items::table.filter(schema::items::dsl::name.eq(name));
 
-        item_query
+        Ok(item_query
             .select(schema::items::dsl::id)
-            .first(self.connection())
-            .expect("Error loading item")
+            .first(self.connection())?)
     }
 
     fn get_or_insert_recipe(&mut self, name: &str) -> i32 {
@@ -117,22 +114,21 @@ impl Storage for SqliteStore {
     }
 
     fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
-        let item_name = item.to_string();
-        let item_id = self.get_or_insert_item(&item_name);
-        let item_query = {
+        let id = self.get_or_insert_item(item.as_str())?;
+        let query = {
             diesel::insert_into(schema::checklist::table)
-                .values(NewChecklistItem { item_id })
+                .values(NewChecklistItem { id })
                 .on_conflict_do_nothing()
         };
-        item_query.execute(self.connection())?;
+        query.execute(self.connection())?;
         Ok(())
     }
 
     fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
         let item_name = item.to_string();
-        let item_id = self.get_or_insert_item(&item_name);
+        let id = self.get_or_insert_item(&item_name)?;
         let item_query = diesel::insert_into(crate::schema::list::table)
-            .values(NewListItem { item_id })
+            .values(NewListItem { id })
             .on_conflict_do_nothing();
         item_query.execute(self.connection())?;
         Ok(())
@@ -141,13 +137,13 @@ impl Storage for SqliteStore {
     fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
         let recipe_name = recipe.to_string().to_lowercase();
         let recipe_id = self.get_or_insert_recipe(&recipe_name);
-        let item_ids: Vec<i32> = ingredients
+        let item_ids = ingredients
             .iter()
             .map(|ingredient| {
                 let item_name = ingredient.as_str().to_lowercase();
                 self.get_or_insert_item(&item_name)
             })
-            .collect();
+            .collect::<Result<Vec<i32>, _>>()?;
 
         for item_id in item_ids {
             self.insert_item_recipe(item_id, recipe_id)?;
@@ -159,7 +155,7 @@ impl Storage for SqliteStore {
         Ok(schema::items::table
             .filter(
                 schema::items::dsl::id
-                    .eq_any(schema::checklist::table.select(schema::checklist::dsl::item_id)),
+                    .eq_any(schema::checklist::table.select(schema::checklist::dsl::id)),
             )
             .load::<Item>(self.connection())?
             .into_iter()
@@ -170,11 +166,9 @@ impl Storage for SqliteStore {
     fn list(&mut self) -> Result<List, StoreError> {
         Ok(schema::items::table
             .filter(
-                schema::items::dsl::id
-                    .eq_any(schema::list::table.select(schema::list::dsl::item_id)),
+                schema::items::dsl::id.eq_any(schema::list::table.select(schema::list::dsl::id)),
             )
-            .load::<Item>(self.connection())
-            .expect("Error loading list")
+            .load::<Item>(self.connection())?
             .into_iter()
             .map(|item| item.into())
             .collect())
@@ -184,7 +178,7 @@ impl Storage for SqliteStore {
         let name = item.to_string();
         diesel::delete(
             schema::checklist::table.filter(
-                schema::checklist::dsl::item_id.eq_any(
+                schema::checklist::dsl::id.eq_any(
                     schema::items::table
                         .select(schema::items::dsl::id)
                         .filter(schema::items::dsl::name.eq(&name)),
@@ -268,5 +262,30 @@ impl Storage for SqliteStore {
             .into_iter()
             .map(|r| r.into())
             .collect())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::item::ItemName;
+
+    #[test]
+    fn test_add_checklist_item() {
+        // Set up a connection to an in-memory SQLite database for testing
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let mut store = SqliteStore::new(connection);
+        crate::sqlite::run_migrations(store.connection()).unwrap();
+
+        // Add an item to the checklist
+        let item_name = ItemName::from("test item");
+        store.add_checklist_item(&item_name).unwrap();
+
+        // Check if the item is in the checklist
+        let checklist = store.checklist().unwrap();
+        let item_in_checklist = checklist.iter().any(|item| item.name() == &item_name);
+
+        // Assert that the item is indeed in the checklist
+        assert!(item_in_checklist);
     }
 }
