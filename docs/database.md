@@ -34,7 +34,7 @@ with just two recipes:
             "section": "dairy",
             "recipes": [
                 "oatmeal chocolate chip cookies",
-                "fried eggs for breakfast",
+                "fried eggs for breakfast"
             ]
         },
         {
@@ -46,7 +46,7 @@ with just two recipes:
             "name": "spinach",
             "section": "fresh",
             "recipes": [
-                "fried eggs for breakfast",
+                "fried eggs for breakfast"
             ]
         },
         {
@@ -66,7 +66,7 @@ with just two recipes:
             "name": "bread",
             "section": "pantry",
             "recipes": [
-                "fried eggs for breakfast",
+                "fried eggs for breakfast"
             ]
         },
         {
@@ -101,7 +101,7 @@ with just two recipes:
             "name": "salt",
             "section": "pantry",
             "recipes": [
-                "oatmeal chocolate chip cookies",
+                "oatmeal chocolate chip cookies"
             ]
         },
         {
@@ -138,11 +138,11 @@ with just two recipes:
             "recipes": [
                 "fried eggs for breakfast"
             ]
-        },
+        }
     ],
     "recipes": [
         "oatmeal chocolate chip cookies",
-        "fried eggs for breakfast",
+        "fried eggs for breakfast"
     ]
 }
 ```

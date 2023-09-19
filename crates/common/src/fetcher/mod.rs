@@ -63,7 +63,10 @@ impl Fetcher {
         };
 
         match document.select(&recipe_name_selector).next() {
-            Some(recipe_name_element) => Ok(recipe_name_element.text().collect::<String>()),
+            Some(recipe_name_element) => Ok(recipe_name_element
+                .text()
+                .collect::<String>()
+                .to_lowercase()),
             None => Err(FetchError::CSS),
         }
     }
@@ -79,7 +82,7 @@ impl Fetcher {
             // Iterate through child elements to extract individual ingredients
             for ingredient_element in ingredients_container.select(&Selector::parse("li").unwrap())
             {
-                ingredients.push(ingredient_element.text().collect::<String>());
+                ingredients.push(ingredient_element.text().collect::<String>().to_lowercase());
             }
             Ok(ingredients)
         } else {
@@ -122,6 +125,6 @@ mod tests {
         let fetcher: Fetcher = recipe_url.into();
         let doc = fetcher.fetch_html().await.unwrap();
         let recipe = fetcher.fetch_recipe_name(&doc).unwrap();
-        insta::assert_display_snapshot!(recipe, @"Scrambled egg and toast with smoked salmon");
+        insta::assert_display_snapshot!(recipe, @"scrambled egg and toast with smoked salmon");
     }
 }

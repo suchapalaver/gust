@@ -86,10 +86,10 @@ fn clear_checklist() -> Command {
         .about("delete everything from checklist")
 }
 
-fn clear_list() -> Command {
+fn refresh_list() -> Command {
     Command::new("clear")
         .subcommand_required(false)
-        .about("delete everything from list")
+        .about("refresh list")
 }
 
 fn read_all_items() -> Command {
@@ -140,7 +140,7 @@ fn delete() -> Command {
         )
         .arg(recipe())
         .arg(item())
-        .subcommand(list().subcommand(clear_list()).arg(recipe()).arg(item()))
+        .subcommand(list().arg(recipe()).arg(item()))
 }
 
 fn fetch() -> Command {
@@ -189,6 +189,7 @@ fn update() -> Command {
                         .arg(ingredient()),
                 ),
         )
+        .subcommand(list().subcommand(refresh_list()))
 }
 
 fn migrate() -> Command {
