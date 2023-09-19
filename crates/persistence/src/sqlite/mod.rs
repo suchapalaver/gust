@@ -12,7 +12,7 @@ use std::env;
 use crate::{
     models::{
         self, Item, ItemInfo, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe,
-        Section,
+        RecipeModel, Section,
     },
     schema,
     store::{Storage, StoreError},
@@ -96,13 +96,14 @@ impl SqliteStore {
             .expect("Error loading item")
     }
 
-    pub fn load_recipe(
+    fn get_recipe(
         &mut self,
         recipe_name: &str,
-    ) -> Result<Vec<models::RecipeModel>, diesel::result::Error> {
+    ) -> Result<Option<Vec<RecipeModel>>, diesel::result::Error> {
         schema::recipes::table
             .filter(schema::recipes::dsl::name.eq(recipe_name))
             .load::<models::RecipeModel>(self.connection())
+            .optional()
     }
 }
 
@@ -170,13 +171,12 @@ impl Storage for SqliteStore {
     }
 
     fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
-        let name = item.to_string();
         diesel::delete(
             schema::checklist::table.filter(
                 schema::checklist::dsl::id.eq_any(
                     schema::items::table
                         .select(schema::items::dsl::id)
-                        .filter(schema::items::dsl::name.eq(&name)),
+                        .filter(schema::items::dsl::name.eq(item.as_str())),
                 ),
             ),
         )
@@ -207,8 +207,7 @@ impl Storage for SqliteStore {
         use schema::items::dsl::*;
 
         Ok(items
-            .load::<Item>(self.connection())
-            .expect("Error loading items")
+            .load::<Item>(self.connection())?
             .into_iter()
             .map(|i| i.into())
             .collect())
@@ -220,8 +219,9 @@ impl Storage for SqliteStore {
     }
 
     fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
-        let results = self.load_recipe(recipe.as_str())?;
-
+        let Some(results) = self.get_recipe(recipe.as_str())? else {
+            return Ok(None);
+        };
         let mut v = Vec::<Ingredients>::with_capacity(results.len());
 
         for recipe in results {
@@ -366,6 +366,36 @@ mod tests {
             .unwrap()
             .iter()
             .all(|item| item.name() != &item_name));
+    }
+
+    #[test]
+    fn test_delete_recipe() {
+        let mut store = inmem_sqlite_store();
+
+        let ingredients = Ingredients::from_iter(vec![
+            ItemName::from("ingredient 1"),
+            ItemName::from("ingredient 2"),
+        ]);
+
+        let recipe = Recipe::new("test recipe").unwrap();
+        store.add_recipe(&recipe, &ingredients).unwrap();
+
+        let recipes = store.recipes().unwrap();
+        assert_eq!(recipes.len(), 1);
+
+        let added_recipe = &recipes[0];
+        assert_eq!(added_recipe.as_str(), "test recipe");
+
+        let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap().unwrap();
+        assert_eq!(recipe_ingredients, ingredients);
+
+        store.delete_recipe(&recipe).unwrap();
+
+        let recipes = store.recipes().unwrap();
+        assert_eq!(recipes.len(), 0);
+
+        let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap();
+        assert_eq!(recipe_ingredients, None);
     }
 
     #[test]
