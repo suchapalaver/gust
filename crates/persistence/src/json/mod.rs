@@ -123,6 +123,10 @@ impl Storage for JsonStore {
         Ok(list)
     }
 
+    fn new_list(&mut self) -> Result<(), StoreError> {
+      todo!()
+    }
+
     fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
         Ok(Some(
             self.items()?
