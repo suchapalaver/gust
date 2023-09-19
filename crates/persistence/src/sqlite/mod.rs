@@ -125,12 +125,11 @@ impl Storage for SqliteStore {
     }
 
     fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
-        let item_name = item.to_string();
-        let id = self.get_or_insert_item(&item_name)?;
-        let item_query = diesel::insert_into(crate::schema::list::table)
+        let id = self.get_or_insert_item(item.as_str())?;
+        let query = diesel::insert_into(schema::list::table)
             .values(NewListItem { id })
             .on_conflict_do_nothing();
-        item_query.execute(self.connection())?;
+        query.execute(self.connection())?;
         Ok(())
     }
 
@@ -317,6 +316,19 @@ mod tests {
             .any(|item| item.name() == &item_name);
 
         assert!(item_in_items);
+    }
+
+    #[test]
+    fn test_add_list_item() {
+        let mut store = inmem_sqlite_store();
+
+        let item_name = test_item();
+        store.add_list_item(&item_name).unwrap();
+
+        let list = store.list().unwrap();
+        let item_in_list = list.items.iter().any(|item| item.name() == &item_name);
+
+        assert!(item_in_list);
     }
 
     #[test]
