@@ -219,6 +219,11 @@ impl Storage for SqliteStore {
             .collect())
     }
 
+    fn new_list(&mut self) -> Result<(), StoreError> {
+        let _ = diesel::delete(schema::list::table).execute(self.connection())?;
+        Ok(())
+    }
+
     fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
         let results = self.load_recipe(recipe.as_str())?;
 
@@ -287,5 +292,32 @@ mod tests {
 
         // Assert that the item is indeed in the checklist
         assert!(item_in_checklist);
+    }
+
+    #[test]
+    fn test_new_list() {
+        // Set up a connection to an in-memory SQLite database for testing
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let mut store = SqliteStore::new(connection);
+        crate::sqlite::run_migrations(store.connection()).unwrap();
+
+        // Create a new list
+        store.new_list().unwrap();
+
+        // Verify that the list is empty initially
+        let list = store.list().unwrap();
+        assert_eq!(list.items.len(), 0);
+
+        // Add items to the list
+        let item1 = ItemName::from("item 1");
+        let item2 = ItemName::from("item 2");
+        store.add_list_item(&item1).unwrap();
+        store.add_list_item(&item2).unwrap();
+
+        // Verify that the list contains the added items
+        let list = store.list().unwrap();
+        assert_eq!(list.items.len(), 2);
+        assert!(list.items.iter().any(|item| item.name() == &item1));
+        assert!(list.items.iter().any(|item| item.name() == &item2));
     }
 }

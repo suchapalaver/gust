@@ -150,6 +150,13 @@ impl Storage for Store {
         }
     }
 
+    fn new_list(&mut self) -> Result<(), StoreError> {
+        match self {
+            Self::Json(store) => store.new_list(),
+            Self::Sqlite(store) => store.new_list(),
+        }
+    }
+
     fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
         match self {
             Self::Json(store) => store.recipes(),
@@ -196,7 +203,7 @@ pub trait Storage {
     fn sections(&mut self) -> Result<Vec<Section>, StoreError>;
 
     // Update
-    // ...
+    fn new_list(&mut self) -> Result<(), StoreError>;
 
     // Delete
     fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
