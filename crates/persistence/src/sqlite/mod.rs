@@ -134,14 +134,10 @@ impl Storage for SqliteStore {
     }
 
     fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
-        let recipe_name = recipe.to_string().to_lowercase();
-        let recipe_id = self.get_or_insert_recipe(&recipe_name);
+        let recipe_id = self.get_or_insert_recipe(recipe.as_str());
         let item_ids = ingredients
             .iter()
-            .map(|ingredient| {
-                let item_name = ingredient.as_str().to_lowercase();
-                self.get_or_insert_item(&item_name)
-            })
+            .map(|ingredient| self.get_or_insert_item(ingredient.as_str()))
             .collect::<Result<Vec<i32>, _>>()?;
 
         for item_id in item_ids {
@@ -272,7 +268,7 @@ impl Storage for SqliteStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::item::ItemName;
+    use common::{item::ItemName, recipes::Ingredients};
 
     fn inmem_sqlite_store() -> SqliteStore {
         let connection = SqliteConnection::establish(":memory:").unwrap();
@@ -333,28 +329,43 @@ mod tests {
 
     #[test]
     fn test_new_list() {
-        // Set up a connection to an in-memory SQLite database for testing
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        let mut store = SqliteStore::new(connection);
-        crate::sqlite::run_migrations(store.connection()).unwrap();
+        let mut store = inmem_sqlite_store();
 
-        // Create a new list
         store.new_list().unwrap();
 
-        // Verify that the list is empty initially
         let list = store.list().unwrap();
         assert_eq!(list.items.len(), 0);
 
-        // Add items to the list
         let item1 = ItemName::from("item 1");
         let item2 = ItemName::from("item 2");
         store.add_list_item(&item1).unwrap();
         store.add_list_item(&item2).unwrap();
 
-        // Verify that the list contains the added items
         let list = store.list().unwrap();
         assert_eq!(list.items.len(), 2);
         assert!(list.items.iter().any(|item| item.name() == &item1));
         assert!(list.items.iter().any(|item| item.name() == &item2));
+    }
+
+    #[test]
+    fn test_add_recipe() {
+        let mut store = inmem_sqlite_store();
+
+        let ingredients = Ingredients::from_iter(vec![
+            ItemName::from("ingredient 1"),
+            ItemName::from("ingredient 2"),
+        ]);
+
+        let recipe = Recipe::new("test recipe").unwrap();
+        store.add_recipe(&recipe, &ingredients).unwrap();
+
+        let recipes = store.recipes().unwrap();
+        assert_eq!(recipes.len(), 1);
+
+        let added_recipe = &recipes[0];
+        assert_eq!(added_recipe.as_str(), "test recipe");
+
+        let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap().unwrap();
+        assert_eq!(recipe_ingredients, ingredients);
     }
 }

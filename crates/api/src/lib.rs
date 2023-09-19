@@ -58,8 +58,10 @@ impl Api {
                 Ok(ApiResponse::ListItemAdded(name))
             }
             Add::ListRecipe(_recipe) => todo!(),
-            Add::NewList => {self.store.new_list()?;
-            Ok(ApiResponse::NewList)}
+            Add::NewList => {
+                self.store.new_list()?;
+                Ok(ApiResponse::NewList)
+            }
             Add::Recipe {
                 recipe,
                 ingredients,

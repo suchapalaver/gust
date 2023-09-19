@@ -124,7 +124,7 @@ impl Storage for JsonStore {
     }
 
     fn new_list(&mut self) -> Result<(), StoreError> {
-      todo!()
+        todo!()
     }
 
     fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
