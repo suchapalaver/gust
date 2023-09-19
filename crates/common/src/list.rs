@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::{
-    item::{Item, ItemName},
+    item::{Item, Name},
     recipes::Recipe,
     Load, ReadError,
 };
@@ -46,7 +46,7 @@ impl List {
             println!("recipes:");
 
             self.recipes.iter().for_each(|recipe| {
-                println!("\t{}", recipe);
+                println!("\t{recipe}");
             });
         }
         if !self.items.is_empty() {
@@ -59,14 +59,14 @@ impl List {
     }
 
     pub fn add_item(&mut self, item: Item) {
-        self.items.push(item)
+        self.items.push(item);
     }
 
     pub fn delete_groceries_item(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
             .items
             .iter()
-            .position(|x| x.name == ItemName::from(name))
+            .position(|x| x.name == Name::from(name))
             .ok_or(ReadError::ItemNotFound)
         {
             self.items.remove(i);
@@ -75,14 +75,14 @@ impl List {
     }
 
     pub fn add_checklist_item(&mut self, item: Item) {
-        self.checklist.push(item)
+        self.checklist.push(item);
     }
 
     pub fn delete_checklist_item(&mut self, name: &str) -> Result<(), ReadError> {
         if let Ok(i) = self
             .checklist
             .iter()
-            .position(|x| x.name == ItemName::from(name))
+            .position(|x| x.name == Name::from(name))
             .ok_or(ReadError::ItemNotFound)
         {
             self.checklist.remove(i);
@@ -91,7 +91,7 @@ impl List {
     }
 
     pub fn add_recipe(&mut self, recipe: Recipe) {
-        self.recipes.push(recipe)
+        self.recipes.push(recipe);
     }
 
     pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {

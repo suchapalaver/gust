@@ -1,5 +1,5 @@
 use common::{
-    item::ItemName,
+    item::Name,
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
@@ -108,7 +108,7 @@ impl SqliteStore {
 }
 
 impl Storage for SqliteStore {
-    fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
         let id = self.get_or_insert_item(item.as_str())?;
         let query = {
             diesel::insert_into(schema::checklist::table)
@@ -119,13 +119,13 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
-    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn add_item(&mut self, item: &Name) -> Result<(), StoreError> {
         let item_name = item.to_string();
         let _ = self.get_or_insert_item(&item_name);
         Ok(())
     }
 
-    fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError> {
         let id = self.get_or_insert_item(item.as_str())?;
         let query = diesel::insert_into(schema::list::table)
             .values(NewListItem { id })
@@ -155,7 +155,7 @@ impl Storage for SqliteStore {
             )
             .load::<Item>(self.connection())?
             .into_iter()
-            .map(|item| item.into())
+            .map(Into::into)
             .collect())
     }
 
@@ -166,11 +166,11 @@ impl Storage for SqliteStore {
             )
             .load::<Item>(self.connection())?
             .into_iter()
-            .map(|item| item.into())
+            .map(Into::into)
             .collect())
     }
 
-    fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
         diesel::delete(
             schema::checklist::table.filter(
                 schema::checklist::dsl::id.eq_any(
@@ -204,12 +204,12 @@ impl Storage for SqliteStore {
     }
 
     fn items(&mut self) -> Result<Items, StoreError> {
-        use schema::items::dsl::*;
+        use schema::items::dsl::items;
 
         Ok(items
             .load::<Item>(self.connection())?
             .into_iter()
-            .map(|i| i.into())
+            .map(Into::into)
             .collect())
     }
 
@@ -235,7 +235,7 @@ impl Storage for SqliteStore {
             let ingredients = results
                 .iter()
                 .flat_map(|item_recipe| self.load_item(item_recipe.item_id))
-                .map(|item| ItemName::from(item.name.as_str()))
+                .map(|item| Name::from(item.name.as_str()))
                 .collect::<Ingredients>();
 
             v.push(ingredients);
@@ -245,7 +245,7 @@ impl Storage for SqliteStore {
     }
 
     fn sections(&mut self) -> Result<Vec<common::item::Section>, StoreError> {
-        use schema::sections::dsl::*;
+        use schema::sections::dsl::sections;
 
         Ok(sections
             .load::<Section>(self.connection())?
@@ -255,12 +255,12 @@ impl Storage for SqliteStore {
     }
 
     fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
-        use schema::recipes::dsl::*;
+        use schema::recipes::dsl::recipes;
 
         Ok(recipes
             .load::<models::RecipeModel>(self.connection())?
             .into_iter()
-            .map(|r| r.into())
+            .map(Into::into)
             .collect())
     }
 }
@@ -268,7 +268,7 @@ impl Storage for SqliteStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::{item::ItemName, recipes::Ingredients};
+    use common::{item::Name, recipes::Ingredients};
 
     fn inmem_sqlite_store() -> SqliteStore {
         // Set up a connection to an in-memory SQLite database for testing
@@ -278,8 +278,8 @@ mod tests {
         store
     }
 
-    fn test_item() -> ItemName {
-        ItemName::from("test item")
+    fn test_item() -> Name {
+        Name::from("test item")
     }
 
     #[test]
@@ -328,10 +328,8 @@ mod tests {
     fn test_add_recipe() {
         let mut store = inmem_sqlite_store();
 
-        let ingredients = Ingredients::from_iter(vec![
-            ItemName::from("ingredient 1"),
-            ItemName::from("ingredient 2"),
-        ]);
+        let ingredients =
+            Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
         let recipe = Recipe::new("test recipe").unwrap();
         store.add_recipe(&recipe, &ingredients).unwrap();
@@ -372,10 +370,8 @@ mod tests {
     fn test_delete_recipe() {
         let mut store = inmem_sqlite_store();
 
-        let ingredients = Ingredients::from_iter(vec![
-            ItemName::from("ingredient 1"),
-            ItemName::from("ingredient 2"),
-        ]);
+        let ingredients =
+            Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
         let recipe = Recipe::new("test recipe").unwrap();
         store.add_recipe(&recipe, &ingredients).unwrap();
@@ -407,8 +403,8 @@ mod tests {
         let list = store.list().unwrap();
         assert_eq!(list.items.len(), 0);
 
-        let item1 = ItemName::from("item 1");
-        let item2 = ItemName::from("item 2");
+        let item1 = Name::from("item 1");
+        let item2 = Name::from("item 2");
         store.add_list_item(&item1).unwrap();
         store.add_list_item(&item2).unwrap();
 

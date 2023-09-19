@@ -62,8 +62,7 @@ pub fn user_wants_to_save_list() -> bool {
 // Returns `None` in case user wishes to skip being asked further.
 pub fn user_wants_to_add_recipe_to_list(recipe: &Recipe) -> Option<bool> {
     let res = Question::new(&format!(
-        "Shall we add {}? (*y*, *n* for next recipe, *s* to skip to end of recipes)",
-        recipe
+        "Shall we add {recipe}? (*y*, *n* for next recipe, *s* to skip to end of recipes)",
     ))
     .acceptable(vec!["y", "n", "s"])
     .until_acceptable()
@@ -107,7 +106,7 @@ pub fn section_from_user() -> String {
 }
 
 pub fn item_matches(item: &Item) -> bool {
-    Question::new(&format!("is *{}* a match?", item))
+    Question::new(&format!("is *{item}* a match?"))
         .default(question::Answer::NO)
         .show_defaults()
         .confirm()

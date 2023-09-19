@@ -59,7 +59,7 @@ impl Fetcher {
     fn fetch_recipe_name(&self, document: &Html) -> Result<String, FetchError> {
         let recipe_name_selector = match self.site {
             Site::BBC => Selector::parse(".gel-trafalgar").unwrap(),
-            _ => unimplemented!(),
+            Site::NYT => unimplemented!(),
         };
 
         match document.select(&recipe_name_selector).next() {
@@ -74,7 +74,7 @@ impl Fetcher {
     fn fetch_recipe_ingredients(&self, document: &Html) -> Result<Vec<String>, FetchError> {
         let ingredients_selector = match self.site {
             Site::BBC => Selector::parse(".recipe-ingredients__list").unwrap(),
-            _ => unimplemented!(),
+            Site::NYT => unimplemented!(),
         };
 
         if let Some(ingredients_container) = document.select(&ingredients_selector).next() {

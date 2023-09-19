@@ -64,7 +64,7 @@ impl JsonStore {
 }
 
 impl Storage for JsonStore {
-    fn add_item(&mut self, item: &common::item::ItemName) -> Result<(), StoreError> {
+    fn add_item(&mut self, item: &common::item::Name) -> Result<(), StoreError> {
         let mut groceries = self.items()?;
 
         let mut present = false;
@@ -86,11 +86,11 @@ impl Storage for JsonStore {
         Ok(())
     }
 
-    fn add_checklist_item(&mut self, _item: &common::item::ItemName) -> Result<(), StoreError> {
+    fn add_checklist_item(&mut self, _item: &common::item::Name) -> Result<(), StoreError> {
         todo!()
     }
 
-    fn add_list_item(&mut self, _item: &common::item::ItemName) -> Result<(), StoreError> {
+    fn add_list_item(&mut self, _item: &common::item::Name) -> Result<(), StoreError> {
         todo!()
     }
 
@@ -106,7 +106,7 @@ impl Storage for JsonStore {
         todo!()
     }
 
-    fn delete_checklist_item(&mut self, _item: &common::item::ItemName) -> Result<(), StoreError> {
+    fn delete_checklist_item(&mut self, _item: &common::item::Name) -> Result<(), StoreError> {
         todo!()
     }
 
@@ -177,7 +177,7 @@ pub mod test {
     use super::*;
 
     use assert_fs::prelude::*;
-    use common::item::{ItemName, Section};
+    use common::item::{Name, Section};
 
     fn test_json_file() -> Result<assert_fs::NamedTempFile, Box<dyn std::error::Error>> {
         let file = assert_fs::NamedTempFile::new("test1.json")?;
@@ -732,7 +732,7 @@ pub mod test {
         "###);
 
         let item = Item {
-            name: ItemName::from("cumquats"),
+            name: Name::from("cumquats"),
             section: Some(Section::from("fresh")),
             recipes: Some(vec![Recipe::from("cumquat chutney")]),
         };
@@ -889,7 +889,7 @@ pub mod test {
 
         let mut shopping_list = store.list().unwrap();
         let item = Item {
-            name: ItemName::from("kumquats"),
+            name: Name::from("kumquats"),
             section: Some(Section::from("fresh")),
             recipes: None,
         };
@@ -1123,7 +1123,7 @@ pub mod test {
     fn test_delete_checklist_item() -> Result<(), Box<dyn std::error::Error>> {
         let mut shopping_list = checklist();
         let item = Item {
-            name: ItemName::from("kumquats"),
+            name: Name::from("kumquats"),
             section: Some(Section::from("fresh")),
             recipes: None,
         };
@@ -1377,7 +1377,7 @@ pub mod test {
         "###);
 
         let item = Item {
-            name: ItemName::from("cumquats"),
+            name: Name::from("cumquats"),
             section: Some(Section::from("fresh")),
             recipes: Some(vec![Recipe::from("cumquat chutney")]),
         };

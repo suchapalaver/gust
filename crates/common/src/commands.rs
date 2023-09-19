@@ -1,7 +1,7 @@
 use url::Url;
 
 use crate::{
-    item::{ItemName, Section},
+    item::{Name, Section},
     recipes::{Ingredients, Recipe},
 };
 
@@ -17,12 +17,12 @@ pub enum ApiCommand {
 
 #[derive(Debug)]
 pub enum Add {
-    ChecklistItem(ItemName),
+    ChecklistItem(Name),
     Item {
-        name: ItemName,
+        name: Name,
         section: Option<Section>,
     },
-    ListItem(ItemName),
+    ListItem(Name),
     ListRecipe(Recipe),
     Recipe {
         recipe: Recipe,
@@ -31,15 +31,15 @@ pub enum Add {
 }
 
 impl Add {
-    pub fn checklist_item_from_name(name: ItemName) -> Self {
+    pub fn checklist_item_from_name(name: Name) -> Self {
         Self::ChecklistItem(name)
     }
 
-    pub fn item_from_name_and_section(name: ItemName, section: Option<Section>) -> Self {
+    pub fn item_from_name_and_section(name: Name, section: Option<Section>) -> Self {
         Self::Item { name, section }
     }
 
-    pub fn list_item_from_name(name: ItemName) -> Self {
+    pub fn list_item_from_name(name: Name) -> Self {
         Self::ListItem(name)
     }
 
@@ -57,16 +57,16 @@ impl Add {
 
 #[derive(Debug)]
 pub enum Delete {
-    ChecklistItem(ItemName),
+    ChecklistItem(Name),
     ClearChecklist,
     ClearList,
-    Item(ItemName),
-    ListItem(ItemName),
+    Item(Name),
+    ListItem(Name),
     Recipe(Recipe),
 }
 
 impl Delete {
-    pub fn item_from_name(name: ItemName) -> Self {
+    pub fn item_from_name(name: Name) -> Self {
         Self::Item(name)
     }
 
@@ -79,7 +79,7 @@ impl Delete {
 pub enum Read {
     All,
     Checklist,
-    Item(ItemName),
+    Item(Name),
     List,
     ListRecipes,
     Recipe(Recipe),
@@ -88,7 +88,7 @@ pub enum Read {
 }
 
 impl Read {
-    pub fn item_from_name(name: ItemName) -> Self {
+    pub fn item_from_name(name: Name) -> Self {
         Self::Item(name)
     }
 
@@ -99,7 +99,7 @@ impl Read {
 
 #[derive(Debug)]
 pub enum Update {
-    Item(ItemName),
+    Item(Name),
     RefreshList,
     Recipe(Recipe),
 }

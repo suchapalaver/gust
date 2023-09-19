@@ -5,7 +5,7 @@ use api::Api;
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
-    item::{ItemName, Section},
+    item::{Name, Section},
     recipes::{Ingredients, Recipe},
 };
 use url::Url;
@@ -48,16 +48,16 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
         Ok(Add::recipe_from_name_and_ingredients(recipe, ingredients))
     } else if let Some(name) = matches.get_one::<String>("item") {
         Ok(Add::item_from_name_and_section(
-            ItemName::from(name.as_str()),
+            Name::from(name.as_str()),
             matches
                 .get_one::<String>("section")
                 .map(|section| Section::from(section.as_str())),
         ))
     } else if let Some(item) = matches.get_one::<String>("checklist-item") {
-        Ok(Add::checklist_item_from_name(ItemName::from(item.as_str())))
+        Ok(Add::checklist_item_from_name(Name::from(item.as_str())))
     } else {
         match matches.subcommand() {
-            Some(("checklist", matches)) => Ok(Add::checklist_item_from_name(ItemName::from(
+            Some(("checklist", matches)) => Ok(Add::checklist_item_from_name(Name::from(
                 matches
                     .get_one::<String>("item")
                     .expect("item required")
@@ -67,7 +67,7 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
                 if let Some(name) = matches.get_one::<String>("recipe") {
                     Ok(Add::list_recipe_from_name(Recipe::from_str(name)?))
                 } else if let Some(name) = matches.get_one::<String>("item") {
-                    Ok(Add::list_item_from_name(ItemName::from(name.as_str())))
+                    Ok(Add::list_item_from_name(Name::from(name.as_str())))
                 } else {
                     unimplemented!()
                 }
@@ -81,12 +81,12 @@ fn delete(matches: &ArgMatches) -> Result<Delete, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
         Ok(Delete::recipe_from_name(Recipe::from_str(name.as_str())?))
     } else if let Some(name) = matches.get_one::<String>("item") {
-        Ok(Delete::item_from_name(ItemName::from(name.as_str())))
+        Ok(Delete::item_from_name(Name::from(name.as_str())))
     } else {
         match matches.subcommand() {
             Some(("checklist", matches)) => {
                 if let Some(name) = matches.get_one::<String>("checklist-item") {
-                    Ok(Delete::ChecklistItem(ItemName::from(name.as_str())))
+                    Ok(Delete::ChecklistItem(Name::from(name.as_str())))
                 } else {
                     unimplemented!()
                 }
@@ -108,7 +108,7 @@ fn read(matches: &ArgMatches) -> Result<Read, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
         Ok(Read::recipe_from_name(Recipe::from_str(name.as_str())?))
     } else if let Some(name) = matches.get_one::<String>("item") {
-        Ok(Read::item_from_name(ItemName::from(name.as_str())))
+        Ok(Read::item_from_name(Name::from(name.as_str())))
     } else {
         match matches.subcommand() {
             Some(("checklist", _matches)) => Ok(Read::Checklist),
