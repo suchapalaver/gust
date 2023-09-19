@@ -1,5 +1,5 @@
 use common::{
-    item::{Item, ItemName, Section},
+    item::{Item, Name, Section},
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
@@ -11,7 +11,7 @@ use thiserror::Error;
 use std::error::Error;
 
 use crate::{
-    json::{migrate::migrate_groceries, JsonStore},
+    json::{migrate::groceries, JsonStore},
     sqlite::{self, establish_connection, SqliteStore},
 };
 
@@ -74,12 +74,12 @@ impl Store {
     // migrating regardless of which database store has been set via CLI options.
     pub fn migrate_json_store_to_sqlite(&mut self) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => migrate_groceries(
+            Self::Json(store) => groceries(
                 store,
                 SqliteStore::new(establish_connection()?).connection(),
             )?,
             Self::Sqlite(store) => {
-                migrate_groceries(&mut JsonStore::default(), store.connection())?
+                groceries(&mut JsonStore::default(), store.connection())?;
             }
         }
         Ok(())
@@ -87,21 +87,21 @@ impl Store {
 }
 
 impl Storage for Store {
-    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn add_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.add_item(item),
             Self::Sqlite(store) => store.add_item(item),
         }
     }
 
-    fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.add_checklist_item(item),
             Self::Sqlite(store) => store.add_checklist_item(item),
         }
     }
 
-    fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.add_list_item(item),
             Self::Sqlite(store) => store.add_list_item(item),
@@ -122,7 +122,7 @@ impl Storage for Store {
         }
     }
 
-    fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+    fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.delete_checklist_item(item),
             Self::Sqlite(store) => store.delete_checklist_item(item),
@@ -181,11 +181,11 @@ impl Storage for Store {
 
 pub trait Storage {
     // Create
-    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
+    fn add_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
-    fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
+    fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
-    fn add_list_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
+    fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
     fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError>;
 
@@ -206,7 +206,7 @@ pub trait Storage {
     fn refresh_list(&mut self) -> Result<(), StoreError>;
 
     // Delete
-    fn delete_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError>;
+    fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
     fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
 }

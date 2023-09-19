@@ -4,7 +4,7 @@ use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    item::{Item, ItemName, Section},
+    item::{Item, Name, Section},
     recipes::{Ingredients, Recipe},
     Load, ReadError,
 };
@@ -52,7 +52,7 @@ impl Items {
         if let Ok(i) = self
             .collection
             .iter()
-            .position(|x| x.name == ItemName::from(name))
+            .position(|x| x.name == Name::from(name))
             .ok_or(ReadError::ItemNotFound)
         {
             self.collection.remove(i);
@@ -141,7 +141,7 @@ impl Items {
         {
             self.recipes.remove(i);
         }
-        for item in self.collection.iter_mut() {
+        for item in &mut self.collection {
             if let Some(recipes) = item.recipes.as_mut() {
                 if let Some(i) = recipes.iter().position(|recipe| recipe.as_str() == name) {
                     recipes.remove(i);

@@ -3,10 +3,9 @@ use crate::{
     sections::SECTIONS, ReadError,
 };
 impl List {
-    pub fn add_groceries(&mut self, groceries: Items) -> Result<(), ReadError> {
+    pub fn add_groceries(&mut self, groceries: &Items) -> Result<(), ReadError> {
         // move everything off list to temp list
         let list_items: Vec<Item> = self.items.drain(..).collect();
-        assert!(self.items.is_empty());
         let sections = SECTIONS;
         let groceries_by_section: Vec<Vec<Item>> = {
             sections

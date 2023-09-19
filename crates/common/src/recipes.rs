@@ -2,7 +2,7 @@ use std::{fmt, ops::Deref, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{item::ItemName, ReadError};
+use crate::{item::Name, ReadError};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
 pub struct Recipe(String);
@@ -42,14 +42,14 @@ impl FromStr for Recipe {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
-pub struct Ingredients(Vec<ItemName>);
+pub struct Ingredients(Vec<Name>);
 
 impl Ingredients {
     pub(crate) fn new() -> Self {
         Self::default()
     }
 
-    pub(crate) fn add(&mut self, elem: ItemName) {
+    pub(crate) fn add(&mut self, elem: Name) {
         self.0.push(elem);
     }
 
@@ -58,8 +58,8 @@ impl Ingredients {
     }
 }
 
-impl FromIterator<ItemName> for Ingredients {
-    fn from_iter<I: IntoIterator<Item = ItemName>>(iter: I) -> Self {
+impl FromIterator<Name> for Ingredients {
+    fn from_iter<I: IntoIterator<Item = Name>>(iter: I) -> Self {
         let mut c = Ingredients::new();
 
         for i in iter {
@@ -71,12 +71,12 @@ impl FromIterator<ItemName> for Ingredients {
 
 impl From<&str> for Ingredients {
     fn from(s: &str) -> Self {
-        s.split(',').map(ItemName::from).collect()
+        s.split(',').map(Name::from).collect()
     }
 }
 
 impl Deref for Ingredients {
-    type Target = Vec<ItemName>;
+    type Target = Vec<Name>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

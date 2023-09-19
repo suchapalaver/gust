@@ -11,7 +11,7 @@ use crate::recipes::Recipe;
 /// * `recipes` - list of recipes of which the item is an ingredient
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Item {
-    pub name: ItemName,
+    pub name: Name,
     pub section: Option<Section>,
     pub recipes: Option<Vec<Recipe>>,
 }
@@ -19,12 +19,12 @@ pub struct Item {
 impl Item {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
-            name: ItemName(name.into()),
+            name: Name(name.into()),
             ..Default::default()
         }
     }
 
-    pub fn name(&self) -> &ItemName {
+    pub fn name(&self) -> &Name {
         &self.name
     }
 
@@ -45,21 +45,21 @@ impl fmt::Display for Item {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
-pub struct ItemName(String);
+pub struct Name(String);
 
-impl std::fmt::Display for ItemName {
+impl std::fmt::Display for Name {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl From<&str> for ItemName {
+impl From<&str> for Name {
     fn from(value: &str) -> Self {
-        ItemName(value.trim().to_lowercase())
+        Name(value.trim().to_lowercase())
     }
 }
 
-impl ItemName {
+impl Name {
     pub fn as_str(&self) -> &str {
         &self.0
     }

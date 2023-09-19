@@ -10,9 +10,9 @@ use crate::{
 use super::JsonStore;
 
 fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
-    let sections = SECTIONS;
-
     use crate::schema::sections;
+
+    let sections = SECTIONS;
 
     for name in sections {
         let section = NewSection { name };
@@ -20,8 +20,7 @@ fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError>
         diesel::insert_into(sections::table)
             .values(&section)
             .on_conflict_do_nothing()
-            .execute(connection)
-            .expect("Error transferring section");
+            .execute(connection)?;
     }
 
     Ok(())
@@ -50,7 +49,7 @@ fn migrate_recipes(
     Ok(())
 }
 
-pub fn migrate_groceries(
+pub fn groceries(
     json: &mut JsonStore,
     connection: &mut SqliteConnection,
 ) -> Result<(), StoreError> {
@@ -71,8 +70,7 @@ pub fn migrate_groceries(
         diesel::insert_into(items_table)
             .values(&new_item)
             .on_conflict_do_nothing()
-            .execute(connection)
-            .unwrap_or_else(|_| panic!("Error transferring item {}", item.name));
+            .execute(connection)?;
 
         // get the item's item_id
         let results = items_table
