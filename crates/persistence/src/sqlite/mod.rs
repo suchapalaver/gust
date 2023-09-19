@@ -275,15 +275,24 @@ mod tests {
     use super::*;
     use common::item::ItemName;
 
-    #[test]
-    fn test_add_checklist_item() {
-        // Set up a connection to an in-memory SQLite database for testing
+    fn inmem_sqlite_store() -> SqliteStore {
         let connection = SqliteConnection::establish(":memory:").unwrap();
         let mut store = SqliteStore::new(connection);
         crate::sqlite::run_migrations(store.connection()).unwrap();
+        store
+    }
+
+    fn test_item() -> ItemName {
+        ItemName::from("test item")
+    }
+
+    #[test]
+    fn test_add_checklist_item() {
+        // Set up a connection to an in-memory SQLite database for testing
+        let mut store = inmem_sqlite_store();
 
         // Add an item to the checklist
-        let item_name = ItemName::from("test item");
+        let item_name = test_item();
         store.add_checklist_item(&item_name).unwrap();
 
         // Check if the item is in the checklist
@@ -292,6 +301,22 @@ mod tests {
 
         // Assert that the item is indeed in the checklist
         assert!(item_in_checklist);
+    }
+
+    #[test]
+    fn test_add_item() {
+        let mut store = inmem_sqlite_store();
+
+        let item_name = test_item();
+        store.add_item(&item_name).unwrap();
+
+        let items = store.items().unwrap();
+        let item_in_items = items
+            .collection
+            .iter()
+            .any(|item| item.name() == &item_name);
+
+        assert!(item_in_items);
     }
 
     #[test]

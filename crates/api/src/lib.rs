@@ -49,13 +49,6 @@ impl Api {
                 self.store.add_checklist_item(&name)?;
                 Ok(ApiResponse::ItemAdded(name))
             }
-            Add::Recipe {
-                recipe,
-                ingredients,
-            } => {
-                self.store.add_recipe(&recipe, &ingredients)?;
-                Ok(ApiResponse::RecipeAdded(recipe))
-            }
             Add::Item { name, .. } => {
                 self.store.add_item(&name)?;
                 Ok(ApiResponse::ItemAdded(name))
@@ -67,6 +60,13 @@ impl Api {
             Add::ListRecipe(_recipe) => todo!(),
             Add::NewList => {self.store.new_list()?;
             Ok(ApiResponse::NewList)}
+            Add::Recipe {
+                recipe,
+                ingredients,
+            } => {
+                self.store.add_recipe(&recipe, &ingredients)?;
+                Ok(ApiResponse::RecipeAdded(recipe))
+            }
         }
     }
 
