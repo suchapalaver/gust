@@ -24,7 +24,6 @@ pub enum Add {
     },
     ListItem(ItemName),
     ListRecipe(Recipe),
-    NewList,
     Recipe {
         recipe: Recipe,
         ingredients: Ingredients,
@@ -46,10 +45,6 @@ impl Add {
 
     pub fn list_recipe_from_name(name: Recipe) -> Self {
         Self::ListRecipe(name)
-    }
-
-    pub fn new_list() -> Self {
-        Self::NewList
     }
 
     pub fn recipe_from_name_and_ingredients(recipe: Recipe, ingredients: Ingredients) -> Self {
@@ -105,10 +100,15 @@ impl Read {
 #[derive(Debug)]
 pub enum Update {
     Item(ItemName),
+    RefreshList,
     Recipe(Recipe),
 }
 
 impl Update {
+    pub fn refresh_list() -> Self {
+        Self::RefreshList
+    }
+
     pub fn recipe_from_name(name: Recipe) -> Self {
         Self::Recipe(name)
     }

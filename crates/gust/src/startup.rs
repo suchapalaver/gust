@@ -69,7 +69,7 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
                 } else if let Some(name) = matches.get_one::<String>("item") {
                     Ok(Add::list_item_from_name(ItemName::from(name.as_str())))
                 } else {
-                    Ok(Add::new_list())
+                    unimplemented!()
                 }
             }
             _ => unreachable!(),
@@ -80,7 +80,7 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
 fn delete(matches: &ArgMatches) -> Result<Delete, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
         Ok(Delete::recipe_from_name(Recipe::from_str(name.as_str())?))
-    } else if let Some(name) = matches.get_one::<String>("recipe") {
+    } else if let Some(name) = matches.get_one::<String>("item") {
         Ok(Delete::item_from_name(ItemName::from(name.as_str())))
     } else {
         match matches.subcommand() {
@@ -122,8 +122,18 @@ fn read(matches: &ArgMatches) -> Result<Read, CliError> {
 }
 
 fn update(matches: &ArgMatches) -> Result<Update, CliError> {
-    if let Some(name) = matches.get_one::<String>("recipe") {
-        Ok(Update::recipe_from_name(Recipe::from_str(name.as_str())?))
+    if let Some(("recipe", matches)) = matches.subcommand() {
+        if let Some(name) = matches.get_one::<String>("recipe") {
+            Ok(Update::recipe_from_name(Recipe::from_str(name.as_str())?))
+        } else {
+            todo!()
+        }
+    } else if let Some(("list", matches)) = matches.subcommand() {
+        if let Some(("clear", _)) = matches.subcommand() {
+            Ok(Update::RefreshList)
+        } else {
+            unimplemented!()
+        }
     } else {
         unimplemented!()
     }

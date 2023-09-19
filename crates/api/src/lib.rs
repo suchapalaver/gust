@@ -58,10 +58,6 @@ impl Api {
                 Ok(ApiResponse::ListItemAdded(name))
             }
             Add::ListRecipe(_recipe) => todo!(),
-            Add::NewList => {
-                self.store.new_list()?;
-                Ok(ApiResponse::NewList)
-            }
             Add::Recipe {
                 recipe,
                 ingredients,
@@ -106,6 +102,10 @@ impl Api {
     fn update(&mut self, cmd: Update) -> Result<ApiResponse, ApiError> {
         match cmd {
             Update::Item(_name) => todo!(),
+            Update::RefreshList => {
+                self.store.refresh_list()?;
+                Ok(ApiResponse::RefreshList)
+            }
             Update::Recipe(_name) => todo!(),
         }
     }
@@ -149,7 +149,7 @@ pub enum ApiResponse {
     ItemAdded(ItemName),
     List(List),
     ListItemAdded(ItemName),
-    NewList,
+    RefreshList,
     NothingReturned(ApiCommand),
     Recipes(Vec<Recipe>),
     RecipeAdded(Recipe),
@@ -190,7 +190,7 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::ListItemAdded(name) => write!(f, "Item added to list: {name}"),
-            Self::NewList => write!(f, "List is now empty"),
+            Self::RefreshList => write!(f, "List is now empty"),
             Self::NothingReturned(cmd) => write!(f, "Nothing returned for command: {:?}.", cmd),
             Self::Recipes(recipes) => {
                 for recipe in recipes {

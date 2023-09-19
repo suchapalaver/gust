@@ -125,6 +125,6 @@ mod tests {
         let fetcher: Fetcher = recipe_url.into();
         let doc = fetcher.fetch_html().await.unwrap();
         let recipe = fetcher.fetch_recipe_name(&doc).unwrap();
-        insta::assert_display_snapshot!(recipe, @"Scrambled egg and toast with smoked salmon");
+        insta::assert_display_snapshot!(recipe, @"scrambled egg and toast with smoked salmon");
     }
 }

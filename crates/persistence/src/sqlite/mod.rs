@@ -214,7 +214,7 @@ impl Storage for SqliteStore {
             .collect())
     }
 
-    fn new_list(&mut self) -> Result<(), StoreError> {
+    fn refresh_list(&mut self) -> Result<(), StoreError> {
         let _ = diesel::delete(schema::list::table).execute(self.connection())?;
         Ok(())
     }
@@ -328,26 +328,6 @@ mod tests {
     }
 
     #[test]
-    fn test_new_list() {
-        let mut store = inmem_sqlite_store();
-
-        store.new_list().unwrap();
-
-        let list = store.list().unwrap();
-        assert_eq!(list.items.len(), 0);
-
-        let item1 = ItemName::from("item 1");
-        let item2 = ItemName::from("item 2");
-        store.add_list_item(&item1).unwrap();
-        store.add_list_item(&item2).unwrap();
-
-        let list = store.list().unwrap();
-        assert_eq!(list.items.len(), 2);
-        assert!(list.items.iter().any(|item| item.name() == &item1));
-        assert!(list.items.iter().any(|item| item.name() == &item2));
-    }
-
-    #[test]
     fn test_add_recipe() {
         let mut store = inmem_sqlite_store();
 
@@ -367,5 +347,30 @@ mod tests {
 
         let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap().unwrap();
         assert_eq!(recipe_ingredients, ingredients);
+    }
+
+    #[test]
+    fn test_refresh_list() {
+        let mut store = inmem_sqlite_store();
+
+        store.refresh_list().unwrap();
+
+        let list = store.list().unwrap();
+        assert_eq!(list.items.len(), 0);
+
+        let item1 = ItemName::from("item 1");
+        let item2 = ItemName::from("item 2");
+        store.add_list_item(&item1).unwrap();
+        store.add_list_item(&item2).unwrap();
+
+        let list = store.list().unwrap();
+        assert_eq!(list.items.len(), 2);
+        assert!(list.items.iter().any(|item| item.name() == &item1));
+        assert!(list.items.iter().any(|item| item.name() == &item2));
+
+        store.refresh_list().unwrap();
+
+        let list = store.list().unwrap();
+        assert_eq!(list.items.len(), 0);
     }
 }

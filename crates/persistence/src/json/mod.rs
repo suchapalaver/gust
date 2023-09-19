@@ -123,7 +123,7 @@ impl Storage for JsonStore {
         Ok(list)
     }
 
-    fn new_list(&mut self) -> Result<(), StoreError> {
+    fn refresh_list(&mut self) -> Result<(), StoreError> {
         todo!()
     }
 
