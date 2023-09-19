@@ -6,19 +6,30 @@ making putting together shopping lists super quick.
 ---
 ## getting started
 
-For help menu:
+### build the docker image
 
 ```bash
-cargo run -- --help    
+docker build --tag gust --file Dockerfile .
+```
+
+### help menu
+
+```bash
+docker run --rm gust
+```
+
+or:
+
+```bash
+cargo run -- -h    
 ```
 
 ---
-## overview
+## docs
+
+### overview
 
 ![`gust` design diagram](./docs/diagrams/design.svg)
-
----
-## docs
 
 ### [cli](./docs/cli.md)
 - [help](./docs/cli.md#help)
@@ -36,29 +47,20 @@ cargo run -- --help
 ---
 ## example - querying recipes
 
-We can query the recipes we have in our sqlite database like this:
+We can query the recipes we have in our default storage 
+option like this:
 
 ```bash
-cargo run -- --database sqlite read recipes
+docker run --rm -v gust:/app gust read recipes
 ```
 
 The result should look like this:
 
 ```text
-chicken breasts with lemon
 oatmeal chocolate chip cookies
-cheese and apple snack
 hummus
 tomato pasta
-turkey meatballs
-sheet pan salmon with broccoli
-peanut butter and jelly on toast
-sheet-pan chicken with jammy tomatoes
-turkey and cheese sandwiches
-fried eggs for breakfast
-swordfish pasta
 crispy tofu with cashews and blistered snap peas
-flue flighter chicken stew
 crispy sheet-pan noodles
 
 ```

@@ -214,7 +214,7 @@ pub fn cli() -> Command {
                 .long("database")
                 .num_args(1)
                 .value_parser(["json", "sqlite"])
-                .default_value("json")
+                .default_value("sqlite")
                 .help("which database to use"),
         )
 }

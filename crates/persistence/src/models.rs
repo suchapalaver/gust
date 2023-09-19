@@ -1,4 +1,6 @@
-use crate::schema::{checklist, items, items_recipes, items_sections, list, recipes, sections};
+use crate::schema::{
+    checklist, items, items_recipes, items_sections, list, list_recipes, recipes, sections,
+};
 use common::recipes::Recipe;
 use diesel::prelude::*;
 
@@ -102,6 +104,18 @@ pub struct ListItem {
 #[derive(Insertable)]
 #[diesel(table_name = list)]
 pub struct NewListItem {
+    pub id: i32,
+}
+
+#[derive(Queryable)]
+#[diesel(table_name = list_recipes)]
+pub struct ListRecipe {
+    pub id: i32,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = list_recipes)]
+pub struct NewListRecipe {
     pub id: i32,
 }
 

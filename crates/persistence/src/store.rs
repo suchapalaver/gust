@@ -37,6 +37,9 @@ pub enum StoreError {
 
     #[error("Error reading/writing file: {0}")]
     ReadWriteError(#[from] std::io::Error),
+
+    #[error("Ingredients not found for: {0}")]
+    RecipeIngredients(String),
 }
 
 pub enum Store {
@@ -108,6 +111,13 @@ impl Storage for Store {
         }
     }
 
+    fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+        match self {
+            Self::Json(store) => store.add_list_recipe(recipe),
+            Self::Sqlite(store) => store.add_list_recipe(recipe),
+        }
+    }
+
     fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.add_recipe(recipe, ingredients),
@@ -150,6 +160,13 @@ impl Storage for Store {
         }
     }
 
+    fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+        match self {
+            Self::Json(store) => store.list_recipes(),
+            Self::Sqlite(store) => store.list_recipes(),
+        }
+    }
+
     fn refresh_list(&mut self) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.refresh_list(),
@@ -187,12 +204,16 @@ pub trait Storage {
 
     fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
+    fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
+
     fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError>;
 
     // Read
     fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
 
     fn list(&mut self) -> Result<List, StoreError>;
+
+    fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError>;
 
     fn items(&mut self) -> Result<Items, StoreError>;
 

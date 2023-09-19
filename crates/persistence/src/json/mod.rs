@@ -94,6 +94,10 @@ impl Storage for JsonStore {
         todo!()
     }
 
+    fn add_list_recipe(&mut self, _recipe: &Recipe) -> Result<(), StoreError> {
+        todo!()
+    }
+
     fn add_recipe(
         &mut self,
         _recipe: &Recipe,
@@ -121,6 +125,10 @@ impl Storage for JsonStore {
     fn list(&mut self) -> Result<List, StoreError> {
         let list = List::from_json(&self.list)?;
         Ok(list)
+    }
+
+    fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+        todo!()
     }
 
     fn refresh_list(&mut self) -> Result<(), StoreError> {

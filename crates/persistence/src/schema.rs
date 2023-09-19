@@ -34,6 +34,12 @@ diesel::table! {
 }
 
 diesel::table! {
+    list_recipes (id) {
+        id -> Integer,
+    }
+}
+
+diesel::table! {
     recipes (id) {
         id -> Integer,
         name -> Text,
@@ -53,6 +59,7 @@ diesel::joinable!(items_recipes -> recipes (recipe_id));
 diesel::joinable!(items_sections -> items (item_id));
 diesel::joinable!(items_sections -> sections (section_id));
 diesel::joinable!(list -> items (id));
+diesel::joinable!(list_recipes -> recipes (id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     checklist,
@@ -60,6 +67,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     items_recipes,
     items_sections,
     list,
+    list_recipes,
     recipes,
     sections,
 );

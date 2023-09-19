@@ -57,7 +57,10 @@ impl Api {
                 self.store.add_list_item(&name)?;
                 Ok(ApiResponse::ListItemAdded(name))
             }
-            Add::ListRecipe(_recipe) => todo!(),
+            Add::ListRecipe(name) => {
+                self.store.add_list_recipe(&name)?;
+                Ok(ApiResponse::AddedListRecipe(name))
+            }
             Add::Recipe {
                 recipe,
                 ingredients,
@@ -142,6 +145,7 @@ impl Api {
 }
 
 pub enum ApiResponse {
+    AddedListRecipe(Recipe),
     Checklist(Vec<Item>),
     ChecklistItemDeleted(Name),
     JsonToSqlite,
@@ -161,6 +165,10 @@ pub enum ApiResponse {
 impl Display for ApiResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::AddedListRecipe(recipe) => {
+                writeln!(f, "\n{recipe}")?;
+                Ok(())
+            }
             Self::Checklist(items) => {
                 for item in items {
                     writeln!(f, "{item}")?;
