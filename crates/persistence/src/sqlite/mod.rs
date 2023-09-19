@@ -107,12 +107,6 @@ impl SqliteStore {
 }
 
 impl Storage for SqliteStore {
-    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
-        let item_name = item.to_string();
-        let _ = self.get_or_insert_item(&item_name);
-        Ok(())
-    }
-
     fn add_checklist_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
         let id = self.get_or_insert_item(item.as_str())?;
         let query = {
@@ -121,6 +115,12 @@ impl Storage for SqliteStore {
                 .on_conflict_do_nothing()
         };
         query.execute(self.connection())?;
+        Ok(())
+    }
+
+    fn add_item(&mut self, item: &ItemName) -> Result<(), StoreError> {
+        let item_name = item.to_string();
+        let _ = self.get_or_insert_item(&item_name);
         Ok(())
     }
 
@@ -271,6 +271,7 @@ mod tests {
     use common::{item::ItemName, recipes::Ingredients};
 
     fn inmem_sqlite_store() -> SqliteStore {
+        // Set up a connection to an in-memory SQLite database for testing
         let connection = SqliteConnection::establish(":memory:").unwrap();
         let mut store = SqliteStore::new(connection);
         crate::sqlite::run_migrations(store.connection()).unwrap();
@@ -283,19 +284,16 @@ mod tests {
 
     #[test]
     fn test_add_checklist_item() {
-        // Set up a connection to an in-memory SQLite database for testing
         let mut store = inmem_sqlite_store();
 
-        // Add an item to the checklist
         let item_name = test_item();
         store.add_checklist_item(&item_name).unwrap();
 
-        // Check if the item is in the checklist
-        let checklist = store.checklist().unwrap();
-        let item_in_checklist = checklist.iter().any(|item| item.name() == &item_name);
-
-        // Assert that the item is indeed in the checklist
-        assert!(item_in_checklist);
+        assert!(store
+            .checklist()
+            .unwrap()
+            .iter()
+            .any(|item| item.name() == &item_name));
     }
 
     #[test]
@@ -306,12 +304,11 @@ mod tests {
         store.add_item(&item_name).unwrap();
 
         let items = store.items().unwrap();
-        let item_in_items = items
+
+        assert!(items
             .collection
             .iter()
-            .any(|item| item.name() == &item_name);
-
-        assert!(item_in_items);
+            .any(|item| item.name() == &item_name));
     }
 
     #[test]
@@ -347,6 +344,28 @@ mod tests {
 
         let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap().unwrap();
         assert_eq!(recipe_ingredients, ingredients);
+    }
+
+    #[test]
+    fn test_delete_checklist_item() {
+        let mut store = inmem_sqlite_store();
+
+        let item_name = test_item();
+        store.add_checklist_item(&item_name).unwrap();
+
+        assert!(store
+            .checklist()
+            .unwrap()
+            .iter()
+            .any(|item| item.name() == &item_name));
+
+        store.delete_checklist_item(&item_name).unwrap();
+
+        assert!(store
+            .checklist()
+            .unwrap()
+            .iter()
+            .all(|item| item.name() != &item_name));
     }
 
     #[test]
