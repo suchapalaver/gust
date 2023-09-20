@@ -15,10 +15,10 @@ use url::Url;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
-    #[error("Fetch error: {0}")]
+    #[error("fetch error: {0}")]
     FetchError(#[from] FetchError),
 
-    #[error("Store error: {0}")]
+    #[error("store error: {0}")]
     StoreError(#[from] StoreError),
 }
 
@@ -47,15 +47,15 @@ impl Api {
         match cmd {
             Add::ChecklistItem(name) => {
                 self.store.add_checklist_item(&name)?;
-                Ok(ApiResponse::ItemAdded(name))
+                Ok(ApiResponse::AddedItem(name))
             }
             Add::Item { name, .. } => {
                 self.store.add_item(&name)?;
-                Ok(ApiResponse::ItemAdded(name))
+                Ok(ApiResponse::AddedItem(name))
             }
             Add::ListItem(name) => {
                 self.store.add_list_item(&name)?;
-                Ok(ApiResponse::ListItemAdded(name))
+                Ok(ApiResponse::AddedListItem(name))
             }
             Add::ListRecipe(name) => {
                 self.store.add_list_recipe(&name)?;
@@ -66,7 +66,7 @@ impl Api {
                 ingredients,
             } => {
                 self.store.add_recipe(&recipe, &ingredients)?;
-                Ok(ApiResponse::RecipeAdded(recipe))
+                Ok(ApiResponse::AddedRecipe(recipe))
             }
         }
     }
@@ -117,7 +117,7 @@ impl Api {
         match cmd {
             Delete::ChecklistItem(name) => {
                 self.store.delete_checklist_item(&name)?;
-                Ok(ApiResponse::ChecklistItemDeleted(name))
+                Ok(ApiResponse::DeletedChecklistItem(name))
             }
             Delete::ClearChecklist => todo!(),
             Delete::ClearList => todo!(),
@@ -145,37 +145,41 @@ impl Api {
 }
 
 pub enum ApiResponse {
+    AddedItem(Name),
+    AddedListItem(Name),
     AddedListRecipe(Recipe),
+    AddedRecipe(Recipe),
     Checklist(Vec<Item>),
-    ChecklistItemDeleted(Name),
-    JsonToSqlite,
+    DeletedChecklistItem(Name),
+    FetchedRecipe((Recipe, Ingredients)),
     Items(Items),
-    ItemAdded(Name),
+    JsonToSqlite,
     List(List),
-    ListItemAdded(Name),
-    RefreshList,
     NothingReturned(ApiCommand),
     Recipes(Vec<Recipe>),
-    RecipeAdded(Recipe),
-    FetchedRecipe((Recipe, Ingredients)),
     RecipeIngredients(Ingredients),
+    RefreshList,
     Sections(Vec<Section>),
 }
 
 impl Display for ApiResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::AddedItem(name) => write!(f, "\nitem added: {name}"),
+            Self::AddedListItem(name) => write!(f, "\nitem added to list: {name}"),
             Self::AddedListRecipe(recipe) => {
-                writeln!(f, "\n{recipe}")?;
+                writeln!(f, "\nrecipe added:\n{recipe}")?;
                 Ok(())
             }
+            Self::AddedRecipe(name) => write!(f, "\nrecipe added: {name}"),
             Self::Checklist(items) => {
+                writeln!(f, "\nchecklist:")?;
                 for item in items {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())
             }
-            Self::ChecklistItemDeleted(name) => write!(f, "Checklist item deleted: {name}"),
+            Self::DeletedChecklistItem(name) => write!(f, "\ndeleted from checklist: \n{name}"),
             Self::FetchedRecipe((recipe, ingredients)) => {
                 writeln!(f, "\n{recipe}:")?;
                 for ingredient in ingredients.iter() {
@@ -184,36 +188,39 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::Items(items) => {
+                writeln!(f)?;
                 for item in &items.collection {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())
             }
-            Self::ItemAdded(name) => write!(f, "Item added: {name}"),
-            Self::JsonToSqlite => write!(f, "JSON to SQLite data store migration successful"),
+            Self::JsonToSqlite => write!(f, "\nJSON to SQLite data store migration successful"),
             Self::List(list) => {
+                writeln!(f)?;
                 for item in &list.items {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())
             }
-            Self::ListItemAdded(name) => write!(f, "Item added to list: {name}"),
-            Self::RefreshList => write!(f, "List is now empty"),
-            Self::NothingReturned(cmd) => write!(f, "Nothing returned for command: {cmd:?}."),
+            Self::NothingReturned(cmd) => write!(f, "\nnothing returned for command: {cmd:?}."),
             Self::Recipes(recipes) => {
+                writeln!(f)?;
                 for recipe in recipes {
                     writeln!(f, "{recipe}")?;
                 }
                 Ok(())
             }
-            Self::RecipeAdded(name) => write!(f, "Recipe added: {name}"),
             Self::RecipeIngredients(ingredients) => {
+                writeln!(f)?;
                 for ingredient in ingredients.iter() {
                     writeln!(f, "{ingredient}")?;
                 }
                 Ok(())
             }
+
+            Self::RefreshList => write!(f, "\nList is now empty"),
             Self::Sections(sections) => {
+                writeln!(f)?;
                 for section in sections {
                     writeln!(f, "{section}")?;
                 }

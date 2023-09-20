@@ -8,7 +8,7 @@ use crate::recipes::{Ingredients, Recipe};
 pub enum FetchError {
     #[error("CSS selector failed to select anything")]
     CSS,
-    #[error("Reqwest error: {0}")]
+    #[error("reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
 }
 
@@ -42,10 +42,10 @@ impl Fetcher {
     pub async fn fetch_recipe(&self) -> Result<(Recipe, Ingredients), FetchError> {
         let document = self.fetch_html().await?;
         Ok((
-            self.fetch_recipe_name(&document)?.as_str().into(),
+            self.fetch_recipe_name(&document)?.trim().into(),
             self.fetch_recipe_ingredients(&document)?
                 .into_iter()
-                .map(|i| i.as_str().into())
+                .map(|i| i.trim().into())
                 .collect(),
         ))
     }

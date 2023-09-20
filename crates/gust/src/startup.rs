@@ -41,33 +41,33 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
         matches.get_one::<String>("ingredients"),
     ) {
         let (recipe, ingredients) = (
-            Recipe::from_str(recipe)?,
-            Ingredients::from_input_string(ingredients),
+            Recipe::from_str(recipe.trim())?,
+            Ingredients::from_input_string(ingredients.trim()),
         );
 
         Ok(Add::recipe_from_name_and_ingredients(recipe, ingredients))
     } else if let Some(name) = matches.get_one::<String>("item") {
         Ok(Add::item_from_name_and_section(
-            Name::from(name.as_str()),
+            Name::from(name.trim()),
             matches
                 .get_one::<String>("section")
-                .map(|section| Section::from(section.as_str())),
+                .map(|section| Section::from(section.trim())),
         ))
     } else if let Some(item) = matches.get_one::<String>("checklist-item") {
-        Ok(Add::checklist_item_from_name(Name::from(item.as_str())))
+        Ok(Add::checklist_item_from_name(Name::from(item.trim())))
     } else {
         match matches.subcommand() {
             Some(("checklist", matches)) => Ok(Add::checklist_item_from_name(Name::from(
                 matches
                     .get_one::<String>("item")
                     .expect("item required")
-                    .as_str(),
+                    .trim(),
             ))),
             Some(("list", matches)) => {
                 if let Some(name) = matches.get_one::<String>("recipe") {
-                    Ok(Add::list_recipe_from_name(Recipe::from_str(name)?))
+                    Ok(Add::list_recipe_from_name(Recipe::from_str(name.trim())?))
                 } else if let Some(name) = matches.get_one::<String>("item") {
-                    Ok(Add::list_item_from_name(Name::from(name.as_str())))
+                    Ok(Add::list_item_from_name(Name::from(name.trim())))
                 } else {
                     unimplemented!()
                 }
@@ -79,14 +79,14 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
 
 fn delete(matches: &ArgMatches) -> Result<Delete, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
-        Ok(Delete::recipe_from_name(Recipe::from_str(name.as_str())?))
+        Ok(Delete::recipe_from_name(Recipe::from_str(name.trim())?))
     } else if let Some(name) = matches.get_one::<String>("item") {
-        Ok(Delete::item_from_name(Name::from(name.as_str())))
+        Ok(Delete::item_from_name(Name::from(name.trim())))
     } else {
         match matches.subcommand() {
             Some(("checklist", matches)) => {
                 if let Some(name) = matches.get_one::<String>("checklist-item") {
-                    Ok(Delete::ChecklistItem(Name::from(name.as_str())))
+                    Ok(Delete::ChecklistItem(Name::from(name.trim())))
                 } else {
                     unimplemented!()
                 }
@@ -100,15 +100,15 @@ fn fetch(matches: &ArgMatches) -> Result<ApiCommand, url::ParseError> {
     let Some(url) = matches.get_one::<String>("url") else {
         unreachable!("Providing a URL is required")
     };
-    let url = Url::parse(url)?;
+    let url = Url::parse(url.trim())?;
     Ok(ApiCommand::FetchRecipe(url))
 }
 
 fn read(matches: &ArgMatches) -> Result<Read, CliError> {
     if let Some(name) = matches.get_one::<String>("recipe") {
-        Ok(Read::recipe_from_name(Recipe::from_str(name.as_str())?))
+        Ok(Read::recipe_from_name(Recipe::from_str(name.trim())?))
     } else if let Some(name) = matches.get_one::<String>("item") {
-        Ok(Read::item_from_name(Name::from(name.as_str())))
+        Ok(Read::item_from_name(Name::from(name.trim())))
     } else {
         match matches.subcommand() {
             Some(("checklist", _matches)) => Ok(Read::Checklist),
@@ -124,7 +124,7 @@ fn read(matches: &ArgMatches) -> Result<Read, CliError> {
 fn update(matches: &ArgMatches) -> Result<Update, CliError> {
     if let Some(("recipe", matches)) = matches.subcommand() {
         if let Some(name) = matches.get_one::<String>("recipe") {
-            Ok(Update::recipe_from_name(Recipe::from_str(name.as_str())?))
+            Ok(Update::recipe_from_name(Recipe::from_str(name.trim())?))
         } else {
             todo!()
         }
