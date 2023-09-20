@@ -243,6 +243,7 @@ mod tests {
             Recipe::from("cheese and apple snack"),
         ]);
         insta::assert_display_snapshot!(recipes, @r###"
+
         peanut butter and jelly sandwich
         cheese and apple snack
         "###);
