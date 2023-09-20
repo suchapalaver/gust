@@ -15,10 +15,10 @@ use url::Url;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
-    #[error("Fetch error: {0}")]
+    #[error("fetch error: {0}")]
     FetchError(#[from] FetchError),
 
-    #[error("Store error: {0}")]
+    #[error("store error: {0}")]
     StoreError(#[from] StoreError),
 }
 
@@ -165,13 +165,13 @@ pub enum ApiResponse {
 impl Display for ApiResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::AddedItem(name) => write!(f, "\nItem added: {name}"),
-            Self::AddedListItem(name) => write!(f, "\nItem added to list: {name}"),
+            Self::AddedItem(name) => write!(f, "\nitem added: {name}"),
+            Self::AddedListItem(name) => write!(f, "\nitem added to list: {name}"),
             Self::AddedListRecipe(recipe) => {
                 writeln!(f, "\nrecipe added:\n{recipe}")?;
                 Ok(())
             }
-            Self::AddedRecipe(name) => write!(f, "\nRecipe added: {name}"),
+            Self::AddedRecipe(name) => write!(f, "\nrecipe added: {name}"),
             Self::Checklist(items) => {
                 writeln!(f, "\nchecklist:")?;
                 for item in items {
@@ -202,7 +202,7 @@ impl Display for ApiResponse {
                 }
                 Ok(())
             }
-            Self::NothingReturned(cmd) => write!(f, "\nNothing returned for command: {cmd:?}."),
+            Self::NothingReturned(cmd) => write!(f, "\nnothing returned for command: {cmd:?}."),
             Self::Recipes(recipes) => {
                 writeln!(f)?;
                 for recipe in recipes {

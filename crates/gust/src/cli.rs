@@ -5,13 +5,13 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum CliError {
-    #[error("Api error: {0}")]
+    #[error("API error: {0}")]
     ApiError(#[from] ApiError),
 
-    #[error("Invalid input: {0}")]
+    #[error("invalid input: {0}")]
     ParseInputError(String),
 
-    #[error("Read error: {0}")]
+    #[error("read error: {0}")]
     ReadError(#[from] ReadError),
 
     #[error("URL parse error: {0}")]

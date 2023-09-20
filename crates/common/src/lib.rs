@@ -31,10 +31,10 @@ pub enum ReadError {
 
 #[derive(Error, Debug)]
 pub enum LoadError {
-    #[error("Load error: {0}")]
+    #[error("load error: {0}")]
     FileError(#[from] std::io::Error),
 
-    #[error("Serde Json error: {0}")]
+    #[error("'serde-json' error: {0}")]
     SerdeJsonError(#[from] serde_json::Error),
 }
 

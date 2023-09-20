@@ -8,7 +8,7 @@ use crate::recipes::{Ingredients, Recipe};
 pub enum FetchError {
     #[error("CSS selector failed to select anything")]
     CSS,
-    #[error("Reqwest error: {0}")]
+    #[error("reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
 }
 

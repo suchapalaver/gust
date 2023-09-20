@@ -17,28 +17,28 @@ use crate::{
 
 #[derive(Error, Debug)]
 pub enum StoreError {
-    #[error("Error connecting to SQLite database: {0}")]
+    #[error("SQLite database connection error: {0}")]
     ConnectionError(#[from] ConnectionError),
 
     #[error("DB query failed: {0}")]
     DBQuery(#[from] diesel::result::Error),
 
-    #[error("Invalid JSON file: {0}")]
+    #[error("invalid JSON file: {0}")]
     DeserializingError(#[from] serde_json::Error),
 
-    #[error("Load error: {0}")]
+    #[error("load error: {0}")]
     LoadError(#[from] LoadError),
 
-    #[error("Migration error: {0}")]
+    #[error("migration error: {0}")]
     MigrationError(#[from] Box<dyn Error + Send + Sync>),
 
-    #[error("Read error: {0}")]
+    #[error("read error: {0}")]
     ReadError(#[from] ReadError),
 
-    #[error("Error reading/writing file: {0}")]
+    #[error("error reading/writing file: {0}")]
     ReadWriteError(#[from] std::io::Error),
 
-    #[error("Ingredients not found for: {0}")]
+    #[error("ingredients not found for: {0}")]
     RecipeIngredients(String),
 }
 
