@@ -165,13 +165,13 @@ pub enum ApiResponse {
 impl Display for ApiResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::AddedItem(name) => write!(f, "\nitem added: {name}"),
-            Self::AddedListItem(name) => write!(f, "\nitem added to list: {name}"),
+            Self::AddedItem(name) => writeln!(f, "\nitem added: {name}"),
+            Self::AddedListItem(name) => writeln!(f, "\nitem added to list: {name}"),
             Self::AddedListRecipe(recipe) => {
                 writeln!(f, "\nrecipe added:\n{recipe}")?;
                 Ok(())
             }
-            Self::AddedRecipe(name) => write!(f, "\nrecipe added: {name}"),
+            Self::AddedRecipe(name) => writeln!(f, "\nrecipe added: {name}"),
             Self::Checklist(items) => {
                 writeln!(f, "\nchecklist:")?;
                 for item in items {
@@ -179,7 +179,7 @@ impl Display for ApiResponse {
                 }
                 Ok(())
             }
-            Self::DeletedChecklistItem(name) => write!(f, "\ndeleted from checklist: \n{name}"),
+            Self::DeletedChecklistItem(name) => writeln!(f, "\ndeleted from checklist: \n{name}"),
             Self::FetchedRecipe((recipe, ingredients)) => {
                 writeln!(f, "\n{recipe}:")?;
                 for ingredient in ingredients.iter() {
@@ -194,7 +194,7 @@ impl Display for ApiResponse {
                 }
                 Ok(())
             }
-            Self::JsonToSqlite => write!(f, "\nJSON to SQLite data store migration successful"),
+            Self::JsonToSqlite => writeln!(f, "\nJSON to SQLite data store migration successful"),
             Self::List(list) => {
                 writeln!(f)?;
                 for item in &list.items {
@@ -202,7 +202,7 @@ impl Display for ApiResponse {
                 }
                 Ok(())
             }
-            Self::NothingReturned(cmd) => write!(f, "\nnothing returned for command: {cmd:?}."),
+            Self::NothingReturned(cmd) => writeln!(f, "\nnothing returned for command: {cmd:?}."),
             Self::Recipes(recipes) => {
                 writeln!(f)?;
                 for recipe in recipes {
@@ -218,7 +218,7 @@ impl Display for ApiResponse {
                 Ok(())
             }
 
-            Self::RefreshList => write!(f, "\nList is now empty"),
+            Self::RefreshList => writeln!(f, "\nList is now empty"),
             Self::Sections(sections) => {
                 writeln!(f)?;
                 for section in sections {
