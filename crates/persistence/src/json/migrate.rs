@@ -1,4 +1,4 @@
-use common::sections::SECTIONS;
+use common::item::SECTIONS;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 
 use crate::{

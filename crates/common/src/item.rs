@@ -65,6 +65,8 @@ impl Name {
     }
 }
 
+pub const SECTIONS: [&str; 5] = ["fresh", "pantry", "protein", "dairy", "freezer"];
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct Section(String);
 
@@ -81,6 +83,10 @@ impl fmt::Display for Section {
 }
 
 impl Section {
+    pub fn new(sec: impl Into<String>) -> Self {
+        Self(sec.into())
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
