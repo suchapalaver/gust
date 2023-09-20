@@ -1,4 +1,7 @@
-use crate::{item::Item, recipes::Recipe, sections::SECTIONS};
+use crate::{
+    item::{Item, SECTIONS},
+    recipes::Recipe,
+};
 use question::{Answer, Question};
 
 pub fn user_wants_to_add_item() -> bool {

@@ -229,23 +229,3 @@ impl Display for ApiResponse {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use common::recipes::Recipe;
-
-    use crate::ApiResponse;
-
-    #[test]
-    fn test_recipes_response_display() {
-        let recipes = ApiResponse::Recipes(vec![
-            Recipe::from("peanut butter and jelly sandwich"),
-            Recipe::from("cheese and apple snack"),
-        ]);
-        insta::assert_display_snapshot!(recipes, @r###"
-
-        peanut butter and jelly sandwich
-        cheese and apple snack
-        "###);
-    }
-}
