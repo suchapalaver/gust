@@ -98,10 +98,10 @@ impl SqliteStore {
 
     fn get_recipe(
         &mut self,
-        recipe_name: &str,
+        recipe: &str,
     ) -> Result<Option<Vec<RecipeModel>>, diesel::result::Error> {
         schema::recipes::table
-            .filter(schema::recipes::dsl::name.eq(recipe_name))
+            .filter(schema::recipes::dsl::name.eq(recipe))
             .load::<models::RecipeModel>(self.connection())
             .optional()
     }

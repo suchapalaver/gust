@@ -170,6 +170,7 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::Checklist(items) => {
+                writeln!(f)?;
                 for item in items {
                     writeln!(f, "{item}")?;
                 }
@@ -184,36 +185,41 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::Items(items) => {
+                writeln!(f)?;
                 for item in &items.collection {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())
             }
-            Self::ItemAdded(name) => write!(f, "Item added: {name}"),
-            Self::JsonToSqlite => write!(f, "JSON to SQLite data store migration successful"),
+            Self::ItemAdded(name) => write!(f, "\nItem added: {name}"),
+            Self::JsonToSqlite => write!(f, "\nJSON to SQLite data store migration successful"),
             Self::List(list) => {
+                writeln!(f)?;
                 for item in &list.items {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())
             }
-            Self::ListItemAdded(name) => write!(f, "Item added to list: {name}"),
-            Self::RefreshList => write!(f, "List is now empty"),
-            Self::NothingReturned(cmd) => write!(f, "Nothing returned for command: {cmd:?}."),
+            Self::ListItemAdded(name) => write!(f, "\nItem added to list: {name}"),
+            Self::RefreshList => write!(f, "\nList is now empty"),
+            Self::NothingReturned(cmd) => write!(f, "\nNothing returned for command: {cmd:?}."),
             Self::Recipes(recipes) => {
+                writeln!(f)?;
                 for recipe in recipes {
                     writeln!(f, "{recipe}")?;
                 }
                 Ok(())
             }
-            Self::RecipeAdded(name) => write!(f, "Recipe added: {name}"),
+            Self::RecipeAdded(name) => write!(f, "\nRecipe added: {name}"),
             Self::RecipeIngredients(ingredients) => {
+                writeln!(f)?;
                 for ingredient in ingredients.iter() {
                     writeln!(f, "{ingredient}")?;
                 }
                 Ok(())
             }
             Self::Sections(sections) => {
+                writeln!(f)?;
                 for section in sections {
                     writeln!(f, "{section}")?;
                 }
