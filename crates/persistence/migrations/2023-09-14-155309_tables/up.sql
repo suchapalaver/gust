@@ -25,6 +25,12 @@ CREATE TABLE list (
     FOREIGN KEY (id) REFERENCES items (id)
 );
 
+CREATE TABLE list_recipes (
+    id INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (id) REFERENCES recipes (id)
+);
+
 CREATE TABLE items_recipes (
     item_id INTEGER NOT NULL,
     recipe_id INTEGER NOT NULL,

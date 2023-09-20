@@ -11,8 +11,8 @@ use std::env;
 
 use crate::{
     models::{
-        self, Item, ItemInfo, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewRecipe,
-        RecipeModel, Section,
+        self, Item, ItemInfo, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewListRecipe,
+        NewRecipe, RecipeModel, Section,
     },
     schema,
     store::{Storage, StoreError},
@@ -134,6 +134,38 @@ impl Storage for SqliteStore {
         Ok(())
     }
 
+    fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+        let Some(ingredients) = self.recipe_ingredients(recipe)? else {
+            return Err(StoreError::RecipeIngredients(recipe.to_string()));
+        };
+
+        let id = self.get_or_insert_recipe(recipe.as_str());
+
+        diesel::insert_into(schema::list_recipes::table)
+            .values(NewListRecipe { id })
+            .on_conflict_do_nothing()
+            .execute(self.connection())?;
+
+        for item in ingredients.iter() {
+            let item_id = self.get_or_insert_item(item.as_str())?;
+            let query = diesel::insert_into(schema::list::table)
+                .values(NewListItem { id: item_id })
+                .on_conflict_do_nothing();
+            query.execute(self.connection())?;
+
+            let new_item_recipe = NewItemRecipe {
+                item_id,
+                recipe_id: id,
+            };
+            diesel::insert_into(schema::items_recipes::table)
+                .values(&new_item_recipe)
+                .on_conflict_do_nothing()
+                .execute(self.connection())?;
+        }
+
+        Ok(())
+    }
+
     fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
         let recipe_id = self.get_or_insert_recipe(recipe.as_str());
         let item_ids = ingredients
@@ -160,11 +192,29 @@ impl Storage for SqliteStore {
     }
 
     fn list(&mut self) -> Result<List, StoreError> {
-        Ok(schema::items::table
+        let mut list = schema::items::table
             .filter(
                 schema::items::dsl::id.eq_any(schema::list::table.select(schema::list::dsl::id)),
             )
             .load::<Item>(self.connection())?
+            .into_iter()
+            .map(Into::into)
+            .collect::<List>();
+
+        list.recipes = self.list_recipes()?;
+
+        list.checklist = self.checklist()?;
+
+        Ok(list)
+    }
+
+    fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+        Ok(schema::recipes::table
+            .filter(
+                schema::recipes::dsl::id
+                    .eq_any(schema::list_recipes::table.select(schema::list_recipes::dsl::id)),
+            )
+            .load::<RecipeModel>(self.connection())?
             .into_iter()
             .map(Into::into)
             .collect())
@@ -322,6 +372,47 @@ mod tests {
         let item_in_list = list.items.iter().any(|item| item.name() == &item_name);
 
         assert!(item_in_list);
+    }
+
+    #[test]
+    fn test_add_list_recipe() {
+        let mut store = inmem_sqlite_store();
+
+        let ingredients =
+            Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
+
+        let recipe = Recipe::new("test recipe").unwrap();
+        store.add_recipe(&recipe, &ingredients).unwrap();
+
+        store.add_list_recipe(&recipe).unwrap();
+
+        let list = store.list().unwrap();
+        insta::assert_debug_snapshot!(list, @r###"
+        List {
+            checklist: [],
+            recipes: [
+                Recipe(
+                    "test recipe",
+                ),
+            ],
+            items: [
+                Item {
+                    name: Name(
+                        "ingredient 1",
+                    ),
+                    section: None,
+                    recipes: None,
+                },
+                Item {
+                    name: Name(
+                        "ingredient 2",
+                    ),
+                    section: None,
+                    recipes: None,
+                },
+            ],
+        }
+        "###);
     }
 
     #[test]
