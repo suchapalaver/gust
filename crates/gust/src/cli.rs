@@ -163,6 +163,12 @@ fn read() -> Command {
         .subcommand(sections())
 }
 
+fn serve_api() -> Command {
+    Command::new("serve-api")
+        .subcommand_required(false)
+        .about("start a server")
+}
+
 fn update() -> Command {
     Command::new("update")
         .subcommand_required(false)
@@ -203,6 +209,7 @@ pub fn cli() -> Command {
         .subcommand(delete())
         .subcommand(fetch())
         .subcommand(read())
+        .subcommand(serve_api())
         .subcommand(update())
         .subcommand(migrate())
         .arg(
