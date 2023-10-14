@@ -8,8 +8,10 @@ use common::{
     item::{Name, Section},
     recipes::{Ingredients, Recipe},
 };
+use tracing::instrument;
 use url::Url;
 
+#[instrument]
 pub async fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
 

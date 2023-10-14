@@ -2,6 +2,7 @@ use std::process;
 
 #[tokio::main]
 async fn main() {
+    common::telemetry::telemetry();
     if let Err(e) = gust::startup::run().await {
         eprintln!("Problem running application:\n{e}");
         drop(e); // From the [docs](https://doc.rust-lang.org/std/process/fn.exit.html)\

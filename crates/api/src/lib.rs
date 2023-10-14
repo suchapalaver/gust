@@ -11,6 +11,7 @@ use common::{
 use persistence::store::{Storage, Store, StoreError};
 
 use thiserror::Error;
+use tracing::{info, instrument};
 use url::Url;
 
 #[derive(Error, Debug)]
@@ -22,6 +23,7 @@ pub enum ApiError {
     StoreError(#[from] StoreError),
 }
 
+#[derive(Debug)]
 pub struct Api {
     store: Store,
 }
@@ -29,9 +31,11 @@ pub struct Api {
 impl Api {
     pub fn new(store: &str) -> Result<Self, ApiError> {
         let store = Store::new(store)?;
+        info!("API initialized with {:?} store", store);
         Ok(Self { store })
     }
 
+    #[instrument(level = "debug", skip(self), ret(Debug))]
     pub async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
         match command {
             ApiCommand::Add(cmd) => self.add(cmd),
@@ -144,6 +148,7 @@ impl Api {
     }
 }
 
+#[derive(Debug)]
 pub enum ApiResponse {
     AddedItem(Name),
     AddedListItem(Name),

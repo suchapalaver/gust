@@ -12,6 +12,7 @@ repository = "https://github.com/suchapalaver/gust"
 common = { path = "../common" }
 persistence = { path = "../persistence" }
 thiserror = { workspace = true }
+tracing = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]

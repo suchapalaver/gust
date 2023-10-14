@@ -1,5 +1,6 @@
 pub mod migrate;
 
+use core::fmt;
 use std::{
     collections::HashSet,
     fs::{self},
@@ -24,6 +25,12 @@ pub const LIST_JSON_PATH: &str = "list.json";
 pub struct JsonStore {
     items: PathBuf,
     list: PathBuf,
+}
+
+impl fmt::Debug for JsonStore {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "JSON")
+    }
 }
 
 impl Default for JsonStore {
