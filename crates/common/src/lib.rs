@@ -5,6 +5,7 @@ pub mod item;
 pub mod items;
 pub mod list;
 pub mod recipes;
+pub mod telemetry;
 
 use std::{
     io::{self},

@@ -1,12 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = [
-    "crates/api",
-    "crates/common",
-    "crates/gust",
-    "crates/persistence",
-]
+members = ["crates/api", "crates/common", "crates/gust", "crates/persistence"]
 
 [workspace.dependencies]
 assert_fs = "1.0"
@@ -25,4 +20,10 @@ serde_json = "*"
 thiserror = "1.0.48"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = [
+  "default",
+  "registry",
+  "env-filter",
+  "json",
+] }
 url = "2.4.1"

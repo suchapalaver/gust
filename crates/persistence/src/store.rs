@@ -8,6 +8,7 @@ use common::{
 use diesel::ConnectionError;
 use thiserror::Error;
 
+use core::fmt;
 use std::error::Error;
 
 use crate::{
@@ -45,6 +46,15 @@ pub enum StoreError {
 pub enum Store {
     Json(JsonStore),
     Sqlite(SqliteStore),
+}
+
+impl fmt::Debug for Store {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Json(store) => write!(f, "{:?}", store),
+            Self::Sqlite(store) => write!(f, "{:?}", store),
+        }
+    }
 }
 
 impl From<SqliteStore> for Store {
