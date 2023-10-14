@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::{cli, CliError};
-use api::Api;
+use api::{Api, ApiError};
 use clap::ArgMatches;
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
@@ -19,7 +19,8 @@ pub async fn run() -> Result<(), CliError> {
         matches
             .get_one::<String>("store")
             .expect("'store' has a default setting")
-            .as_str(),
+            .parse()
+            .map_err(ApiError::from)?,
     )?
     .execute(match matches.subcommand() {
         Some(("add", matches)) => ApiCommand::Add(add(matches)?),

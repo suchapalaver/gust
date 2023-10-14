@@ -8,7 +8,7 @@ use common::{
     list::List,
     recipes::{Ingredients, Recipe},
 };
-use persistence::store::{Storage, Store, StoreError};
+use persistence::store::{Storage, Store, StoreError, StoreType};
 
 use thiserror::Error;
 use tracing::{info, instrument};
@@ -23,15 +23,14 @@ pub enum ApiError {
     StoreError(#[from] StoreError),
 }
 
-#[derive(Debug)]
 pub struct Api {
     store: Store,
 }
 
 impl Api {
-    pub fn new(store: &str) -> Result<Self, ApiError> {
+    pub fn new(store: StoreType) -> Result<Self, ApiError> {
+        info!("Initializing API with store type: {:?}", store);
         let store = Store::new(store)?;
-        info!("API initialized with {:?} store", store);
         Ok(Self { store })
     }
 

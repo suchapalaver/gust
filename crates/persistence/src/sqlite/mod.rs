@@ -4,7 +4,6 @@ use common::{
     list::List,
     recipes::{Ingredients, Recipe},
 };
-use core::fmt;
 use diesel::{prelude::*, sqlite::Sqlite, SqliteConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use dotenv::dotenv;
@@ -40,12 +39,6 @@ pub fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<
 
 pub struct SqliteStore {
     connection: SqliteConnection,
-}
-
-impl fmt::Debug for SqliteStore {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "SQLite")
-    }
 }
 
 impl SqliteStore {

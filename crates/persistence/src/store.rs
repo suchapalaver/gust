@@ -8,8 +8,7 @@ use common::{
 use diesel::ConnectionError;
 use thiserror::Error;
 
-use core::fmt;
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 use crate::{
     json::{migrate::groceries, JsonStore},
@@ -33,6 +32,9 @@ pub enum StoreError {
     #[error("migration error: {0}")]
     MigrationError(#[from] Box<dyn Error + Send + Sync>),
 
+    #[error("Parse store type error: {0}")]
+    ParseStoreType(String),
+
     #[error("read error: {0}")]
     ReadError(#[from] ReadError),
 
@@ -43,18 +45,29 @@ pub enum StoreError {
     RecipeIngredients(String),
 }
 
+#[derive(Debug)]
+pub enum StoreType {
+    Json,
+    Sqlite,
+}
+
+impl FromStr for StoreType {
+    type Err = StoreError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "json" => Ok(StoreType::Json),
+            "sqlite" => Ok(StoreType::Sqlite),
+            _ => Err(StoreError::ParseStoreType(
+                "Store types are currently limited to 'sqlite' and 'json'.".to_string(),
+            )),
+        }
+    }
+}
+
 pub enum Store {
     Json(JsonStore),
     Sqlite(SqliteStore),
-}
-
-impl fmt::Debug for Store {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Json(store) => write!(f, "{:?}", store),
-            Self::Sqlite(store) => write!(f, "{:?}", store),
-        }
-    }
 }
 
 impl From<SqliteStore> for Store {
@@ -70,16 +83,14 @@ impl From<JsonStore> for Store {
 }
 
 impl Store {
-    pub fn new(store: &str) -> Result<Self, StoreError> {
+    pub fn new(store: StoreType) -> Result<Self, StoreError> {
         match store {
-            "sqlite" => {
+            StoreType::Sqlite => {
                 let mut store = SqliteStore::new(establish_connection()?);
                 sqlite::run_migrations(store.connection())?;
                 Ok(Store::from(store))
             }
-            "json" => Ok(Store::from(JsonStore::default())),
-
-            _ => unreachable!("Store types are currently limited to 'sqlite' and 'json'."),
+            StoreType::Json => Ok(Store::from(JsonStore::default())),
         }
     }
 
