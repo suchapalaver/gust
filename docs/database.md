@@ -1,11 +1,16 @@
 # Databases and Storage
 
+## Contents
+
+- [Storage Options](#storage-options)
+- [Migrating from JSON to SQLite](#migrating-from-json-to-sqlite)
+
 ## Storage Options
 
 There are two supported storage options:
 
-- JSON
-- SQLite
+- [JSON](#json)
+- [SQLite](#sqlite)
 
 ### JSON
 
