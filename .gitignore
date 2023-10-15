@@ -13,7 +13,4 @@ target/
 # Local JSON 'groceries.json' and 'list.json' files 
 *.json
 
-# Steps to add database
-db_steps.md
-
-crates/persistence/sqlite.db
+/sqlite.db

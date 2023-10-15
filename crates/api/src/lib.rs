@@ -28,9 +28,9 @@ pub struct Api {
 }
 
 impl Api {
-    pub fn new(store: StoreType) -> Result<Self, ApiError> {
+    pub async fn new(store: StoreType) -> Result<Self, ApiError> {
         info!("Initializing API with store type: {:?}", store);
-        let store = Store::new(store)?;
+        let store = Store::new(store).await?;
         Ok(Self { store })
     }
 
@@ -40,7 +40,7 @@ impl Api {
             ApiCommand::Add(cmd) => self.add(cmd),
             ApiCommand::Delete(cmd) => self.delete(cmd),
             ApiCommand::FetchRecipe(url) => self.fetch_recipe(url).await,
-            ApiCommand::MigrateJsonDbToSqlite => self.migrate_json_store_to_sqlite(),
+            ApiCommand::MigrateJsonDbToSqlite => self.migrate_json_store_to_sqlite().await,
             ApiCommand::Read(cmd) => self.read(cmd),
             ApiCommand::Update(cmd) => self.update(cmd),
         }
@@ -141,8 +141,8 @@ impl Api {
         Ok(ApiResponse::FetchedRecipe((recipe, ingredients)))
     }
 
-    fn migrate_json_store_to_sqlite(&mut self) -> Result<ApiResponse, ApiError> {
-        self.store.migrate_json_store_to_sqlite()?;
+    async fn migrate_json_store_to_sqlite(&mut self) -> Result<ApiResponse, ApiError> {
+        self.store.migrate_json_store_to_sqlite().await?;
         Ok(ApiResponse::JsonToSqlite)
     }
 }
