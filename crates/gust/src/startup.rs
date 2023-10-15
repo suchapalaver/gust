@@ -21,7 +21,8 @@ pub async fn run() -> Result<(), CliError> {
             .expect("'store' has a default setting")
             .parse()
             .map_err(ApiError::from)?,
-    )?
+    )
+    .await?
     .execute(match matches.subcommand() {
         Some(("add", matches)) => ApiCommand::Add(add(matches)?),
         Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
@@ -88,11 +89,10 @@ fn delete(matches: &ArgMatches) -> Result<Delete, CliError> {
     } else {
         match matches.subcommand() {
             Some(("checklist", matches)) => {
-                if let Some(name) = matches.get_one::<String>("checklist-item") {
-                    Ok(Delete::ChecklistItem(Name::from(name.trim())))
-                } else {
+                let Some(name) = matches.get_one::<String>("checklist-item") else {
                     unimplemented!()
-                }
+                };
+                Ok(Delete::ChecklistItem(Name::from(name.trim())))
             }
             _ => unimplemented!(),
         }
@@ -125,19 +125,19 @@ fn read(matches: &ArgMatches) -> Result<Read, CliError> {
 }
 
 fn update(matches: &ArgMatches) -> Result<Update, CliError> {
-    if let Some(("recipe", matches)) = matches.subcommand() {
-        if let Some(name) = matches.get_one::<String>("recipe") {
+    match matches.subcommand() {
+        Some(("recipe", matches)) => {
+            let Some(name) = matches.get_one::<String>("recipe") else {
+                todo!()
+            };
             Ok(Update::recipe_from_name(Recipe::from_str(name.trim())?))
-        } else {
-            todo!()
         }
-    } else if let Some(("list", matches)) = matches.subcommand() {
-        if let Some(("clear", _)) = matches.subcommand() {
+        Some(("list", matches)) => {
+            let Some(("clear", _)) = matches.subcommand() else {
+                unimplemented!()
+            };
             Ok(Update::RefreshList)
-        } else {
-            unimplemented!()
         }
-    } else {
-        unimplemented!()
+        _ => unimplemented!(),
     }
 }

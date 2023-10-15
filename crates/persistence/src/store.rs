@@ -5,20 +5,27 @@ use common::{
     recipes::{Ingredients, Recipe},
     LoadError, ReadError,
 };
-use diesel::ConnectionError;
+use diesel::{
+    r2d2::{ConnectionManager, Pool},
+    SqliteConnection,
+};
+use dotenv::dotenv;
 use thiserror::Error;
 
-use std::{error::Error, str::FromStr};
+use std::{env, error::Error, ops::Deref, str::FromStr};
 
 use crate::{
     json::{migrate::groceries, JsonStore},
-    sqlite::{self, establish_connection, SqliteStore},
+    sqlite::{self, SqliteStore},
 };
 
 #[derive(Error, Debug)]
 pub enum StoreError {
     #[error("SQLite database connection error: {0}")]
-    ConnectionError(#[from] ConnectionError),
+    ConnectionError(#[from] diesel::ConnectionError),
+
+    #[error("Connection pool error: {0}")]
+    ConnectionPoolError(#[from] r2d2::Error),
 
     #[error("DB query failed: {0}")]
     DBQuery(#[from] diesel::result::Error),
@@ -45,6 +52,59 @@ pub enum StoreError {
     RecipeIngredients(String),
 }
 
+pub struct DbUri(String);
+
+impl From<String> for DbUri {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl Deref for DbUri {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+pub fn db_uri() -> DbUri {
+    dotenv().ok();
+    env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set")
+        .into()
+}
+
+pub type ConnectionPool = Pool<ConnectionManager<SqliteConnection>>;
+
+#[async_trait::async_trait]
+pub trait Connection {
+    async fn try_connect(&self) -> Result<ConnectionPool, StoreError>;
+}
+
+pub(crate) struct DatabaseConnector {
+    db_uri: DbUri,
+}
+
+impl DatabaseConnector {
+    pub(crate) fn new(db_uri: DbUri) -> Self {
+        Self { db_uri }
+    }
+}
+
+#[async_trait::async_trait]
+impl Connection for DatabaseConnector {
+    async fn try_connect(&self) -> Result<ConnectionPool, StoreError> {
+        use diesel::Connection;
+        SqliteConnection::establish(&self.db_uri)?;
+        Ok(
+            Pool::builder().build(ConnectionManager::<SqliteConnection>::new(
+                self.db_uri.deref(),
+            ))?,
+        )
+    }
+}
+
 #[derive(Debug)]
 pub enum StoreType {
     Json,
@@ -56,8 +116,8 @@ impl FromStr for StoreType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "json" => Ok(StoreType::Json),
-            "sqlite" => Ok(StoreType::Sqlite),
+            "json" => Ok(Self::Json),
+            "sqlite" => Ok(Self::Sqlite),
             _ => Err(StoreError::ParseStoreType(
                 "Store types are currently limited to 'sqlite' and 'json'.".to_string(),
             )),
@@ -83,11 +143,14 @@ impl From<JsonStore> for Store {
 }
 
 impl Store {
-    pub fn new(store: StoreType) -> Result<Self, StoreError> {
+    pub async fn new(store: StoreType) -> Result<Self, StoreError> {
         match store {
             StoreType::Sqlite => {
-                let mut store = SqliteStore::new(establish_connection()?);
-                sqlite::run_migrations(store.connection())?;
+                let db_uri = db_uri();
+                let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
+                let mut store = SqliteStore::new(connection_pool);
+                let mut connection = store.connection()?;
+                connection.immediate_transaction(sqlite::run_migrations)?;
                 Ok(Store::from(store))
             }
             StoreType::Json => Ok(Store::from(JsonStore::default())),
@@ -96,17 +159,26 @@ impl Store {
 
     // We need to deconstruct the `enum` anyway, and so while we do, we handle
     // migrating regardless of which database store has been set via CLI options.
-    pub fn migrate_json_store_to_sqlite(&mut self) -> Result<(), StoreError> {
+    pub async fn migrate_json_store_to_sqlite(&mut self) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => groceries(
-                store,
-                SqliteStore::new(establish_connection()?).connection(),
-            )?,
+            Self::Json(store) => {
+                let db_uri = db_uri();
+                let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
+                let mut sqlite_store = SqliteStore::new(connection_pool);
+                let mut connection = sqlite_store.connection()?;
+                connection.immediate_transaction(|connection| {
+                    groceries(store, connection)?;
+                    Ok(())
+                })
+            }
             Self::Sqlite(store) => {
-                groceries(&mut JsonStore::default(), store.connection())?;
+                let mut connection = store.connection()?;
+                connection.immediate_transaction(|connection| {
+                    groceries(&mut JsonStore::default(), connection)?;
+                    Ok(())
+                })
             }
         }
-        Ok(())
     }
 }
 
@@ -181,6 +253,13 @@ impl Storage for Store {
         }
     }
 
+    fn list_items(&mut self) -> Result<List, StoreError> {
+        match self {
+            Self::Json(store) => store.list_items(),
+            Self::Sqlite(store) => store.list_items(),
+        }
+    }
+
     fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
         match self {
             Self::Json(store) => store.list_recipes(),
@@ -233,6 +312,8 @@ pub trait Storage {
     fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
 
     fn list(&mut self) -> Result<List, StoreError>;
+
+    fn list_items(&mut self) -> Result<List, StoreError>;
 
     fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError>;
 
