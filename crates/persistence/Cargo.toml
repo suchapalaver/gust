@@ -13,7 +13,7 @@ async-trait = { workspace = true }
 common = { path = "../common" }
 diesel = { workspace = true }
 diesel_migrations = { workspace = true }
-dotenv = { workspace = true }
+dotenvy = { workspace = true }
 r2d2 = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
