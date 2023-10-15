@@ -9,7 +9,6 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     SqliteConnection,
 };
-use dotenv::dotenv;
 use thiserror::Error;
 
 use std::{env, error::Error, ops::Deref, str::FromStr};
@@ -69,7 +68,7 @@ impl Deref for DbUri {
 }
 
 pub fn db_uri() -> DbUri {
-    dotenv().ok();
+    dotenvy::dotenv().ok();
     env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set")
         .into()
