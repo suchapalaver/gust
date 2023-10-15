@@ -1,5 +1,10 @@
 # CLI
 
+## Contents
+
+- [Help](#help)
+- [Fetching Recipes](#fetching-recipes)
+
 ## Help
 
 For a menu of CLI commands run:
