@@ -3,6 +3,21 @@
 use `gust` to add recipes and grocery items to a local database,
 making putting together shopping lists super quick.
 
+## Summary
+
+- [documentation](#docs)
+- [getting started](#getting-started)
+
+## Prerequisites
+
+The main prerequisite to get started using this application is [Docker](https://docs.docker.com/).
+Docker allows you to [build](./docs/docker.md#build) an image of an application and [run](./docs/docker.md#run) application
+[containers](https://en.wikipedia.org/wiki/Containerization_(computing)), allowing you to use an application such as `gust` without
+needing to install the Rust programming language, database software, or
+other dependencies on your computer.
+
+All you need is to [install Docker](https://docs.docker.com/install/). 
+
 ---
 ## docs
 
