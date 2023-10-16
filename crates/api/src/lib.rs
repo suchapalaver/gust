@@ -23,6 +23,7 @@ pub enum ApiError {
     StoreError(#[from] StoreError),
 }
 
+#[derive(Clone)]
 pub struct Api {
     store: Store,
 }

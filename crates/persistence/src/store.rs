@@ -124,6 +124,7 @@ impl FromStr for StoreType {
     }
 }
 
+#[derive(Clone)]
 pub enum Store {
     Json(JsonStore),
     Sqlite(SqliteStore),

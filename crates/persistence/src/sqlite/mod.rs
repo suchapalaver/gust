@@ -29,6 +29,7 @@ pub fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<
     Ok(())
 }
 
+#[derive(Clone)]
 pub struct SqliteStore {
     pool: ConnectionPool,
 }
