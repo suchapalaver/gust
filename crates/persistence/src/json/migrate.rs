@@ -42,8 +42,7 @@ fn migrate_recipes(
         diesel::insert_into(recipes::table)
             .values(&recipe)
             .on_conflict_do_nothing()
-            .execute(connection)
-            .expect("Error transferring recipe");
+            .execute(connection)?;
     }
 
     Ok(())
@@ -75,8 +74,7 @@ pub fn groceries(
         // get the item's item_id
         let results = items_table
             .filter(schema::items::dsl::name.eq(item.name.to_string()))
-            .load::<models::Item>(connection)
-            .expect("Error loading recipes");
+            .load::<models::Item>(connection)?;
 
         assert_eq!(results.len(), 1);
 
@@ -97,8 +95,7 @@ pub fn groceries(
 
                 let results = recipes_table
                     .filter(schema::recipes::dsl::name.eq(recipe.to_string()))
-                    .load::<models::RecipeModel>(connection)
-                    .expect("Error loading recipes");
+                    .load::<models::RecipeModel>(connection)?;
 
                 assert_eq!(results.len(), 1);
 
@@ -118,8 +115,7 @@ pub fn groceries(
             // log the item_id in items_sections
             let results = sections_table
                 .filter(schema::sections::dsl::name.eq(item_section.to_string()))
-                .load::<models::Section>(connection)
-                .expect("Error loading recipes");
+                .load::<models::Section>(connection)?;
 
             assert_eq!(results.len(), 1);
 

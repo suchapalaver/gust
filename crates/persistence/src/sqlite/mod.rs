@@ -266,25 +266,29 @@ impl Storage for SqliteStore {
         })
     }
 
-    fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let name = recipe.to_string();
-            diesel::delete(
-                schema::items_recipes::table.filter(
-                    schema::items_recipes::dsl::recipe_id.eq_any(
-                        schema::recipes::table
-                            .select(schema::recipes::dsl::id)
-                            .filter(schema::recipes::dsl::name.eq(&name)),
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        let recipe = recipe.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let name = recipe.to_string();
+                diesel::delete(
+                    schema::items_recipes::table.filter(
+                        schema::items_recipes::dsl::recipe_id.eq_any(
+                            schema::recipes::table
+                                .select(schema::recipes::dsl::id)
+                                .filter(schema::recipes::dsl::name.eq(&name)),
+                        ),
                     ),
-                ),
-            )
-            .execute(connection)
-            .expect("Error deleting recipe");
-            diesel::delete(schema::recipes::table.filter(schema::recipes::dsl::name.eq(name)))
+                )
                 .execute(connection)?;
-            Ok(())
+                diesel::delete(schema::recipes::table.filter(schema::recipes::dsl::name.eq(name)))
+                    .execute(connection)?;
+                Ok(())
+            })
         })
+        .await?
     }
 
     fn items(&mut self) -> Result<Items, StoreError> {
@@ -321,8 +325,7 @@ impl Storage for SqliteStore {
 
                 let results = schema::items_recipes::table
                     .filter(schema::items_recipes::dsl::recipe_id.eq(&recipe_id))
-                    .load::<models::ItemRecipe>(connection)
-                    .expect("Error loading recipe");
+                    .load::<models::ItemRecipe>(connection)?;
 
                 let ingredients = results
                     .iter()
