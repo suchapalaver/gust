@@ -21,6 +21,7 @@ pub const ITEMS_JSON_PATH: &str = "groceries.json";
 
 pub const LIST_JSON_PATH: &str = "list.json";
 
+#[derive(Clone)]
 pub struct JsonStore {
     items: PathBuf,
     list: PathBuf,
