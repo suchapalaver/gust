@@ -39,7 +39,7 @@ impl SqliteStore {
         Self { pool }
     }
 
-    pub fn connection(
+    pub(crate) fn connection(
         &mut self,
     ) -> Result<PooledConnection<ConnectionManager<SqliteConnection>>, r2d2::Error> {
         self.pool.get()
@@ -91,7 +91,46 @@ impl SqliteStore {
         Ok(())
     }
 
-    pub fn load_item(
+    async fn list_items(&mut self) -> Result<List, StoreError> {
+        let mut store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                Ok(schema::items::table
+                    .filter(
+                        schema::items::dsl::id
+                            .eq_any(schema::list::table.select(schema::list::dsl::id)),
+                    )
+                    .load::<Item>(connection)?
+                    .into_iter()
+                    .map(Into::into)
+                    .collect::<List>())
+            })
+        })
+        .await?
+    }
+
+    async fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+        let mut store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                Ok(schema::recipes::table
+                    .filter(
+                        schema::recipes::dsl::id.eq_any(
+                            schema::list_recipes::table.select(schema::list_recipes::dsl::id),
+                        ),
+                    )
+                    .load::<RecipeModel>(connection)?
+                    .into_iter()
+                    .map(Into::into)
+                    .collect())
+            })
+        })
+        .await?
+    }
+
+    fn load_item(
         &mut self,
         connection: &mut SqliteConnection,
         item_id: i32,
@@ -113,255 +152,294 @@ impl SqliteStore {
     }
 }
 
+#[async_trait::async_trait]
 impl Storage for SqliteStore {
-    fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let id = self.get_or_insert_item(connection, item.as_str())?;
-            let query = {
-                diesel::insert_into(schema::checklist::table)
-                    .values(NewChecklistItem { id })
-                    .on_conflict_do_nothing()
-            };
-            query.execute(connection)?;
-            Ok(())
+    async fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        let item = item.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let id = store.get_or_insert_item(connection, item.as_str())?;
+                let query = {
+                    diesel::insert_into(schema::checklist::table)
+                        .values(NewChecklistItem { id })
+                        .on_conflict_do_nothing()
+                };
+                query.execute(connection)?;
+                Ok(())
+            })
         })
+        .await?
     }
 
-    fn add_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let item_name = item.to_string();
-            let _ = self.get_or_insert_item(connection, &item_name);
-            Ok(())
+    async fn add_item(&mut self, item: &Name) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        let item = item.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let item_name = item.to_string();
+                let _ = store.get_or_insert_item(connection, &item_name);
+                Ok(())
+            })
         })
+        .await?
     }
 
-    fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let id = self.get_or_insert_item(connection, item.as_str())?;
-            let query = diesel::insert_into(schema::list::table)
-                .values(NewListItem { id })
-                .on_conflict_do_nothing();
-            query.execute(connection)?;
-            Ok(())
+    async fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        let item = item.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let id = store.get_or_insert_item(connection, item.as_str())?;
+                let query = diesel::insert_into(schema::list::table)
+                    .values(NewListItem { id })
+                    .on_conflict_do_nothing();
+                query.execute(connection)?;
+                Ok(())
+            })
         })
+        .await?
     }
 
-    fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
-        let Some(ingredients) = self.recipe_ingredients(recipe)? else {
+    async fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+        let Some(ingredients) = self.recipe_ingredients(recipe).await? else {
             return Err(StoreError::RecipeIngredients(recipe.to_string()));
         };
 
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let id = self.get_or_insert_recipe(connection, recipe.as_str())?;
-            diesel::insert_into(schema::list_recipes::table)
-                .values(NewListRecipe { id })
-                .on_conflict_do_nothing()
-                .execute(connection)?;
-            for item in ingredients.iter() {
-                let item_id = self.get_or_insert_item(connection, item.as_str())?;
-                let query = diesel::insert_into(schema::list::table)
-                    .values(NewListItem { id: item_id })
-                    .on_conflict_do_nothing();
-                query.execute(connection)?;
-
-                let new_item_recipe = NewItemRecipe {
-                    item_id,
-                    recipe_id: id,
-                };
-                diesel::insert_into(schema::items_recipes::table)
-                    .values(&new_item_recipe)
+        let mut store = self.clone();
+        let recipe = recipe.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let id = store.get_or_insert_recipe(connection, recipe.as_str())?;
+                diesel::insert_into(schema::list_recipes::table)
+                    .values(NewListRecipe { id })
                     .on_conflict_do_nothing()
                     .execute(connection)?;
-            }
-            Ok(())
+                for item in ingredients.iter() {
+                    let item_id = store.get_or_insert_item(connection, item.as_str())?;
+                    let query = diesel::insert_into(schema::list::table)
+                        .values(NewListItem { id: item_id })
+                        .on_conflict_do_nothing();
+                    query.execute(connection)?;
+
+                    let new_item_recipe = NewItemRecipe {
+                        item_id,
+                        recipe_id: id,
+                    };
+                    diesel::insert_into(schema::items_recipes::table)
+                        .values(&new_item_recipe)
+                        .on_conflict_do_nothing()
+                        .execute(connection)?;
+                }
+                Ok(())
+            })
         })
+        .await?
     }
 
-    fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let recipe_id = self.get_or_insert_recipe(connection, recipe.as_str())?;
-            let item_ids = ingredients
-                .iter()
-                .map(|ingredient| self.get_or_insert_item(connection, ingredient.as_str()))
-                .collect::<Result<Vec<i32>, _>>()?;
+    async fn add_recipe(
+        &mut self,
+        recipe: &Recipe,
+        ingredients: &Ingredients,
+    ) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        let recipe = recipe.clone();
+        let ingredients = ingredients.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection: PooledConnection<ConnectionManager<SqliteConnection>> =
+                store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let recipe_id = store.get_or_insert_recipe(connection, recipe.as_str())?;
+                let item_ids = ingredients
+                    .iter()
+                    .map(|ingredient| store.get_or_insert_item(connection, ingredient.as_str()))
+                    .collect::<Result<Vec<i32>, _>>()?;
 
-            for item_id in item_ids {
-                self.insert_item_recipe(connection, item_id, recipe_id)?;
-            }
-            Ok(())
+                for item_id in item_ids {
+                    store.insert_item_recipe(connection, item_id, recipe_id)?;
+                }
+                Ok(())
+            })
         })
+        .await?
     }
 
-    fn checklist(&mut self) -> Result<Vec<common::item::Item>, StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            Ok(schema::items::table
-                .filter(
-                    schema::items::dsl::id
-                        .eq_any(schema::checklist::table.select(schema::checklist::dsl::id)),
-                )
-                .load::<Item>(connection)?
-                .into_iter()
-                .map(Into::into)
-                .collect())
+    async fn checklist(&mut self) -> Result<Vec<common::item::Item>, StoreError> {
+        let mut store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                Ok(schema::items::table
+                    .filter(
+                        schema::items::dsl::id
+                            .eq_any(schema::checklist::table.select(schema::checklist::dsl::id)),
+                    )
+                    .load::<Item>(connection)?
+                    .into_iter()
+                    .map(Into::into)
+                    .collect())
+            })
         })
+        .await?
     }
 
-    fn list(&mut self) -> Result<List, StoreError> {
-        let mut list = self.list_items()?;
-        list.recipes = self.list_recipes()?;
-        list.checklist = self.checklist()?;
+    async fn list(&mut self) -> Result<List, StoreError> {
+        let mut list = self.list_items().await?;
+        list.recipes = self.list_recipes().await?;
+        list.checklist = self.checklist().await?;
         Ok(list)
     }
 
-    fn list_items(&mut self) -> Result<List, StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            Ok(schema::items::table
-                .filter(
-                    schema::items::dsl::id
-                        .eq_any(schema::list::table.select(schema::list::dsl::id)),
-                )
-                .load::<Item>(connection)?
-                .into_iter()
-                .map(Into::into)
-                .collect::<List>())
-        })
-    }
-
-    fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            Ok(schema::recipes::table
-                .filter(
-                    schema::recipes::dsl::id
-                        .eq_any(schema::list_recipes::table.select(schema::list_recipes::dsl::id)),
-                )
-                .load::<RecipeModel>(connection)?
-                .into_iter()
-                .map(Into::into)
-                .collect())
-        })
-    }
-
-    fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            diesel::delete(
-                schema::checklist::table.filter(
-                    schema::checklist::dsl::id.eq_any(
-                        schema::items::table
-                            .select(schema::items::dsl::id)
-                            .filter(schema::items::dsl::name.eq(item.as_str())),
+    async fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        let item = item.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                diesel::delete(
+                    schema::checklist::table.filter(
+                        schema::checklist::dsl::id.eq_any(
+                            schema::items::table
+                                .select(schema::items::dsl::id)
+                                .filter(schema::items::dsl::name.eq(item.as_str())),
+                        ),
                     ),
-                ),
-            )
-            .execute(connection)?;
-            Ok(())
-        })
-    }
-
-    fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let name = recipe.to_string();
-            diesel::delete(
-                schema::items_recipes::table.filter(
-                    schema::items_recipes::dsl::recipe_id.eq_any(
-                        schema::recipes::table
-                            .select(schema::recipes::dsl::id)
-                            .filter(schema::recipes::dsl::name.eq(&name)),
-                    ),
-                ),
-            )
-            .execute(connection)
-            .expect("Error deleting recipe");
-            diesel::delete(schema::recipes::table.filter(schema::recipes::dsl::name.eq(name)))
+                )
                 .execute(connection)?;
-            Ok(())
+                Ok(())
+            })
         })
+        .await?
     }
 
-    fn items(&mut self) -> Result<Items, StoreError> {
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        let recipe = recipe.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let name = recipe.to_string();
+                diesel::delete(
+                    schema::items_recipes::table.filter(
+                        schema::items_recipes::dsl::recipe_id.eq_any(
+                            schema::recipes::table
+                                .select(schema::recipes::dsl::id)
+                                .filter(schema::recipes::dsl::name.eq(&name)),
+                        ),
+                    ),
+                )
+                .execute(connection)?;
+                diesel::delete(schema::recipes::table.filter(schema::recipes::dsl::name.eq(name)))
+                    .execute(connection)?;
+                Ok(())
+            })
+        })
+        .await?
+    }
+
+    async fn items(&mut self) -> Result<Items, StoreError> {
         use schema::items::dsl::items;
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            Ok(items
-                .load::<Item>(connection)?
-                .into_iter()
-                .map(Into::into)
-                .collect())
-        })
-    }
 
-    fn refresh_list(&mut self) -> Result<(), StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            diesel::delete(schema::list::table).execute(connection)?;
-            Ok(())
-        })
-    }
-
-    fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            let Some(results) = self.get_recipe(connection, recipe.as_str())? else {
-                return Ok(None);
-            };
-
-            let mut v = Vec::<Ingredients>::with_capacity(results.len());
-
-            for recipe in results {
-                let recipe_id = recipe.id;
-
-                let results = schema::items_recipes::table
-                    .filter(schema::items_recipes::dsl::recipe_id.eq(&recipe_id))
-                    .load::<models::ItemRecipe>(connection)
-                    .expect("Error loading recipe");
-
-                let ingredients = results
-                    .iter()
-                    .map(|item_recipe| self.load_item(connection, item_recipe.item_id))
-                    .collect::<Result<Vec<Vec<Item>>, _>>()?
+        let mut store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                Ok(items
+                    .load::<Item>(connection)?
                     .into_iter()
-                    .flatten()
-                    .map(|item| Name::from(item.name.as_str()))
-                    .collect::<Ingredients>();
-
-                v.push(ingredients);
-            }
-
-            Ok(v.into_iter().take(1).next())
+                    .map(Into::into)
+                    .collect())
+            })
         })
+        .await?
     }
 
-    fn sections(&mut self) -> Result<Vec<common::item::Section>, StoreError> {
+    async fn refresh_list(&mut self) -> Result<(), StoreError> {
+        let mut store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                diesel::delete(schema::list::table).execute(connection)?;
+                Ok(())
+            })
+        })
+        .await?
+    }
+
+    async fn recipe_ingredients(
+        &mut self,
+        recipe: &Recipe,
+    ) -> Result<Option<Ingredients>, StoreError> {
+        let mut store = self.clone();
+        let recipe = recipe.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                let Some(results) = store.get_recipe(connection, recipe.as_str())? else {
+                    return Ok(None);
+                };
+
+                let mut v = Vec::<Ingredients>::with_capacity(results.len());
+
+                for recipe in results {
+                    let recipe_id = recipe.id;
+
+                    let results = schema::items_recipes::table
+                        .filter(schema::items_recipes::dsl::recipe_id.eq(&recipe_id))
+                        .load::<models::ItemRecipe>(connection)?;
+
+                    let ingredients = results
+                        .iter()
+                        .map(|item_recipe| store.load_item(connection, item_recipe.item_id))
+                        .collect::<Result<Vec<Vec<Item>>, _>>()?
+                        .into_iter()
+                        .flatten()
+                        .map(|item| Name::from(item.name.as_str()))
+                        .collect::<Ingredients>();
+
+                    v.push(ingredients);
+                }
+
+                Ok(v.into_iter().take(1).next())
+            })
+        })
+        .await?
+    }
+
+    async fn sections(&mut self) -> Result<Vec<common::item::Section>, StoreError> {
         use schema::sections::dsl::sections;
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            Ok(sections
-                .load::<Section>(connection)?
-                .into_iter()
-                .map(|sec| sec.name().into())
-                .collect())
+        let mut store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                Ok(sections
+                    .load::<Section>(connection)?
+                    .into_iter()
+                    .map(|sec| sec.name().into())
+                    .collect())
+            })
         })
+        .await?
     }
 
-    fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+    async fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
         use schema::recipes::dsl::recipes;
-        let mut connection = self.connection()?;
-        connection.immediate_transaction(|connection| {
-            Ok(recipes
-                .load::<models::RecipeModel>(connection)?
-                .into_iter()
-                .map(Into::into)
-                .collect())
+        let mut store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = store.connection()?;
+            connection.immediate_transaction(|connection| {
+                Ok(recipes
+                    .load::<models::RecipeModel>(connection)?
+                    .into_iter()
+                    .map(Into::into)
+                    .collect())
+            })
         })
+        .await?
     }
 }
 
@@ -378,9 +456,14 @@ mod tests {
             .try_connect()
             .await
             .unwrap();
-        let mut store = SqliteStore::new(pool);
-        let mut connection = store.connection().unwrap();
-        connection.immediate_transaction(run_migrations).unwrap();
+        let store = SqliteStore::new(pool);
+        let mut migrations_store = store.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut connection = migrations_store.connection().unwrap();
+            connection.immediate_transaction(run_migrations).unwrap();
+        })
+        .await
+        .unwrap();
         store
     }
 
@@ -393,10 +476,11 @@ mod tests {
         let mut store = inmem_sqlite_store().await;
 
         let item_name = test_item();
-        store.add_checklist_item(&item_name).unwrap();
+        store.add_checklist_item(&item_name).await.unwrap();
 
         assert!(store
             .checklist()
+            .await
             .unwrap()
             .iter()
             .any(|item| item.name() == &item_name));
@@ -407,9 +491,9 @@ mod tests {
         let mut store = inmem_sqlite_store().await;
 
         let item_name = test_item();
-        store.add_item(&item_name).unwrap();
+        store.add_item(&item_name).await.unwrap();
 
-        let items = store.items().unwrap();
+        let items = store.items().await.unwrap();
 
         assert!(items
             .collection
@@ -422,9 +506,9 @@ mod tests {
         let mut store = inmem_sqlite_store().await;
 
         let item_name = test_item();
-        store.add_list_item(&item_name).unwrap();
+        store.add_list_item(&item_name).await.unwrap();
 
-        let list = store.list().unwrap();
+        let list = store.list().await.unwrap();
         let item_in_list = list.items.iter().any(|item| item.name() == &item_name);
 
         assert!(item_in_list);
@@ -438,11 +522,11 @@ mod tests {
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
         let recipe = Recipe::new("test recipe").unwrap();
-        store.add_recipe(&recipe, &ingredients).unwrap();
+        store.add_recipe(&recipe, &ingredients).await.unwrap();
 
-        store.add_list_recipe(&recipe).unwrap();
+        store.add_list_recipe(&recipe).await.unwrap();
 
-        let list = store.list().unwrap();
+        let list = store.list().await.unwrap();
         insta::assert_debug_snapshot!(list, @r###"
         List {
             checklist: [],
@@ -479,15 +563,15 @@ mod tests {
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
         let recipe = Recipe::new("test recipe").unwrap();
-        store.add_recipe(&recipe, &ingredients).unwrap();
+        store.add_recipe(&recipe, &ingredients).await.unwrap();
 
-        let recipes = store.recipes().unwrap();
+        let recipes = store.recipes().await.unwrap();
         assert_eq!(recipes.len(), 1);
 
         let added_recipe = &recipes[0];
         assert_eq!(added_recipe.as_str(), "test recipe");
 
-        let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap().unwrap();
+        let recipe_ingredients = store.recipe_ingredients(&recipe).await.unwrap().unwrap();
         assert_eq!(recipe_ingredients, ingredients);
     }
 
@@ -496,18 +580,20 @@ mod tests {
         let mut store = inmem_sqlite_store().await;
 
         let item_name = test_item();
-        store.add_checklist_item(&item_name).unwrap();
+        store.add_checklist_item(&item_name).await.unwrap();
 
         assert!(store
             .checklist()
+            .await
             .unwrap()
             .iter()
             .any(|item| item.name() == &item_name));
 
-        store.delete_checklist_item(&item_name).unwrap();
+        store.delete_checklist_item(&item_name).await.unwrap();
 
         assert!(store
             .checklist()
+            .await
             .unwrap()
             .iter()
             .all(|item| item.name() != &item_name));
@@ -521,23 +607,23 @@ mod tests {
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
         let recipe = Recipe::new("test recipe").unwrap();
-        store.add_recipe(&recipe, &ingredients).unwrap();
+        store.add_recipe(&recipe, &ingredients).await.unwrap();
 
-        let recipes = store.recipes().unwrap();
+        let recipes = store.recipes().await.unwrap();
         assert_eq!(recipes.len(), 1);
 
         let added_recipe = &recipes[0];
         assert_eq!(added_recipe.as_str(), "test recipe");
 
-        let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap().unwrap();
+        let recipe_ingredients = store.recipe_ingredients(&recipe).await.unwrap().unwrap();
         assert_eq!(recipe_ingredients, ingredients);
 
-        store.delete_recipe(&recipe).unwrap();
+        store.delete_recipe(&recipe).await.unwrap();
 
-        let recipes = store.recipes().unwrap();
+        let recipes = store.recipes().await.unwrap();
         assert_eq!(recipes.len(), 0);
 
-        let recipe_ingredients = store.recipe_ingredients(&recipe).unwrap();
+        let recipe_ingredients = store.recipe_ingredients(&recipe).await.unwrap();
         assert_eq!(recipe_ingredients, None);
     }
 
@@ -545,24 +631,24 @@ mod tests {
     async fn test_refresh_list() {
         let mut store = inmem_sqlite_store().await;
 
-        store.refresh_list().unwrap();
+        store.refresh_list().await.unwrap();
 
-        let list = store.list().unwrap();
+        let list = store.list().await.unwrap();
         assert_eq!(list.items.len(), 0);
 
         let item1 = Name::from("item 1");
         let item2 = Name::from("item 2");
-        store.add_list_item(&item1).unwrap();
-        store.add_list_item(&item2).unwrap();
+        store.add_list_item(&item1).await.unwrap();
+        store.add_list_item(&item2).await.unwrap();
 
-        let list = store.list().unwrap();
+        let list = store.list().await.unwrap();
         assert_eq!(list.items.len(), 2);
         assert!(list.items.iter().any(|item| item.name() == &item1));
         assert!(list.items.iter().any(|item| item.name() == &item2));
 
-        store.refresh_list().unwrap();
+        store.refresh_list().await.unwrap();
 
-        let list = store.list().unwrap();
+        let list = store.list().await.unwrap();
         assert_eq!(list.items.len(), 0);
     }
 }

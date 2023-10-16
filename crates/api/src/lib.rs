@@ -38,89 +38,89 @@ impl Api {
     #[instrument(level = "debug", skip(self), ret(Debug))]
     pub async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
         match command {
-            ApiCommand::Add(cmd) => self.add(cmd),
-            ApiCommand::Delete(cmd) => self.delete(cmd),
+            ApiCommand::Add(cmd) => self.add(cmd).await,
+            ApiCommand::Delete(cmd) => self.delete(cmd).await,
             ApiCommand::FetchRecipe(url) => self.fetch_recipe(url).await,
             ApiCommand::MigrateJsonDbToSqlite => self.migrate_json_store_to_sqlite().await,
-            ApiCommand::Read(cmd) => self.read(cmd),
-            ApiCommand::Update(cmd) => self.update(cmd),
+            ApiCommand::Read(cmd) => self.read(cmd).await,
+            ApiCommand::Update(cmd) => self.update(cmd).await,
         }
     }
 
-    fn add(&mut self, cmd: Add) -> Result<ApiResponse, ApiError> {
+    async fn add(&mut self, cmd: Add) -> Result<ApiResponse, ApiError> {
         match cmd {
             Add::ChecklistItem(name) => {
-                self.store.add_checklist_item(&name)?;
+                self.store.add_checklist_item(&name).await?;
                 Ok(ApiResponse::AddedItem(name))
             }
             Add::Item { name, .. } => {
-                self.store.add_item(&name)?;
+                self.store.add_item(&name).await?;
                 Ok(ApiResponse::AddedItem(name))
             }
             Add::ListItem(name) => {
-                self.store.add_list_item(&name)?;
+                self.store.add_list_item(&name).await?;
                 Ok(ApiResponse::AddedListItem(name))
             }
             Add::ListRecipe(name) => {
-                self.store.add_list_recipe(&name)?;
+                self.store.add_list_recipe(&name).await?;
                 Ok(ApiResponse::AddedListRecipe(name))
             }
             Add::Recipe {
                 recipe,
                 ingredients,
             } => {
-                self.store.add_recipe(&recipe, &ingredients)?;
+                self.store.add_recipe(&recipe, &ingredients).await?;
                 Ok(ApiResponse::AddedRecipe(recipe))
             }
         }
     }
 
-    fn read(&mut self, cmd: Read) -> Result<ApiResponse, ApiError> {
+    async fn read(&mut self, cmd: Read) -> Result<ApiResponse, ApiError> {
         match cmd {
             Read::All => {
-                let results = self.store.items()?;
+                let results = self.store.items().await?;
                 Ok(ApiResponse::Items(results))
             }
             Read::Checklist => {
-                let items = self.store.checklist()?;
+                let items = self.store.checklist().await?;
                 Ok(ApiResponse::Checklist(items))
             }
             Read::Item(_name) => todo!(),
             Read::List => {
-                let list = self.store.list()?;
+                let list = self.store.list().await?;
                 Ok(ApiResponse::List(list))
             }
             Read::ListRecipes => todo!(),
-            Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe) {
+            Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe).await {
                 Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
                 Ok(None) => Ok(ApiResponse::NothingReturned(ApiCommand::Read(
                     Read::Recipe(recipe),
                 ))),
                 Err(e) => Err(e.into()),
             },
-            Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes()?)),
+            Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes().await?)),
             Read::Sections => {
-                let results = self.store.sections()?;
+                let results = self.store.sections().await?;
                 Ok(ApiResponse::Sections(results))
             }
         }
     }
 
-    fn update(&mut self, cmd: Update) -> Result<ApiResponse, ApiError> {
+    async fn update(&mut self, cmd: Update) -> Result<ApiResponse, ApiError> {
         match cmd {
             Update::Item(_name) => todo!(),
             Update::RefreshList => {
-                self.store.refresh_list()?;
+                self.store.refresh_list().await?;
                 Ok(ApiResponse::RefreshList)
             }
             Update::Recipe(_name) => todo!(),
         }
     }
 
-    fn delete(&mut self, cmd: Delete) -> Result<ApiResponse, ApiError> {
+    async fn delete(&mut self, cmd: Delete) -> Result<ApiResponse, ApiError> {
         match cmd {
             Delete::ChecklistItem(name) => {
-                self.store.delete_checklist_item(&name)?;
+                self.store.delete_checklist_item(&name).await?;
                 Ok(ApiResponse::DeletedChecklistItem(name))
             }
             Delete::ClearChecklist => todo!(),
@@ -128,7 +128,7 @@ impl Api {
             Delete::Item(_name) => todo!(),
             Delete::ListItem(_name) => todo!(),
             Delete::Recipe(recipe) => {
-                self.store.delete_recipe(&recipe)?;
+                self.store.delete_recipe(&recipe).await?;
                 todo!()
             }
         }
@@ -138,7 +138,7 @@ impl Api {
         let fetcher = Fetcher::from(url);
         let (recipe, ingredients) = fetcher.fetch_recipe().await?;
 
-        self.store.add_recipe(&recipe, &ingredients)?;
+        self.store.add_recipe(&recipe, &ingredients).await?;
         Ok(ApiResponse::FetchedRecipe((recipe, ingredients)))
     }
 
