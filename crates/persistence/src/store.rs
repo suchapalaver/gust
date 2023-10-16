@@ -14,7 +14,10 @@ use thiserror::Error;
 use std::{env, error::Error, ops::Deref, str::FromStr};
 
 use crate::{
-    json::{migrate::groceries, JsonStore},
+    json::{
+        migrate::{groceries, migrate_recipes, migrate_sections},
+        JsonStore,
+    },
     sqlite::{self, SqliteStore},
 };
 
@@ -31,6 +34,9 @@ pub enum StoreError {
 
     #[error("invalid JSON file: {0}")]
     DeserializingError(#[from] serde_json::Error),
+
+    #[error("JoinError: {0}")]
+    JoinError(#[from] tokio::task::JoinError),
 
     #[error("load error: {0}")]
     LoadError(#[from] LoadError),
@@ -166,15 +172,23 @@ impl Store {
                 let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
                 let mut sqlite_store = SqliteStore::new(connection_pool);
                 let mut connection = sqlite_store.connection()?;
-                connection.immediate_transaction(|connection| {
-                    groceries(store, connection)?;
-                    Ok(())
+                let grocery_items = store.items().await?;
+                let recipes = store.recipes().await?;
+                tokio::task::spawn_blocking(move || {
+                    connection.immediate_transaction(|connection| {
+                        migrate_sections(connection)?;
+                        migrate_recipes(connection, recipes)?;
+                        groceries(connection, grocery_items)?;
+                        Ok(())
+                    })
                 })
+                .await?
             }
             Self::Sqlite(store) => {
                 let mut connection = store.connection()?;
+                let grocery_items = store.items().await?;
                 connection.immediate_transaction(|connection| {
-                    groceries(&mut JsonStore::default(), connection)?;
+                    groceries(connection, grocery_items)?;
                     Ok(())
                 })
             }
@@ -182,154 +196,152 @@ impl Store {
     }
 }
 
+#[async_trait::async_trait]
 impl Storage for Store {
-    fn add_item(&mut self, item: &Name) -> Result<(), StoreError> {
+    async fn add_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.add_item(item),
-            Self::Sqlite(store) => store.add_item(item),
+            Self::Json(store) => store.add_item(item).await,
+            Self::Sqlite(store) => store.add_item(item).await,
         }
     }
 
-    fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
+    async fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.add_checklist_item(item),
-            Self::Sqlite(store) => store.add_checklist_item(item),
+            Self::Json(store) => store.add_checklist_item(item).await,
+            Self::Sqlite(store) => store.add_checklist_item(item).await,
         }
     }
 
-    fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError> {
+    async fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.add_list_item(item),
-            Self::Sqlite(store) => store.add_list_item(item),
+            Self::Json(store) => store.add_list_item(item).await,
+            Self::Sqlite(store) => store.add_list_item(item).await,
         }
     }
 
-    fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+    async fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.add_list_recipe(recipe),
-            Self::Sqlite(store) => store.add_list_recipe(recipe),
+            Self::Json(store) => store.add_list_recipe(recipe).await,
+            Self::Sqlite(store) => store.add_list_recipe(recipe).await,
         }
     }
 
-    fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError> {
+    async fn add_recipe(
+        &mut self,
+        recipe: &Recipe,
+        ingredients: &Ingredients,
+    ) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.add_recipe(recipe, ingredients),
-            Self::Sqlite(store) => store.add_recipe(recipe, ingredients),
+            Self::Json(store) => store.add_recipe(recipe, ingredients).await,
+            Self::Sqlite(store) => store.add_recipe(recipe, ingredients).await,
         }
     }
 
-    fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
+    async fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
         match self {
-            Self::Json(store) => store.checklist(),
-            Self::Sqlite(store) => store.checklist(),
+            Self::Json(store) => store.checklist().await,
+            Self::Sqlite(store) => store.checklist().await,
         }
     }
 
-    fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
+    async fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.delete_checklist_item(item),
-            Self::Sqlite(store) => store.delete_checklist_item(item),
+            Self::Json(store) => store.delete_checklist_item(item).await,
+            Self::Sqlite(store) => store.delete_checklist_item(item).await,
         }
     }
 
-    fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.delete_recipe(recipe),
-            Self::Sqlite(store) => store.delete_recipe(recipe),
+            Self::Json(store) => store.delete_recipe(recipe).await,
+            Self::Sqlite(store) => store.delete_recipe(recipe).await,
         }
     }
 
-    fn items(&mut self) -> Result<Items, StoreError> {
+    async fn items(&mut self) -> Result<Items, StoreError> {
         match self {
-            Self::Json(store) => store.items(),
-            Self::Sqlite(store) => store.items(),
+            Self::Json(store) => store.items().await,
+            Self::Sqlite(store) => store.items().await,
         }
     }
 
-    fn list(&mut self) -> Result<List, StoreError> {
+    async fn list(&mut self) -> Result<List, StoreError> {
         match self {
-            Self::Json(store) => store.list(),
-            Self::Sqlite(store) => store.list(),
+            Self::Json(store) => store.list().await,
+            Self::Sqlite(store) => store.list().await,
         }
     }
 
-    fn list_items(&mut self) -> Result<List, StoreError> {
+    async fn refresh_list(&mut self) -> Result<(), StoreError> {
         match self {
-            Self::Json(store) => store.list_items(),
-            Self::Sqlite(store) => store.list_items(),
+            Self::Json(store) => store.refresh_list().await,
+            Self::Sqlite(store) => store.refresh_list().await,
         }
     }
 
-    fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+    async fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
         match self {
-            Self::Json(store) => store.list_recipes(),
-            Self::Sqlite(store) => store.list_recipes(),
+            Self::Json(store) => store.recipes().await,
+            Self::Sqlite(store) => store.recipes().await,
         }
     }
 
-    fn refresh_list(&mut self) -> Result<(), StoreError> {
+    async fn recipe_ingredients(
+        &mut self,
+        recipe: &Recipe,
+    ) -> Result<Option<Ingredients>, StoreError> {
         match self {
-            Self::Json(store) => store.refresh_list(),
-            Self::Sqlite(store) => store.refresh_list(),
+            Self::Json(store) => store.recipe_ingredients(recipe).await,
+            Self::Sqlite(store) => store.recipe_ingredients(recipe).await,
         }
     }
 
-    fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+    async fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
         match self {
-            Self::Json(store) => store.recipes(),
-            Self::Sqlite(store) => store.recipes(),
-        }
-    }
-
-    fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError> {
-        match self {
-            Self::Json(store) => store.recipe_ingredients(recipe),
-            Self::Sqlite(store) => store.recipe_ingredients(recipe),
-        }
-    }
-
-    fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
-        match self {
-            Self::Json(store) => store.sections(),
-            Self::Sqlite(store) => store.sections(),
+            Self::Json(store) => store.sections().await,
+            Self::Sqlite(store) => store.sections().await,
         }
     }
 }
 
+#[async_trait::async_trait]
 pub trait Storage {
     // Create
-    fn add_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn add_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
-    fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
-    fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
-    fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
+    async fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
 
-    fn add_recipe(&mut self, recipe: &Recipe, ingredients: &Ingredients) -> Result<(), StoreError>;
+    async fn add_recipe(
+        &mut self,
+        recipe: &Recipe,
+        ingredients: &Ingredients,
+    ) -> Result<(), StoreError>;
 
     // Read
-    fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
+    async fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
 
-    fn list(&mut self) -> Result<List, StoreError>;
+    async fn list(&mut self) -> Result<List, StoreError>;
 
-    fn list_items(&mut self) -> Result<List, StoreError>;
+    async fn items(&mut self) -> Result<Items, StoreError>;
 
-    fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError>;
+    async fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError>;
 
-    fn items(&mut self) -> Result<Items, StoreError>;
+    async fn recipe_ingredients(
+        &mut self,
+        recipe: &Recipe,
+    ) -> Result<Option<Ingredients>, StoreError>;
 
-    fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError>;
-
-    fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<Option<Ingredients>, StoreError>;
-
-    fn sections(&mut self) -> Result<Vec<Section>, StoreError>;
+    async fn sections(&mut self) -> Result<Vec<Section>, StoreError>;
 
     // Update
-    fn refresh_list(&mut self) -> Result<(), StoreError>;
+    async fn refresh_list(&mut self) -> Result<(), StoreError>;
 
     // Delete
-    fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
-    fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
 }

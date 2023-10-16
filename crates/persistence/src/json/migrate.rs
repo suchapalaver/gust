@@ -1,15 +1,13 @@
-use common::item::SECTIONS;
+use common::{item::SECTIONS, items::Items, recipes::Recipe};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 
 use crate::{
     models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
     schema,
-    store::{Storage, StoreError},
+    store::StoreError,
 };
 
-use super::JsonStore;
-
-fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
+pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
     use crate::schema::sections;
 
     let sections = SECTIONS;
@@ -26,12 +24,10 @@ fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError>
     Ok(())
 }
 
-fn migrate_recipes(
-    json: &mut JsonStore,
+pub fn migrate_recipes(
     connection: &mut SqliteConnection,
+    recipes: Vec<Recipe>,
 ) -> Result<(), StoreError> {
-    let recipes = json.recipes()?;
-
     use crate::schema::recipes;
 
     for recipe in recipes {
@@ -48,14 +44,7 @@ fn migrate_recipes(
     Ok(())
 }
 
-pub fn groceries(
-    json: &mut JsonStore,
-    connection: &mut SqliteConnection,
-) -> Result<(), StoreError> {
-    migrate_sections(connection)?;
-    migrate_recipes(json, connection)?;
-
-    let groceries = json.items()?;
+pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<(), StoreError> {
     let items_table = schema::items::table;
     let recipes_table = schema::recipes::table;
     let sections_table = schema::sections::table;
