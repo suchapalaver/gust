@@ -10,6 +10,8 @@ pub enum FetchError {
     CSS,
     #[error("reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
+    #[error("Selector Error: {0}")]
+    SelectorError(String),
 }
 
 pub struct Fetcher {
@@ -58,7 +60,8 @@ impl Fetcher {
 
     fn fetch_recipe_name(&self, document: &Html) -> Result<String, FetchError> {
         let recipe_name_selector = match self.site {
-            Site::BBC => Selector::parse(".gel-trafalgar").unwrap(),
+            Site::BBC => Selector::parse(".gel-trafalgar")
+                .map_err(|e| FetchError::SelectorError(e.to_string()))?,
             Site::NYT => unimplemented!(),
         };
 
@@ -73,15 +76,17 @@ impl Fetcher {
 
     fn fetch_recipe_ingredients(&self, document: &Html) -> Result<Vec<String>, FetchError> {
         let ingredients_selector = match self.site {
-            Site::BBC => Selector::parse(".recipe-ingredients__list").unwrap(),
+            Site::BBC => Selector::parse(".recipe-ingredients__list")
+                .map_err(|e| FetchError::SelectorError(e.to_string()))?,
             Site::NYT => unimplemented!(),
         };
 
         if let Some(ingredients_container) = document.select(&ingredients_selector).next() {
             let mut ingredients = Vec::new();
             // Iterate through child elements to extract individual ingredients
-            for ingredient_element in ingredients_container.select(&Selector::parse("li").unwrap())
-            {
+            for ingredient_element in ingredients_container.select(
+                &Selector::parse("li").map_err(|e| FetchError::SelectorError(e.to_string()))?,
+            ) {
                 ingredients.push(ingredient_element.text().collect::<String>().to_lowercase());
             }
             Ok(ingredients)
