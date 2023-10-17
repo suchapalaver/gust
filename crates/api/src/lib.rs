@@ -8,14 +8,22 @@ use common::{
     list::List,
     recipes::{Ingredients, Recipe},
 };
+use futures::FutureExt;
 use persistence::store::{Storage, Store, StoreError, StoreType};
 
 use thiserror::Error;
-use tracing::{info, instrument};
+use tokio::sync::mpsc::error::SendError;
+use tracing::{error, info, instrument, trace, warn};
 use url::Url;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
+    #[error("API shut down before reply")]
+    ApiShutdownRx,
+
+    #[error("API shut down before send: {0}")]
+    ApiShutdownTx(#[from] SendError<ApiSendWithReply>),
+
     #[error("fetch error: {0}")]
     FetchError(#[from] FetchError),
 
@@ -26,6 +34,12 @@ pub enum ApiError {
 #[derive(Clone)]
 pub struct Api {
     store: Store,
+}
+
+impl From<Store> for Api {
+    fn from(store: Store) -> Self {
+        Self { store }
+    }
 }
 
 impl Api {
@@ -128,8 +142,8 @@ impl Api {
             Delete::Item(_name) => todo!(),
             Delete::ListItem(_name) => todo!(),
             Delete::Recipe(recipe) => {
-                self.store.delete_recipe(&recipe).await?;
-                todo!()
+                let recipe = self.store.delete_recipe(&recipe).await?;
+                Ok(ApiResponse::DeletedRecipe(recipe))
             }
         }
     }
@@ -146,6 +160,71 @@ impl Api {
         self.store.migrate_json_store_to_sqlite().await?;
         Ok(ApiResponse::JsonToSqlite)
     }
+
+    pub async fn dispatch(&self) -> Result<ApiDispatch, ApiError> {
+        let (commit_tx, mut commit_rx) = tokio::sync::mpsc::channel::<ApiSendWithReply>(10);
+
+        let dispatch = ApiDispatch {
+            tx: commit_tx.clone(),
+        };
+
+        let mut api = self.clone();
+
+        tokio::task::spawn(async move {
+            loop {
+                tokio::select! {
+                    cmd = commit_rx.recv().fuse() => {
+                        if let Some((command, reply)) = cmd {
+
+                        let result = api
+                            .execute(command)
+                            .await;
+
+                        reply
+                            .send(result)
+                            .await
+                            .map_err(|e| {
+                                warn!(?e, "Send reply to API consumer failed");
+                            })
+                            .ok();
+                        }
+                    }
+                    else => break
+                }
+            }
+        });
+
+        Ok(dispatch)
+    }
+}
+
+type ApiSendWithReply = (
+    ApiCommand,
+    tokio::sync::mpsc::Sender<Result<ApiResponse, ApiError>>,
+);
+
+#[derive(Debug, Clone)]
+/// A clonable API handle
+pub struct ApiDispatch {
+    tx: tokio::sync::mpsc::Sender<ApiSendWithReply>,
+}
+
+impl ApiDispatch {
+    #[instrument]
+    pub async fn dispatch(&self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
+        let (reply_tx, mut reply_rx) = tokio::sync::mpsc::channel(1);
+        trace!(?command, "Dispatch command to API");
+
+        self.tx.clone().send((command, reply_tx)).await?;
+
+        let reply = reply_rx.recv().await;
+
+        if let Some(Err(ref error)) = reply {
+            error!(?error, "API dispatch");
+        }
+
+        reply.ok_or(ApiError::ApiShutdownRx)?
+    }
 }
 
 #[derive(Debug)]
@@ -155,6 +234,7 @@ pub enum ApiResponse {
     AddedListRecipe(Recipe),
     AddedRecipe(Recipe),
     Checklist(Vec<Item>),
+    DeletedRecipe(Recipe),
     DeletedChecklistItem(Name),
     FetchedRecipe((Recipe, Ingredients)),
     Items(Items),
@@ -185,6 +265,7 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::DeletedChecklistItem(name) => writeln!(f, "\ndeleted from checklist: \n{name}"),
+            Self::DeletedRecipe(recipe) => writeln!(f, "\ndeleted recipe: \n{recipe}"),
             Self::FetchedRecipe((recipe, ingredients)) => {
                 writeln!(f, "\n{recipe}:")?;
                 for ingredient in ingredients.iter() {
@@ -232,5 +313,96 @@ impl Display for ApiResponse {
                 Ok(())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn serve_api() {
+        let api = Api::from(Store::new_inmem(StoreType::Sqlite).await.unwrap());
+        let api_dispatch = api.dispatch().await.unwrap();
+
+        let response = api_dispatch
+            .dispatch(ApiCommand::Add(Add::Recipe { recipe: Recipe::new("fluffy american pancakes").unwrap(), ingredients: Ingredients::from_input_string("135g/4¾oz plain flour, 1 tsp baking powder, ½ tsp salt, 2 tbsp caster sugar, 130ml/4½fl oz milk, 1 large egg, lightly beaten, 2 tbsp melted butter (allowed to cool slightly), plus extra for cooking") }))
+            .await
+            .unwrap();
+
+        insta::assert_display_snapshot!(response.to_string().trim(), @r###"
+
+        recipe added: fluffy american pancakes
+        "###);
+
+        let response = api_dispatch
+            .dispatch(ApiCommand::Read(Read::Recipes))
+            .await
+            .unwrap();
+
+        insta::assert_display_snapshot!(response.to_string().trim(), @"fluffy american pancakes");
+
+        let response = api_dispatch
+            .dispatch(ApiCommand::Read(Read::Recipe(
+                Recipe::new("fluffy american pancakes").unwrap(),
+            )))
+            .await
+            .unwrap();
+
+        insta::assert_display_snapshot!(response.to_string().trim(), @r###"
+
+        135g/4¾oz plain flour
+        1 tsp baking powder
+        ½ tsp salt
+        2 tbsp caster sugar
+        130ml/4½fl oz milk
+        1 large egg
+        lightly beaten
+        2 tbsp melted butter (allowed to cool slightly)
+        plus extra for cooking
+        "###);
+
+        let response = api_dispatch
+            .dispatch(ApiCommand::Read(Read::All))
+            .await
+            .unwrap();
+
+        insta::assert_display_snapshot!(response.to_string().trim(), @r###"
+        135g/4¾oz plain flour
+        1 tsp baking powder
+        ½ tsp salt
+        2 tbsp caster sugar
+        130ml/4½fl oz milk
+        1 large egg
+        lightly beaten
+        2 tbsp melted butter (allowed to cool slightly)
+        plus extra for cooking
+        "###);
+
+        let response = api_dispatch
+            .dispatch(ApiCommand::Delete(Delete::Recipe(
+                Recipe::new("fluffy american pancakes").unwrap(),
+            )))
+            .await
+            .unwrap();
+
+        insta::assert_display_snapshot!(response.to_string().trim(), @r###"
+        deleted recipe: 
+        fluffy american pancakes
+        "###);
+
+        let response = api_dispatch
+            .dispatch(ApiCommand::Read(Read::Recipes))
+            .await
+            .unwrap();
+
+        insta::assert_display_snapshot!(response.to_string().trim(), @"");
+
+        let response = api_dispatch
+            .dispatch(ApiCommand::Read(Read::All))
+            .await
+            .unwrap();
+
+        insta::assert_display_snapshot!(response.to_string().trim(), @"");
     }
 }

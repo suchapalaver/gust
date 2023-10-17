@@ -119,7 +119,7 @@ impl Storage for JsonStore {
         todo!()
     }
 
-    async fn delete_recipe(&mut self, _recipe: &Recipe) -> Result<(), StoreError> {
+    async fn delete_recipe(&mut self, _recipe: &Recipe) -> Result<Recipe, StoreError> {
         todo!()
     }
 
