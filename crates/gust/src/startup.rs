@@ -15,15 +15,18 @@ use url::Url;
 pub async fn run() -> Result<(), CliError> {
     let matches = cli().get_matches();
 
-    let response = Api::new(
+    let api = Api::new(
         matches
             .get_one::<String>("store")
             .expect("'store' has a default setting")
             .parse()
             .map_err(ApiError::from)?,
     )
-    .await?
-    .execute(match matches.subcommand() {
+    .await?;
+
+    let api_dispatch = api.dispatch().await?;
+
+    let command = match matches.subcommand() {
         Some(("add", matches)) => ApiCommand::Add(add(matches)?),
         Some(("delete", matches)) => ApiCommand::Delete(delete(matches)?),
         Some(("fetch", matches)) => fetch(matches)?,
@@ -31,8 +34,9 @@ pub async fn run() -> Result<(), CliError> {
         Some(("update", matches)) => ApiCommand::Update(update(matches)?),
         Some(("migrate-json-store", _)) => ApiCommand::MigrateJsonDbToSqlite,
         _ => unreachable!(),
-    })
-    .await?;
+    };
+
+    let response = api_dispatch.dispatch(command).await?;
 
     println!("{response}");
 

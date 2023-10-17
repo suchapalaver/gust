@@ -316,7 +316,7 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<Recipe, StoreError> {
         let mut store = self.clone();
         let recipe = recipe.clone();
         let ingredients = self.recipe_ingredients(&recipe).await?;
@@ -344,7 +344,7 @@ impl Storage for SqliteStore {
                         .execute(connection)?;
                     }
                 }
-                Ok(())
+                Ok(recipe)
             })
         })
         .await?
@@ -461,7 +461,7 @@ mod tests {
 
     async fn inmem_sqlite_store() -> SqliteStore {
         // Set up a connection to an in-memory SQLite database for testing
-        let pool = DatabaseConnector::new(DbUri::from(":memory:".to_string()))
+        let pool = DatabaseConnector::new(DbUri::from(":memory:"))
             .try_connect()
             .await
             .unwrap();

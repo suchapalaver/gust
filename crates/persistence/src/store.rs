@@ -59,9 +59,9 @@ pub enum StoreError {
 
 pub struct DbUri(String);
 
-impl From<String> for DbUri {
-    fn from(value: String) -> Self {
-        Self(value)
+impl From<&str> for DbUri {
+    fn from(value: &str) -> Self {
+        Self(value.to_string())
     }
 }
 
@@ -77,6 +77,7 @@ pub fn db_uri() -> DbUri {
     dotenvy::dotenv().ok();
     env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set")
+        .as_str()
         .into()
 }
 
@@ -153,6 +154,20 @@ impl Store {
         match store {
             StoreType::Sqlite => {
                 let db_uri = db_uri();
+                let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
+                let mut store = SqliteStore::new(connection_pool);
+                let mut connection = store.connection()?;
+                connection.immediate_transaction(sqlite::run_migrations)?;
+                Ok(Store::from(store))
+            }
+            StoreType::Json => Ok(Store::from(JsonStore::default())),
+        }
+    }
+
+    pub async fn new_inmem(store: StoreType) -> Result<Self, StoreError> {
+        match store {
+            StoreType::Sqlite => {
+                let db_uri = DbUri::from(":memory:");
                 let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
                 let mut store = SqliteStore::new(connection_pool);
                 let mut connection = store.connection()?;
@@ -251,7 +266,7 @@ impl Storage for Store {
         }
     }
 
-    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<Recipe, StoreError> {
         match self {
             Self::Json(store) => store.delete_recipe(recipe).await,
             Self::Sqlite(store) => store.delete_recipe(recipe).await,
@@ -343,5 +358,5 @@ pub trait Storage {
     // Delete
     async fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
-    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<Recipe, StoreError>;
 }

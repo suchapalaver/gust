@@ -9,9 +9,13 @@ readme = "README.md"
 repository = "https://github.com/suchapalaver/gust"
 
 [dependencies]
+async-trait = { workspace = true }
 common = { path = "../common" }
+diesel = { workspace = true }
+futures = { workspace = true }
 persistence = { path = "../persistence" }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 url = { workspace = true }
 
