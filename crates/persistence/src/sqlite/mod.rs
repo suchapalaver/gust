@@ -319,6 +319,7 @@ impl Storage for SqliteStore {
     async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
         let mut store = self.clone();
         let recipe = recipe.clone();
+        let ingredients = self.recipe_ingredients(&recipe).await?;
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -335,6 +336,14 @@ impl Storage for SqliteStore {
                 .execute(connection)?;
                 diesel::delete(schema::recipes::table.filter(schema::recipes::dsl::name.eq(name)))
                     .execute(connection)?;
+                if let Some(ingredients) = ingredients {
+                    for item in ingredients.iter() {
+                        diesel::delete(
+                            schema::items::table.filter(schema::items::dsl::name.eq(item.as_str())),
+                        )
+                        .execute(connection)?;
+                    }
+                }
                 Ok(())
             })
         })
