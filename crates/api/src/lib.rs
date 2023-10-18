@@ -49,8 +49,43 @@ impl Api {
         Ok(Self { store })
     }
 
+    pub async fn dispatch(&self) -> Result<ApiDispatch, ApiError> {
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<ApiSendWithReply>(10);
+
+        let dispatch = ApiDispatch { tx };
+
+        let api = self.clone();
+
+        tokio::task::spawn(async move {
+            let mut api = api;
+
+            loop {
+                tokio::select! {
+                    cmd = rx.recv().fuse() => {
+                        if let Some((command, reply)) = cmd {
+                            let result = api
+                                .execute(command)
+                                .await;
+
+                            reply
+                                .send(result)
+                                .await
+                                .map_err(|e| {
+                                    warn!(?e, "Send reply to API consumer failed");
+                                })
+                                .ok();
+                        }
+                    }
+                    else => break
+                }
+            }
+        });
+
+        Ok(dispatch)
+    }
+
     #[instrument(level = "debug", skip(self), ret(Debug))]
-    pub async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
+    async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
         match command {
             ApiCommand::Add(cmd) => self.add(cmd).await,
             ApiCommand::Delete(cmd) => self.delete(cmd).await,
@@ -159,42 +194,6 @@ impl Api {
     async fn migrate_json_store_to_sqlite(&mut self) -> Result<ApiResponse, ApiError> {
         self.store.migrate_json_store_to_sqlite().await?;
         Ok(ApiResponse::JsonToSqlite)
-    }
-
-    pub async fn dispatch(&self) -> Result<ApiDispatch, ApiError> {
-        let (commit_tx, mut commit_rx) = tokio::sync::mpsc::channel::<ApiSendWithReply>(10);
-
-        let dispatch = ApiDispatch {
-            tx: commit_tx.clone(),
-        };
-
-        let mut api = self.clone();
-
-        tokio::task::spawn(async move {
-            loop {
-                tokio::select! {
-                    cmd = commit_rx.recv().fuse() => {
-                        if let Some((command, reply)) = cmd {
-
-                        let result = api
-                            .execute(command)
-                            .await;
-
-                        reply
-                            .send(result)
-                            .await
-                            .map_err(|e| {
-                                warn!(?e, "Send reply to API consumer failed");
-                            })
-                            .ok();
-                        }
-                    }
-                    else => break
-                }
-            }
-        });
-
-        Ok(dispatch)
     }
 }
 
