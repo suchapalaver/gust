@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
-use crate::{cli, CliError};
-use api::{Api, ApiError};
+use crate::{ cli, CliError };
+use api::{ Api, ApiError };
 use clap::ArgMatches;
 use common::{
-    commands::{Add, ApiCommand, Delete, Read, Update},
-    item::{Name, Section},
-    recipes::{Ingredients, Recipe},
+    commands::{ Add, ApiCommand, Delete, Read, Update },
+    item::{ Name, Section },
+    recipes::{ Ingredients, Recipe },
 };
 use tracing::instrument;
 use url::Url;
@@ -20,9 +20,8 @@ pub async fn run() -> Result<(), CliError> {
             .get_one::<String>("store")
             .expect("'store' has a default setting")
             .parse()
-            .map_err(ApiError::from)?,
-    )
-    .await?;
+            .map_err(ApiError::from)?
+    ).await?;
 
     let api_dispatch = api.dispatch().await?;
 
@@ -44,10 +43,12 @@ pub async fn run() -> Result<(), CliError> {
 }
 
 fn add(matches: &ArgMatches) -> Result<Add, CliError> {
-    if let (Some(recipe), Some(ingredients)) = (
-        matches.get_one::<String>("recipe"),
-        matches.get_one::<String>("ingredients"),
-    ) {
+    if
+        let (Some(recipe), Some(ingredients)) = (
+            matches.get_one::<String>("recipe"),
+            matches.get_one::<String>("ingredients"),
+        )
+    {
         let (recipe, ingredients) = (
             Recipe::from_str(recipe.trim())?,
             Ingredients::from_input_string(ingredients.trim()),
@@ -55,22 +56,22 @@ fn add(matches: &ArgMatches) -> Result<Add, CliError> {
 
         Ok(Add::recipe_from_name_and_ingredients(recipe, ingredients))
     } else if let Some(name) = matches.get_one::<String>("item") {
-        Ok(Add::item_from_name_and_section(
-            Name::from(name.trim()),
-            matches
-                .get_one::<String>("section")
-                .map(|section| Section::from(section.trim())),
-        ))
+        Ok(
+            Add::item_from_name_and_section(
+                Name::from(name.trim()),
+                matches.get_one::<String>("section").map(|section| Section::from(section.trim()))
+            )
+        )
     } else if let Some(item) = matches.get_one::<String>("checklist-item") {
         Ok(Add::checklist_item_from_name(Name::from(item.trim())))
     } else {
         match matches.subcommand() {
-            Some(("checklist", matches)) => Ok(Add::checklist_item_from_name(Name::from(
-                matches
-                    .get_one::<String>("item")
-                    .expect("item required")
-                    .trim(),
-            ))),
+            Some(("checklist", matches)) =>
+                Ok(
+                    Add::checklist_item_from_name(
+                        Name::from(matches.get_one::<String>("item").expect("item required").trim())
+                    )
+                ),
             Some(("list", matches)) => {
                 if let Some(name) = matches.get_one::<String>("recipe") {
                     Ok(Add::list_recipe_from_name(Recipe::from_str(name.trim())?))
@@ -131,15 +132,11 @@ fn read(matches: &ArgMatches) -> Result<Read, CliError> {
 fn update(matches: &ArgMatches) -> Result<Update, CliError> {
     match matches.subcommand() {
         Some(("recipe", matches)) => {
-            let Some(name) = matches.get_one::<String>("recipe") else {
-                todo!()
-            };
+            let Some(name) = matches.get_one::<String>("recipe") else { todo!() };
             Ok(Update::recipe_from_name(Recipe::from_str(name.trim())?))
         }
         Some(("list", matches)) => {
-            let Some(("clear", _)) = matches.subcommand() else {
-                unimplemented!()
-            };
+            let Some(("clear", _)) = matches.subcommand() else { unimplemented!() };
             Ok(Update::RefreshList)
         }
         _ => unimplemented!(),

@@ -1,8 +1,8 @@
-use common::{item::SECTIONS, items::Items, recipes::Recipe};
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
+use common::{ item::SECTIONS, items::Items, recipes::Recipe };
+use diesel::{ ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection };
 
 use crate::{
-    models::{self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection},
+    models::{ self, NewItem, NewItemRecipe, NewItemSection, NewRecipe, NewSection },
     schema,
     store::StoreError,
 };
@@ -15,7 +15,8 @@ pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreEr
     for name in sections {
         let section = NewSection { name };
 
-        diesel::insert_into(sections::table)
+        diesel
+            ::insert_into(sections::table)
             .values(&section)
             .on_conflict_do_nothing()
             .execute(connection)?;
@@ -26,7 +27,7 @@ pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreEr
 
 pub fn migrate_recipes(
     connection: &mut SqliteConnection,
-    recipes: Vec<Recipe>,
+    recipes: Vec<Recipe>
 ) -> Result<(), StoreError> {
     use crate::schema::recipes;
 
@@ -35,7 +36,8 @@ pub fn migrate_recipes(
             name: &recipe.to_string().to_lowercase(),
         };
 
-        diesel::insert_into(recipes::table)
+        diesel
+            ::insert_into(recipes::table)
             .values(&recipe)
             .on_conflict_do_nothing()
             .execute(connection)?;
@@ -55,7 +57,8 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
             name: &item.name.to_string(),
         };
 
-        diesel::insert_into(items_table)
+        diesel
+            ::insert_into(items_table)
             .values(&new_item)
             .on_conflict_do_nothing()
             .execute(connection)?;
@@ -76,7 +79,8 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
                     name: &recipe.to_string(),
                 };
 
-                diesel::insert_into(schema::recipes::table)
+                diesel
+                    ::insert_into(schema::recipes::table)
                     .values(&new_recipe)
                     .on_conflict_do_nothing()
                     .execute(connection)
@@ -92,7 +96,8 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
 
                 let new_item_recipe = NewItemRecipe { item_id, recipe_id };
 
-                diesel::insert_into(schema::items_recipes::table)
+                diesel
+                    ::insert_into(schema::items_recipes::table)
                     .values(&new_item_recipe)
                     .on_conflict_do_nothing()
                     .execute(connection)
@@ -116,7 +121,8 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
                     section_id,
                 };
 
-                diesel::insert_into(schema::items_sections::table)
+                diesel
+                    ::insert_into(schema::items_sections::table)
                     .values(&new_item_section)
                     .on_conflict_do_nothing()
                     .execute(connection)

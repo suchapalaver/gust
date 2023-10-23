@@ -1,5 +1,12 @@
 use crate::schema::{
-    checklist, items, items_recipes, items_sections, list, list_recipes, recipes, sections,
+    checklist,
+    items,
+    items_recipes,
+    items_sections,
+    list,
+    list_recipes,
+    recipes,
+    sections,
 };
 use common::recipes::Recipe;
 use diesel::prelude::*;

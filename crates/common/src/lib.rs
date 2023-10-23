@@ -7,15 +7,13 @@ pub mod list;
 pub mod recipes;
 pub mod telemetry;
 
-use std::{
-    io::{self},
-    path::Path,
-};
+use std::{ io::{ self }, path::Path };
 
 use serde::Deserialize;
 use serde_json::Value;
 use thiserror::Error;
 
+#[rustfmt::skip]
 #[derive(Error, Debug)]
 pub enum ReadError {
     #[error("Invalid JSON: {0}")]
@@ -30,11 +28,9 @@ pub enum ReadError {
 
 #[derive(Error, Debug)]
 pub enum LoadError {
-    #[error("load error: {0}")]
-    FileError(#[from] std::io::Error),
+    #[error("load error: {0}")] FileError(#[from] std::io::Error),
 
-    #[error("'serde-json' error: {0}")]
-    SerdeJsonError(#[from] serde_json::Error),
+    #[error("'serde-json' error: {0}")] SerdeJsonError(#[from] serde_json::Error),
 }
 
 pub trait Load {

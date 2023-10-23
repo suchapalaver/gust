@@ -1,26 +1,22 @@
 use common::{
-    item::{Item, Name, Section},
+    item::{ Item, Name, Section },
     items::Items,
     list::List,
-    recipes::{Ingredients, Recipe},
-    LoadError, ReadError,
+    recipes::{ Ingredients, Recipe },
+    LoadError,
+    ReadError,
 };
-use diesel::{
-    r2d2::{ConnectionManager, Pool},
-    SqliteConnection,
-};
+use diesel::{ r2d2::{ ConnectionManager, Pool }, SqliteConnection };
 use thiserror::Error;
 
-use std::{env, error::Error, ops::Deref, str::FromStr};
+use std::{ env, error::Error, ops::Deref, str::FromStr };
 
 use crate::{
-    json::{
-        migrate::{groceries, migrate_recipes, migrate_sections},
-        JsonStore,
-    },
-    sqlite::{self, SqliteStore},
+    json::{ migrate::{ groceries, migrate_recipes, migrate_sections }, JsonStore },
+    sqlite::{ self, SqliteStore },
 };
 
+#[rustfmt::skip]
 #[derive(Error, Debug)]
 pub enum StoreError {
     #[error("SQLite database connection error: {0}")]
@@ -75,10 +71,7 @@ impl Deref for DbUri {
 
 pub fn db_uri() -> DbUri {
     dotenvy::dotenv().ok();
-    env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set")
-        .as_str()
-        .into()
+    env::var("DATABASE_URL").expect("DATABASE_URL must be set").as_str().into()
 }
 
 pub type ConnectionPool = Pool<ConnectionManager<SqliteConnection>>;
@@ -103,11 +96,7 @@ impl Connection for DatabaseConnector {
     async fn try_connect(&self) -> Result<ConnectionPool, StoreError> {
         use diesel::Connection;
         SqliteConnection::establish(&self.db_uri)?;
-        Ok(
-            Pool::builder().build(ConnectionManager::<SqliteConnection>::new(
-                self.db_uri.deref(),
-            ))?,
-        )
+        Ok(Pool::builder().build(ConnectionManager::<SqliteConnection>::new(self.db_uri.deref()))?)
     }
 }
 
@@ -124,9 +113,12 @@ impl FromStr for StoreType {
         match s {
             "json" => Ok(Self::Json),
             "sqlite" => Ok(Self::Sqlite),
-            _ => Err(StoreError::ParseStoreType(
-                "Store types are currently limited to 'sqlite' and 'json'.".to_string(),
-            )),
+            _ =>
+                Err(
+                    StoreError::ParseStoreType(
+                        "Store types are currently limited to 'sqlite' and 'json'.".to_string()
+                    )
+                ),
         }
     }
 }
@@ -196,8 +188,7 @@ impl Store {
                         groceries(connection, grocery_items)?;
                         Ok(())
                     })
-                })
-                .await?
+                }).await?
             }
             Self::Sqlite(store) => {
                 let mut connection = store.connection()?;
@@ -244,7 +235,7 @@ impl Storage for Store {
     async fn add_recipe(
         &mut self,
         recipe: &Recipe,
-        ingredients: &Ingredients,
+        ingredients: &Ingredients
     ) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => store.add_recipe(recipe, ingredients).await,
@@ -303,7 +294,7 @@ impl Storage for Store {
 
     async fn recipe_ingredients(
         &mut self,
-        recipe: &Recipe,
+        recipe: &Recipe
     ) -> Result<Option<Ingredients>, StoreError> {
         match self {
             Self::Json(store) => store.recipe_ingredients(recipe).await,
@@ -333,7 +324,7 @@ pub trait Storage {
     async fn add_recipe(
         &mut self,
         recipe: &Recipe,
-        ingredients: &Ingredients,
+        ingredients: &Ingredients
     ) -> Result<(), StoreError>;
 
     // Read
@@ -347,7 +338,7 @@ pub trait Storage {
 
     async fn recipe_ingredients(
         &mut self,
-        recipe: &Recipe,
+        recipe: &Recipe
     ) -> Result<Option<Ingredients>, StoreError>;
 
     async fn sections(&mut self) -> Result<Vec<Section>, StoreError>;

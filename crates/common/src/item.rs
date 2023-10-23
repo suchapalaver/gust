@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use std::fmt;
 
 use crate::recipes::Recipe;
@@ -34,7 +34,9 @@ impl Item {
     }
 
     pub(crate) fn matches(&self, s: impl Into<String>) -> bool {
-        s.into().split(' ').all(|word| !self.name.0.contains(word))
+        s.into()
+            .split(' ')
+            .all(|word| !self.name.0.contains(word))
     }
 }
 

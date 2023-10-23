@@ -1,15 +1,18 @@
-use scraper::{Html, Selector};
+use scraper::{ Html, Selector };
 use thiserror::Error;
 use url::Url;
 
-use crate::recipes::{Ingredients, Recipe};
+use crate::recipes::{ Ingredients, Recipe };
 
+#[rustfmt::skip]
 #[derive(Error, Debug)]
 pub enum FetchError {
     #[error("CSS selector failed to select anything")]
     CSS,
+
     #[error("reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
+    
     #[error("Selector Error: {0}")]
     SelectorError(String),
 }
@@ -29,9 +32,10 @@ impl From<Url> for Fetcher {
     fn from(url: Url) -> Self {
         match url.host_str() {
             Some("www.bbc.co.uk") => Self::new(Site::BBC, url),
-            _ => unimplemented!(
-                "'gust' currently only supports requests for recipes from the BBC Food website."
-            ),
+            _ =>
+                unimplemented!(
+                    "'gust' currently only supports requests for recipes from the BBC Food website."
+                ),
         }
     }
 }
@@ -45,7 +49,8 @@ impl Fetcher {
         let document = self.fetch_html().await?;
         Ok((
             self.fetch_recipe_name(&document)?.trim().into(),
-            self.fetch_recipe_ingredients(&document)?
+            self
+                .fetch_recipe_ingredients(&document)?
                 .into_iter()
                 .map(|i| i.trim().into())
                 .collect(),
@@ -60,24 +65,26 @@ impl Fetcher {
 
     fn fetch_recipe_name(&self, document: &Html) -> Result<String, FetchError> {
         let recipe_name_selector = match self.site {
-            Site::BBC => Selector::parse(".gel-trafalgar")
-                .map_err(|e| FetchError::SelectorError(e.to_string()))?,
+            Site::BBC =>
+                Selector::parse(".gel-trafalgar").map_err(|e|
+                    FetchError::SelectorError(e.to_string())
+                )?,
             Site::NYT => unimplemented!(),
         };
 
         match document.select(&recipe_name_selector).next() {
-            Some(recipe_name_element) => Ok(recipe_name_element
-                .text()
-                .collect::<String>()
-                .to_lowercase()),
+            Some(recipe_name_element) =>
+                Ok(recipe_name_element.text().collect::<String>().to_lowercase()),
             None => Err(FetchError::CSS),
         }
     }
 
     fn fetch_recipe_ingredients(&self, document: &Html) -> Result<Vec<String>, FetchError> {
         let ingredients_selector = match self.site {
-            Site::BBC => Selector::parse(".recipe-ingredients__list")
-                .map_err(|e| FetchError::SelectorError(e.to_string()))?,
+            Site::BBC =>
+                Selector::parse(".recipe-ingredients__list").map_err(|e|
+                    FetchError::SelectorError(e.to_string())
+                )?,
             Site::NYT => unimplemented!(),
         };
 
@@ -85,7 +92,7 @@ impl Fetcher {
             let mut ingredients = Vec::new();
             // Iterate through child elements to extract individual ingredients
             for ingredient_element in ingredients_container.select(
-                &Selector::parse("li").map_err(|e| FetchError::SelectorError(e.to_string()))?,
+                &Selector::parse("li").map_err(|e| FetchError::SelectorError(e.to_string()))?
             ) {
                 ingredients.push(ingredient_element.text().collect::<String>().to_lowercase());
             }

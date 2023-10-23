@@ -1,8 +1,8 @@
-use std::{fmt, ops::Deref, str::FromStr};
+use std::{ fmt, ops::Deref, str::FromStr };
 
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 
-use crate::{item::Name, ReadError};
+use crate::{ item::Name, ReadError };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
 pub struct Recipe(String);

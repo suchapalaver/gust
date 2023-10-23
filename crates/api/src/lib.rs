@@ -1,21 +1,22 @@
-use std::fmt::{self, Display};
+use std::fmt::{ self, Display };
 
 use common::{
-    commands::{Add, ApiCommand, Delete, Read, Update},
-    fetcher::{FetchError, Fetcher},
-    item::{Item, Name, Section},
+    commands::{ Add, ApiCommand, Delete, Read, Update },
+    fetcher::{ FetchError, Fetcher },
+    item::{ Item, Name, Section },
     items::Items,
     list::List,
-    recipes::{Ingredients, Recipe},
+    recipes::{ Ingredients, Recipe },
 };
 use futures::FutureExt;
-use persistence::store::{Storage, Store, StoreError, StoreType};
+use persistence::store::{ Storage, Store, StoreError, StoreType };
 
 use thiserror::Error;
 use tokio::sync::mpsc::error::SendError;
-use tracing::{error, info, instrument, trace, warn};
+use tracing::{ error, info, instrument, trace, warn };
 use url::Url;
 
+#[rustfmt::skip]
 #[derive(Error, Debug)]
 pub enum ApiError {
     #[error("API shut down before reply")]
@@ -114,10 +115,7 @@ impl Api {
                 self.store.add_list_recipe(&name).await?;
                 Ok(ApiResponse::AddedListRecipe(name))
             }
-            Add::Recipe {
-                recipe,
-                ingredients,
-            } => {
+            Add::Recipe { recipe, ingredients } => {
                 self.store.add_recipe(&recipe, &ingredients).await?;
                 Ok(ApiResponse::AddedRecipe(recipe))
             }
@@ -140,13 +138,13 @@ impl Api {
                 Ok(ApiResponse::List(list))
             }
             Read::ListRecipes => todo!(),
-            Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe).await {
-                Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
-                Ok(None) => Ok(ApiResponse::NothingReturned(ApiCommand::Read(
-                    Read::Recipe(recipe),
-                ))),
-                Err(e) => Err(e.into()),
-            },
+            Read::Recipe(recipe) =>
+                match self.store.recipe_ingredients(&recipe).await {
+                    Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
+                    Ok(None) =>
+                        Ok(ApiResponse::NothingReturned(ApiCommand::Read(Read::Recipe(recipe)))),
+                    Err(e) => Err(e.into()),
+                }
             Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes().await?)),
             Read::Sections => {
                 let results = self.store.sections().await?;
@@ -197,10 +195,7 @@ impl Api {
     }
 }
 
-type ApiSendWithReply = (
-    ApiCommand,
-    tokio::sync::mpsc::Sender<Result<ApiResponse, ApiError>>,
-);
+type ApiSendWithReply = (ApiCommand, tokio::sync::mpsc::Sender<Result<ApiResponse, ApiError>>);
 
 #[derive(Debug, Clone)]
 /// A clonable API handle
@@ -325,8 +320,14 @@ mod tests {
         let api_dispatch = api.dispatch().await.unwrap();
 
         let response = api_dispatch
-            .dispatch(ApiCommand::Add(Add::Recipe { recipe: Recipe::new("fluffy american pancakes").unwrap(), ingredients: Ingredients::from_input_string("135g/4¾oz plain flour, 1 tsp baking powder, ½ tsp salt, 2 tbsp caster sugar, 130ml/4½fl oz milk, 1 large egg, lightly beaten, 2 tbsp melted butter (allowed to cool slightly), plus extra for cooking") }))
-            .await
+            .dispatch(
+                ApiCommand::Add(Add::Recipe {
+                    recipe: Recipe::new("fluffy american pancakes").unwrap(),
+                    ingredients: Ingredients::from_input_string(
+                        "135g/4¾oz plain flour, 1 tsp baking powder, ½ tsp salt, 2 tbsp caster sugar, 130ml/4½fl oz milk, 1 large egg, lightly beaten, 2 tbsp melted butter (allowed to cool slightly), plus extra for cooking"
+                    ),
+                })
+            ).await
             .unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @r###"
@@ -334,18 +335,14 @@ mod tests {
         recipe added: fluffy american pancakes
         "###);
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::Recipes))
-            .await
-            .unwrap();
+        let response = api_dispatch.dispatch(ApiCommand::Read(Read::Recipes)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @"fluffy american pancakes");
 
         let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::Recipe(
-                Recipe::new("fluffy american pancakes").unwrap(),
-            )))
-            .await
+            .dispatch(
+                ApiCommand::Read(Read::Recipe(Recipe::new("fluffy american pancakes").unwrap()))
+            ).await
             .unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @r###"
@@ -361,10 +358,7 @@ mod tests {
         plus extra for cooking
         "###);
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::All))
-            .await
-            .unwrap();
+        let response = api_dispatch.dispatch(ApiCommand::Read(Read::All)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @r###"
         135g/4¾oz plain flour
@@ -379,10 +373,9 @@ mod tests {
         "###);
 
         let response = api_dispatch
-            .dispatch(ApiCommand::Delete(Delete::Recipe(
-                Recipe::new("fluffy american pancakes").unwrap(),
-            )))
-            .await
+            .dispatch(
+                ApiCommand::Delete(Delete::Recipe(Recipe::new("fluffy american pancakes").unwrap()))
+            ).await
             .unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @r###"
@@ -390,17 +383,11 @@ mod tests {
         fluffy american pancakes
         "###);
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::Recipes))
-            .await
-            .unwrap();
+        let response = api_dispatch.dispatch(ApiCommand::Read(Read::Recipes)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @"");
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::All))
-            .await
-            .unwrap();
+        let response = api_dispatch.dispatch(ApiCommand::Read(Read::All)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @"");
     }

@@ -1,21 +1,17 @@
 pub mod migrate;
 
-use std::{
-    collections::HashSet,
-    fs::{self},
-    path::{Path, PathBuf},
-};
+use std::{ collections::HashSet, fs::{ self }, path::{ Path, PathBuf } };
 
 use common::{
     input::item_matches,
-    item::{Item, Section},
+    item::{ Item, Section },
     items::Items,
     list::List,
-    recipes::{Ingredients, Recipe},
+    recipes::{ Ingredients, Recipe },
     Load,
 };
 
-use crate::store::{Storage, StoreError};
+use crate::store::{ Storage, StoreError };
 
 pub const ITEMS_JSON_PATH: &str = "groceries.json";
 
@@ -103,7 +99,7 @@ impl Storage for JsonStore {
     async fn add_recipe(
         &mut self,
         _recipe: &Recipe,
-        _ingredients: &common::recipes::Ingredients,
+        _ingredients: &common::recipes::Ingredients
     ) -> Result<(), StoreError> {
         todo!()
     }
@@ -114,7 +110,7 @@ impl Storage for JsonStore {
 
     async fn delete_checklist_item(
         &mut self,
-        _item: &common::item::Name,
+        _item: &common::item::Name
     ) -> Result<(), StoreError> {
         todo!()
     }
@@ -138,15 +134,17 @@ impl Storage for JsonStore {
 
     async fn recipe_ingredients(
         &mut self,
-        recipe: &Recipe,
+        recipe: &Recipe
     ) -> Result<Option<Ingredients>, StoreError> {
-        Ok(Some(
-            self.items()
-                .await?
-                .recipe_ingredients(&recipe.to_string())?
-                .map(|item| item.name.clone())
-                .collect(),
-        ))
+        Ok(
+            Some(
+                self
+                    .items().await?
+                    .recipe_ingredients(&recipe.to_string())?
+                    .map(|item| item.name.clone())
+                    .collect()
+            )
+        )
     }
 
     async fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
@@ -190,7 +188,7 @@ pub mod test {
     use super::*;
 
     use assert_fs::prelude::*;
-    use common::item::{Name, Section};
+    use common::item::{ Name, Section };
 
     fn test_json_file() -> Result<assert_fs::NamedTempFile, Box<dyn std::error::Error>> {
         let file = assert_fs::NamedTempFile::new("test1.json")?;
@@ -320,7 +318,7 @@ pub mod test {
                   "oatmeal chocolate chip cookies",
                   "fried eggs for breakfast"
               ]
-          }"#,
+          }"#
         )?;
         Ok(file)
     }
@@ -751,7 +749,8 @@ pub mod test {
         };
         let recipe = "cumquat chutney";
 
-        let ingredients = "kumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
+        let ingredients =
+            "kumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
 
         items.add_item(item);
         items.add_recipe(recipe, ingredients)?;
@@ -1114,8 +1113,10 @@ pub mod test {
         Ok(())
     }
 
-    fn create_test_checklist_json_file(
-    ) -> Result<assert_fs::NamedTempFile, Box<dyn std::error::Error>> {
+    fn create_test_checklist_json_file() -> Result<
+        assert_fs::NamedTempFile,
+        Box<dyn std::error::Error>
+    > {
         let file = assert_fs::NamedTempFile::new("test3.json")?;
         file.write_str(
             r#"

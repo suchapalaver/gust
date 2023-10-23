@@ -12,13 +12,14 @@ making putting together shopping lists super quick.
 
 The main prerequisite to get started using this application is [Docker](https://docs.docker.com/).
 Docker allows you to [build](./docs/docker.md#build) an image of an application and [run](./docs/docker.md#run) application
-[containers](https://en.wikipedia.org/wiki/Containerization_(computing)), allowing you to use an application such as `gust` without
+[containers](<https://en.wikipedia.org/wiki/Containerization_(computing)>), allowing you to use an application such as `gust` without
 needing to install the Rust programming language, database software, or
 other dependencies on your computer.
 
-All you need is to [install Docker](https://docs.docker.com/install/). 
+All you need is to [install Docker](https://docs.docker.com/install/).
 
 ---
+
 ## docs
 
 ### overview
@@ -42,6 +43,7 @@ All you need is to [install Docker](https://docs.docker.com/install/).
 - [migrating from JSON to SQLite](./docker.md#migrate-a-json-gust-store-to-sqlite)
 
 ---
+
 ## getting started
 
 ### build the docker image
@@ -59,7 +61,7 @@ docker run --rm gust
 or:
 
 ```bash
-cargo run -- -h    
+cargo run -- -h
 ```
 
 ### fetch a recipe and save it to the database

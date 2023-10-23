@@ -2,12 +2,13 @@ use std::str::FromStr;
 
 use crate::{
     input::user_wants_to_add_item_to_list,
-    item::{Item, Name, SECTIONS},
+    item::{ Item, Name, SECTIONS },
     items::Items,
     recipes::Recipe,
-    Load, ReadError,
+    Load,
+    ReadError,
 };
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct List {
@@ -81,8 +82,7 @@ impl List {
                         .cloned()
                         .collect();
 
-                    let b: Vec<Item> = groceries
-                        .collection
+                    let b: Vec<Item> = groceries.collection
                         .iter()
                         .filter(|item| {
                             if let Some(item_sec) = &item.section {
@@ -119,8 +119,12 @@ impl List {
                                     self.add_item(item.clone());
                                 }
                             }
-                            Some(false) => continue,
-                            None => break,
+                            Some(false) => {
+                                continue;
+                            }
+                            None => {
+                                break;
+                            }
                         }
                     }
                 }
@@ -134,11 +138,11 @@ impl List {
     }
 
     pub fn delete_groceries_item(&mut self, name: &str) -> Result<(), ReadError> {
-        if let Ok(i) = self
-            .items
-            .iter()
-            .position(|x| x.name == Name::from(name))
-            .ok_or(ReadError::ItemNotFound)
+        if
+            let Ok(i) = self.items
+                .iter()
+                .position(|x| x.name == Name::from(name))
+                .ok_or(ReadError::ItemNotFound)
         {
             self.items.remove(i);
         }
@@ -150,11 +154,11 @@ impl List {
     }
 
     pub fn delete_checklist_item(&mut self, name: &str) -> Result<(), ReadError> {
-        if let Ok(i) = self
-            .checklist
-            .iter()
-            .position(|x| x.name == Name::from(name))
-            .ok_or(ReadError::ItemNotFound)
+        if
+            let Ok(i) = self.checklist
+                .iter()
+                .position(|x| x.name == Name::from(name))
+                .ok_or(ReadError::ItemNotFound)
         {
             self.checklist.remove(i);
         }
@@ -167,11 +171,11 @@ impl List {
 
     pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
         let recipe = Recipe::from_str(name)?;
-        if let Ok(index) = self
-            .recipes
-            .iter()
-            .position(|x| x == &recipe)
-            .ok_or(ReadError::ItemNotFound)
+        if
+            let Ok(index) = self.recipes
+                .iter()
+                .position(|x| x == &recipe)
+                .ok_or(ReadError::ItemNotFound)
         {
             self.recipes.remove(index);
         }

@@ -1,9 +1,6 @@
 use url::Url;
 
-use crate::{
-    item::{Name, Section},
-    recipes::{Ingredients, Recipe},
-};
+use crate::{ item::{ Name, Section }, recipes::{ Ingredients, Recipe } };
 
 #[derive(Debug)]
 pub enum ApiCommand {

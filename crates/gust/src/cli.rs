@@ -1,8 +1,9 @@
 use api::ApiError;
-use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
+use clap::{ builder::NonEmptyStringValueParser, Arg, Command, ValueHint };
 use common::ReadError;
 use thiserror::Error;
 
+#[rustfmt::skip]
 #[derive(Error, Debug)]
 pub enum CliError {
     #[error("API error: {0}")]
@@ -76,26 +77,20 @@ fn url() -> Arg {
         .value_hint(ValueHint::Url)
         .value_parser(NonEmptyStringValueParser::new())
         .help(
-            "URL for recipe, e.g. 'https://www.bbc.co.uk/food/recipes/scrambledeggandtoast_75736'",
+            "URL for recipe, e.g. 'https://www.bbc.co.uk/food/recipes/scrambledeggandtoast_75736'"
         )
 }
 
 fn clear_checklist() -> Command {
-    Command::new("clear")
-        .subcommand_required(false)
-        .about("delete everything from checklist")
+    Command::new("clear").subcommand_required(false).about("delete everything from checklist")
 }
 
 fn refresh_list() -> Command {
-    Command::new("clear")
-        .subcommand_required(false)
-        .about("refresh list")
+    Command::new("clear").subcommand_required(false).about("refresh list")
 }
 
 fn read_all_items() -> Command {
-    Command::new("all")
-        .subcommand_required(false)
-        .about("read all items from library")
+    Command::new("all").subcommand_required(false).about("read all items from library")
 }
 
 fn sections() -> Command {
@@ -103,9 +98,7 @@ fn sections() -> Command {
 }
 
 fn checklist() -> Command {
-    Command::new("checklist")
-        .about("work with the checklist")
-        .arg(item())
+    Command::new("checklist").about("work with the checklist").arg(item())
 }
 
 fn read_list() -> Command {
@@ -132,22 +125,14 @@ fn delete() -> Command {
     Command::new("delete")
         .subcommand_required(false)
         .about("delete stuff")
-        .subcommand(
-            checklist()
-                .subcommand(clear_checklist())
-                .arg(recipe())
-                .arg(checklist_item()),
-        )
+        .subcommand(checklist().subcommand(clear_checklist()).arg(recipe()).arg(checklist_item()))
         .arg(recipe())
         .arg(item())
         .subcommand(list().arg(recipe()).arg(item()))
 }
 
 fn fetch() -> Command {
-    Command::new("fetch")
-        .subcommand_required(false)
-        .about("fetch recipes from a URL")
-        .arg(url())
+    Command::new("fetch").subcommand_required(false).about("fetch recipes from a URL").arg(url())
 }
 
 fn read() -> Command {
@@ -159,11 +144,7 @@ fn read() -> Command {
         .subcommand(read_list())
         .subcommand(checklist())
         .subcommand(read_all_items())
-        .subcommand(
-            Command::new("recipes")
-                .subcommand_required(false)
-                .about("read all recipes"),
-        )
+        .subcommand(Command::new("recipes").subcommand_required(false).about("read all recipes"))
         .subcommand(sections())
 }
 
@@ -181,13 +162,13 @@ fn update() -> Command {
                 .subcommand(
                     Command::new("delete-ingredient")
                         .about("delete an ingredient from a recipe")
-                        .arg(ingredient()),
+                        .arg(ingredient())
                 )
                 .subcommand(
                     Command::new("edit-ingredient")
                         .about("edits an ingredient in a recipe")
-                        .arg(ingredient()),
-                ),
+                        .arg(ingredient())
+                )
         )
         .subcommand(list().subcommand(refresh_list()))
 }
@@ -215,6 +196,6 @@ pub fn cli() -> Command {
                 .num_args(1)
                 .value_parser(["json", "sqlite"])
                 .default_value("sqlite")
-                .help("which database to use"),
+                .help("which database to use")
         )
 }
