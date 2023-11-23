@@ -19,7 +19,7 @@ use crate::{
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
-pub fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<(), StoreError> {
+fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<(), StoreError> {
     // This will run the necessary migrations.
     //
     // See the documentation for `MigrationHarness` for
@@ -37,6 +37,11 @@ pub struct SqliteStore {
 impl SqliteStore {
     pub fn new(pool: ConnectionPool) -> Self {
         Self { pool }
+    }
+
+    pub(crate) fn run_migrations(&mut self) -> Result<(), StoreError> {
+        let mut connection = self.connection()?;
+        connection.immediate_transaction(run_migrations)
     }
 
     pub(crate) fn connection(

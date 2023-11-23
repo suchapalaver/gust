@@ -18,7 +18,7 @@ use crate::{
         migrate::{groceries, migrate_recipes, migrate_sections},
         JsonStore,
     },
-    sqlite::{self, SqliteStore},
+    sqlite::SqliteStore,
 };
 
 #[derive(Error, Debug)]
@@ -156,8 +156,7 @@ impl Store {
                 let db_uri = db_uri();
                 let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
                 let mut store = SqliteStore::new(connection_pool);
-                let mut connection = store.connection()?;
-                connection.immediate_transaction(sqlite::run_migrations)?;
+                store.run_migrations()?;
                 Ok(Store::from(store))
             }
             StoreType::Json => Ok(Store::from(JsonStore::default())),
@@ -170,8 +169,7 @@ impl Store {
                 let db_uri = DbUri::from(":memory:");
                 let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
                 let mut store = SqliteStore::new(connection_pool);
-                let mut connection = store.connection()?;
-                connection.immediate_transaction(sqlite::run_migrations)?;
+                store.run_migrations()?;
                 Ok(Store::from(store))
             }
             StoreType::Json => Ok(Store::from(JsonStore::default())),
