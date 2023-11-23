@@ -1,20 +1,18 @@
 use std::fmt::{self, Display};
 
 use common::{
-    commands::{Add, ApiCommand, Delete, Read, Update},
-    fetcher::{FetchError, Fetcher},
+    commands::ApiCommand,
     item::{Item, Name, Section},
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
 };
-use futures::FutureExt;
-use persistence::store::{Storage, Store, StoreError, StoreType};
+use persistence::store::{Store, StoreDispatch, StoreError, StoreResponse, StoreType};
 
+use futures::FutureExt;
 use thiserror::Error;
-use tokio::sync::mpsc::error::SendError;
+use tokio::sync::{mpsc::error::SendError, oneshot};
 use tracing::{error, info, instrument, trace, warn};
-use url::Url;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -24,8 +22,8 @@ pub enum ApiError {
     #[error("API shut down before send: {0}")]
     ApiShutdownTx(#[from] SendError<ApiSendWithReply>),
 
-    #[error("fetch error: {0}")]
-    FetchError(#[from] FetchError),
+    #[error("{0}")]
+    RecvError(#[from] oneshot::error::RecvError),
 
     #[error("store error: {0}")]
     StoreError(#[from] StoreError),
@@ -33,28 +31,17 @@ pub enum ApiError {
 
 #[derive(Clone)]
 pub struct Api {
-    store: Store,
-}
-
-impl From<Store> for Api {
-    fn from(store: Store) -> Self {
-        Self { store }
-    }
+    store: StoreDispatch,
 }
 
 impl Api {
-    pub async fn new(store: StoreType) -> Result<Self, ApiError> {
+    pub async fn init(store: StoreType) -> Result<ApiDispatch, ApiError> {
         info!("Initializing API with store type: {:?}", store);
-        let store = Store::new(store).await?;
-        Ok(Self { store })
-    }
+        let store = Store::init(store).await?;
+        let api = Api { store };
 
-    pub async fn dispatch(&self) -> Result<ApiDispatch, ApiError> {
         let (tx, mut rx) = tokio::sync::mpsc::channel::<ApiSendWithReply>(10);
-
         let dispatch = ApiDispatch { tx };
-
-        let api = self.clone();
 
         tokio::task::spawn(async move {
             let mut api = api;
@@ -86,114 +73,10 @@ impl Api {
 
     #[instrument(level = "debug", skip(self), ret(Debug))]
     async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
-        match command {
-            ApiCommand::Add(cmd) => self.add(cmd).await,
-            ApiCommand::Delete(cmd) => self.delete(cmd).await,
-            ApiCommand::FetchRecipe(url) => self.fetch_recipe(url).await,
-            ApiCommand::MigrateJsonDbToSqlite => self.migrate_json_store_to_sqlite().await,
-            ApiCommand::Read(cmd) => self.read(cmd).await,
-            ApiCommand::Update(cmd) => self.update(cmd).await,
-        }
-    }
-
-    async fn add(&mut self, cmd: Add) -> Result<ApiResponse, ApiError> {
-        match cmd {
-            Add::ChecklistItem(name) => {
-                self.store.add_checklist_item(&name).await?;
-                Ok(ApiResponse::AddedItem(name))
-            }
-            Add::Item { name, .. } => {
-                self.store.add_item(&name).await?;
-                Ok(ApiResponse::AddedItem(name))
-            }
-            Add::ListItem(name) => {
-                self.store.add_list_item(&name).await?;
-                Ok(ApiResponse::AddedListItem(name))
-            }
-            Add::ListRecipe(name) => {
-                self.store.add_list_recipe(&name).await?;
-                Ok(ApiResponse::AddedListRecipe(name))
-            }
-            Add::Recipe {
-                recipe,
-                ingredients,
-            } => {
-                self.store.add_recipe(&recipe, &ingredients).await?;
-                Ok(ApiResponse::AddedRecipe(recipe))
-            }
-        }
-    }
-
-    async fn read(&mut self, cmd: Read) -> Result<ApiResponse, ApiError> {
-        match cmd {
-            Read::All => {
-                let results = self.store.items().await?;
-                Ok(ApiResponse::Items(results))
-            }
-            Read::Checklist => {
-                let items = self.store.checklist().await?;
-                Ok(ApiResponse::Checklist(items))
-            }
-            Read::Item(_name) => todo!(),
-            Read::List => {
-                let list = self.store.list().await?;
-                Ok(ApiResponse::List(list))
-            }
-            Read::ListRecipes => todo!(),
-            Read::Recipe(recipe) => match self.store.recipe_ingredients(&recipe).await {
-                Ok(Some(ingredients)) => Ok(ApiResponse::RecipeIngredients(ingredients)),
-                Ok(None) => Ok(ApiResponse::NothingReturned(ApiCommand::Read(
-                    Read::Recipe(recipe),
-                ))),
-                Err(e) => Err(e.into()),
-            },
-            Read::Recipes => Ok(ApiResponse::Recipes(self.store.recipes().await?)),
-            Read::Sections => {
-                let results = self.store.sections().await?;
-                Ok(ApiResponse::Sections(results))
-            }
-        }
-    }
-
-    async fn update(&mut self, cmd: Update) -> Result<ApiResponse, ApiError> {
-        match cmd {
-            Update::Item(_name) => todo!(),
-            Update::RefreshList => {
-                self.store.refresh_list().await?;
-                Ok(ApiResponse::RefreshList)
-            }
-            Update::Recipe(_name) => todo!(),
-        }
-    }
-
-    async fn delete(&mut self, cmd: Delete) -> Result<ApiResponse, ApiError> {
-        match cmd {
-            Delete::ChecklistItem(name) => {
-                self.store.delete_checklist_item(&name).await?;
-                Ok(ApiResponse::DeletedChecklistItem(name))
-            }
-            Delete::ClearChecklist => todo!(),
-            Delete::ClearList => todo!(),
-            Delete::Item(_name) => todo!(),
-            Delete::ListItem(_name) => todo!(),
-            Delete::Recipe(recipe) => {
-                let recipe = self.store.delete_recipe(&recipe).await?;
-                Ok(ApiResponse::DeletedRecipe(recipe))
-            }
-        }
-    }
-
-    async fn fetch_recipe(&mut self, url: Url) -> Result<ApiResponse, ApiError> {
-        let fetcher = Fetcher::from(url);
-        let (recipe, ingredients) = fetcher.fetch_recipe().await?;
-
-        self.store.add_recipe(&recipe, &ingredients).await?;
-        Ok(ApiResponse::FetchedRecipe((recipe, ingredients)))
-    }
-
-    async fn migrate_json_store_to_sqlite(&mut self) -> Result<ApiResponse, ApiError> {
-        self.store.migrate_json_store_to_sqlite().await?;
-        Ok(ApiResponse::JsonToSqlite)
+        let (tx, rx) = oneshot::channel();
+        self.store.send((command, tx)).await?;
+        let res = rx.await??;
+        Ok(res.into())
     }
 }
 
@@ -217,7 +100,6 @@ impl ApiDispatch {
         self.tx.clone().send((command, reply_tx)).await?;
 
         let reply = reply_rx.recv().await;
-
         if let Some(Err(ref error)) = reply {
             error!(?error, "API dispatch");
         }
@@ -315,16 +197,40 @@ impl Display for ApiResponse {
     }
 }
 
+impl From<StoreResponse> for ApiResponse {
+    fn from(res: StoreResponse) -> Self {
+        match res {
+            StoreResponse::AddedItem(item) => Self::AddedItem(item),
+            StoreResponse::AddedListItem(item) => Self::AddedListItem(item),
+            StoreResponse::AddedListRecipe(item) => Self::AddedListRecipe(item),
+            StoreResponse::AddedRecipe(item) => Self::AddedRecipe(item),
+            StoreResponse::Checklist(item) => Self::Checklist(item),
+            StoreResponse::DeletedRecipe(item) => Self::DeletedRecipe(item),
+            StoreResponse::DeletedChecklistItem(item) => Self::DeletedChecklistItem(item),
+            StoreResponse::FetchedRecipe(item) => Self::FetchedRecipe(item),
+            StoreResponse::Items(item) => Self::Items(item),
+            StoreResponse::JsonToSqlite => Self::JsonToSqlite,
+            StoreResponse::List(item) => Self::List(item),
+            StoreResponse::NothingReturned(item) => Self::NothingReturned(item),
+            StoreResponse::Recipes(item) => Self::Recipes(item),
+            StoreResponse::RecipeIngredients(item) => Self::RecipeIngredients(item),
+            StoreResponse::RefreshList => Self::RefreshList,
+            StoreResponse::Sections(item) => Self::Sections(item),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use common::commands::{Add, Delete, Read};
+
     use super::*;
 
     #[tokio::test]
     async fn serve_api() {
-        let api = Api::from(Store::new_inmem(StoreType::Sqlite).await.unwrap());
-        let api_dispatch = api.dispatch().await.unwrap();
+        let api = Api::init(StoreType::SqliteInmem).await.unwrap();
 
-        let response = api_dispatch
+        let response = api
             .dispatch(ApiCommand::Add(Add::Recipe { recipe: Recipe::new("fluffy american pancakes").unwrap(), ingredients: Ingredients::from_input_string("135g/4¾oz plain flour, 1 tsp baking powder, ½ tsp salt, 2 tbsp caster sugar, 130ml/4½fl oz milk, 1 large egg, lightly beaten, 2 tbsp melted butter (allowed to cool slightly), plus extra for cooking") }))
             .await
             .unwrap();
@@ -334,14 +240,11 @@ mod tests {
         recipe added: fluffy american pancakes
         "###);
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::Recipes))
-            .await
-            .unwrap();
+        let response = api.dispatch(ApiCommand::Read(Read::Recipes)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @"fluffy american pancakes");
 
-        let response = api_dispatch
+        let response = api
             .dispatch(ApiCommand::Read(Read::Recipe(
                 Recipe::new("fluffy american pancakes").unwrap(),
             )))
@@ -361,10 +264,7 @@ mod tests {
         plus extra for cooking
         "###);
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::All))
-            .await
-            .unwrap();
+        let response = api.dispatch(ApiCommand::Read(Read::All)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @r###"
         135g/4¾oz plain flour
@@ -378,7 +278,7 @@ mod tests {
         plus extra for cooking
         "###);
 
-        let response = api_dispatch
+        let response = api
             .dispatch(ApiCommand::Delete(Delete::Recipe(
                 Recipe::new("fluffy american pancakes").unwrap(),
             )))
@@ -390,17 +290,11 @@ mod tests {
         fluffy american pancakes
         "###);
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::Recipes))
-            .await
-            .unwrap();
+        let response = api.dispatch(ApiCommand::Read(Read::Recipes)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @"");
 
-        let response = api_dispatch
-            .dispatch(ApiCommand::Read(Read::All))
-            .await
-            .unwrap();
+        let response = api.dispatch(ApiCommand::Read(Read::All)).await.unwrap();
 
         insta::assert_display_snapshot!(response.to_string().trim(), @"");
     }
