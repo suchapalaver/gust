@@ -5,20 +5,16 @@ use common::{
     recipes::{Ingredients, Recipe},
     LoadError, ReadError,
 };
-use diesel::{
-    r2d2::{ConnectionManager, Pool},
-    SqliteConnection,
-};
 use thiserror::Error;
 
-use std::{env, error::Error, ops::Deref, str::FromStr};
+use std::{error::Error, str::FromStr};
 
 use crate::{
     json::{
         migrate::{groceries, migrate_recipes, migrate_sections},
         JsonStore,
     },
-    sqlite::SqliteStore,
+    sqlite::{DbUri, SqliteStore},
 };
 
 #[derive(Error, Debug)]
@@ -55,60 +51,6 @@ pub enum StoreError {
 
     #[error("ingredients not found for: {0}")]
     RecipeIngredients(String),
-}
-
-pub struct DbUri(String);
-
-impl From<&str> for DbUri {
-    fn from(value: &str) -> Self {
-        Self(value.to_string())
-    }
-}
-
-impl Deref for DbUri {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-pub fn db_uri() -> DbUri {
-    dotenvy::dotenv().ok();
-    env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set")
-        .as_str()
-        .into()
-}
-
-pub type ConnectionPool = Pool<ConnectionManager<SqliteConnection>>;
-
-#[async_trait::async_trait]
-pub trait Connection {
-    async fn try_connect(&self) -> Result<ConnectionPool, StoreError>;
-}
-
-pub(crate) struct DatabaseConnector {
-    db_uri: DbUri,
-}
-
-impl DatabaseConnector {
-    pub(crate) fn new(db_uri: DbUri) -> Self {
-        Self { db_uri }
-    }
-}
-
-#[async_trait::async_trait]
-impl Connection for DatabaseConnector {
-    async fn try_connect(&self) -> Result<ConnectionPool, StoreError> {
-        use diesel::Connection;
-        SqliteConnection::establish(&self.db_uri)?;
-        Ok(
-            Pool::builder().build(ConnectionManager::<SqliteConnection>::new(
-                self.db_uri.deref(),
-            ))?,
-        )
-    }
 }
 
 #[derive(Debug)]
@@ -152,26 +94,14 @@ impl From<JsonStore> for Store {
 impl Store {
     pub async fn new(store: StoreType) -> Result<Self, StoreError> {
         match store {
-            StoreType::Sqlite => {
-                let db_uri = db_uri();
-                let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
-                let mut store = SqliteStore::new(connection_pool);
-                store.run_migrations()?;
-                Ok(Store::from(store))
-            }
+            StoreType::Sqlite => Ok(Store::from(SqliteStore::new(DbUri::new()).await?)),
             StoreType::Json => Ok(Store::from(JsonStore::default())),
         }
     }
 
     pub async fn new_inmem(store: StoreType) -> Result<Self, StoreError> {
         match store {
-            StoreType::Sqlite => {
-                let db_uri = DbUri::from(":memory:");
-                let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
-                let mut store = SqliteStore::new(connection_pool);
-                store.run_migrations()?;
-                Ok(Store::from(store))
-            }
+            StoreType::Sqlite => Ok(Store::from(SqliteStore::new(DbUri::inmem()).await?)),
             StoreType::Json => Ok(Store::from(JsonStore::default())),
         }
     }
@@ -181,9 +111,7 @@ impl Store {
     pub async fn migrate_json_store_to_sqlite(&mut self) -> Result<(), StoreError> {
         match self {
             Self::Json(store) => {
-                let db_uri = db_uri();
-                let connection_pool = DatabaseConnector::new(db_uri).try_connect().await?;
-                let mut sqlite_store = SqliteStore::new(connection_pool);
+                let mut sqlite_store = SqliteStore::new(DbUri::new()).await?;
                 let mut connection = sqlite_store.connection()?;
                 let grocery_items = store.items().await?;
                 let recipes = store.recipes().await?;
