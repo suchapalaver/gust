@@ -185,8 +185,6 @@ impl Storage for JsonStore {
 
 #[cfg(test)]
 pub mod test {
-    use crate::store::Store;
-
     use super::*;
 
     use assert_fs::prelude::*;
@@ -327,7 +325,7 @@ pub mod test {
 
     async fn items() -> Items {
         let file = test_json_file().unwrap();
-        let mut store = Store::Json(JsonStore::new().with_items_path(file.path()));
+        let mut store = JsonStore::new().with_items_path(file.path());
         store.items().await.unwrap()
     }
 
@@ -898,7 +896,7 @@ pub mod test {
     #[tokio::test]
     async fn test_delete_item_from_list() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_checklist_json_file().unwrap();
-        let mut store = Store::Json(JsonStore::new().with_list_path(file.path()));
+        let mut store = JsonStore::new().with_list_path(file.path());
 
         let mut shopping_list = store.list().await.unwrap();
         let item = Item {
@@ -1127,8 +1125,7 @@ pub mod test {
 
     async fn checklist() -> List {
         let file = create_test_checklist_json_file().unwrap();
-        let store = JsonStore::new().with_list_path(file.path());
-        let mut store = Store::Json(store);
+        let mut store = JsonStore::new().with_list_path(file.path());
         store.list().await.unwrap()
     }
 

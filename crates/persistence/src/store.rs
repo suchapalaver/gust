@@ -75,6 +75,16 @@ pub enum StoreType {
     SqliteInmem,
 }
 
+impl StoreType {
+    async fn create(&self) -> Result<Box<dyn Storage>, StoreError> {
+        match self {
+            StoreType::Json => Ok(Box::<JsonStore>::default()),
+            StoreType::Sqlite => Ok(Box::new(SqliteStore::new(DbUri::new()).await?)),
+            StoreType::SqliteInmem => Ok(Box::new(SqliteStore::new(DbUri::inmem()).await?)),
+        }
+    }
+}
+
 impl FromStr for StoreType {
     type Err = StoreError;
 
@@ -89,23 +99,7 @@ impl FromStr for StoreType {
     }
 }
 
-#[derive(Clone)]
-pub enum Store {
-    Json(JsonStore),
-    Sqlite(SqliteStore),
-}
-
-impl From<SqliteStore> for Store {
-    fn from(store: SqliteStore) -> Self {
-        Self::Sqlite(store)
-    }
-}
-
-impl From<JsonStore> for Store {
-    fn from(store: JsonStore) -> Self {
-        Self::Json(store)
-    }
-}
+pub struct Store;
 
 #[derive(Debug)]
 pub enum StoreResponse {
@@ -136,6 +130,15 @@ pub struct StoreDispatch {
 }
 
 impl StoreDispatch {
+    pub fn new(
+        tx: mpsc::Sender<(
+            ApiCommand,
+            oneshot::Sender<Result<StoreResponse, StoreError>>,
+        )>,
+    ) -> Self {
+        Self { tx }
+    }
+
     pub async fn send(
         &self,
         msg: (
@@ -150,11 +153,7 @@ impl StoreDispatch {
 
 impl Store {
     pub async fn init(store_type: StoreType) -> Result<StoreDispatch, StoreError> {
-        let mut store = match store_type {
-            StoreType::Json => Store::from(JsonStore::default()),
-            StoreType::Sqlite => Store::from(SqliteStore::new(DbUri::new()).await?),
-            StoreType::SqliteInmem => Store::from(SqliteStore::new(DbUri::inmem()).await?),
-        };
+        let mut store = store_type.create().await?;
 
         let (tx, mut rx) = mpsc::channel::<(
             ApiCommand,
@@ -173,7 +172,7 @@ impl Store {
                             reply
                                 .send(result)
                                 .map_err(|e| {
-                                    warn!(?e, "Send reply to API consumer failed");
+                                    warn!(?e, "Send reply to API command executor failed");
                                 })
                                 .ok();
                         }
@@ -185,7 +184,10 @@ impl Store {
 
         Ok(StoreDispatch { tx })
     }
+}
 
+#[async_trait::async_trait]
+pub trait Storage: Send + Sync + 'static {
     async fn execute_transaction(
         &mut self,
         command: ApiCommand,
@@ -295,147 +297,22 @@ impl Store {
         Ok(StoreResponse::FetchedRecipe((recipe, ingredients)))
     }
 
-    // We need to deconstruct the `enum` anyway, and so while we do, we handle
-    // migrating regardless of which database store has been set via CLI options.
     async fn migrate_json_store_to_sqlite(&mut self) -> Result<StoreResponse, StoreError> {
-        match self {
-            Self::Json(store) => {
-                let mut sqlite_store = SqliteStore::new(DbUri::new()).await?;
-                let mut connection = sqlite_store.connection()?;
-                let grocery_items = store.items().await?;
-                let recipes = store.recipes().await?;
-                tokio::task::spawn_blocking(move || {
-                    connection.immediate_transaction(|connection| {
-                        migrate_sections(connection)?;
-                        migrate_recipes(connection, recipes)?;
-                        groceries(connection, grocery_items)?;
-                        Ok(StoreResponse::JsonToSqlite)
-                    })
-                })
-                .await?
-            }
-            Self::Sqlite(store) => {
-                let mut connection = store.connection()?;
-                let grocery_items = store.items().await?;
-                connection.immediate_transaction(|connection| {
-                    groceries(connection, grocery_items)?;
-                    Ok(StoreResponse::JsonToSqlite)
-                })
-            }
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl Storage for Store {
-    async fn add_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        match self {
-            Self::Json(store) => store.add_item(item).await,
-            Self::Sqlite(store) => store.add_item(item).await,
-        }
+        let mut sqlite_store = SqliteStore::new(DbUri::new()).await?;
+        let mut connection = sqlite_store.connection()?;
+        let grocery_items = self.items().await?;
+        let recipes = self.recipes().await?;
+        tokio::task::spawn_blocking(move || {
+            connection.immediate_transaction(|connection| {
+                migrate_sections(connection)?;
+                migrate_recipes(connection, recipes)?;
+                groceries(connection, grocery_items)?;
+                Ok(StoreResponse::JsonToSqlite)
+            })
+        })
+        .await?
     }
 
-    async fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        match self {
-            Self::Json(store) => store.add_checklist_item(item).await,
-            Self::Sqlite(store) => store.add_checklist_item(item).await,
-        }
-    }
-
-    async fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        match self {
-            Self::Json(store) => store.add_list_item(item).await,
-            Self::Sqlite(store) => store.add_list_item(item).await,
-        }
-    }
-
-    async fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError> {
-        match self {
-            Self::Json(store) => store.add_list_recipe(recipe).await,
-            Self::Sqlite(store) => store.add_list_recipe(recipe).await,
-        }
-    }
-
-    async fn add_recipe(
-        &mut self,
-        recipe: &Recipe,
-        ingredients: &Ingredients,
-    ) -> Result<(), StoreError> {
-        match self {
-            Self::Json(store) => store.add_recipe(recipe, ingredients).await,
-            Self::Sqlite(store) => store.add_recipe(recipe, ingredients).await,
-        }
-    }
-
-    async fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
-        match self {
-            Self::Json(store) => store.checklist().await,
-            Self::Sqlite(store) => store.checklist().await,
-        }
-    }
-
-    async fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError> {
-        match self {
-            Self::Json(store) => store.delete_checklist_item(item).await,
-            Self::Sqlite(store) => store.delete_checklist_item(item).await,
-        }
-    }
-
-    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<Recipe, StoreError> {
-        match self {
-            Self::Json(store) => store.delete_recipe(recipe).await,
-            Self::Sqlite(store) => store.delete_recipe(recipe).await,
-        }
-    }
-
-    async fn items(&mut self) -> Result<Items, StoreError> {
-        match self {
-            Self::Json(store) => store.items().await,
-            Self::Sqlite(store) => store.items().await,
-        }
-    }
-
-    async fn list(&mut self) -> Result<List, StoreError> {
-        match self {
-            Self::Json(store) => store.list().await,
-            Self::Sqlite(store) => store.list().await,
-        }
-    }
-
-    async fn refresh_list(&mut self) -> Result<(), StoreError> {
-        match self {
-            Self::Json(store) => store.refresh_list().await,
-            Self::Sqlite(store) => store.refresh_list().await,
-        }
-    }
-
-    async fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
-        match self {
-            Self::Json(store) => store.recipes().await,
-            Self::Sqlite(store) => store.recipes().await,
-        }
-    }
-
-    async fn recipe_ingredients(
-        &mut self,
-        recipe: &Recipe,
-    ) -> Result<Option<Ingredients>, StoreError> {
-        match self {
-            Self::Json(store) => store.recipe_ingredients(recipe).await,
-            Self::Sqlite(store) => store.recipe_ingredients(recipe).await,
-        }
-    }
-
-    async fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
-        match self {
-            Self::Json(store) => store.sections().await,
-            Self::Sqlite(store) => store.sections().await,
-        }
-    }
-}
-
-#[async_trait::async_trait]
-pub trait Storage {
     // Create
     async fn add_item(&mut self, item: &Name) -> Result<(), StoreError>;
 
