@@ -69,23 +69,23 @@ pub enum StoreError {
 }
 
 #[derive(Debug)]
-pub enum StoreType {
+pub enum Store {
     Json,
     Sqlite,
     SqliteInmem,
 }
 
-impl StoreType {
+impl Store {
     async fn create(&self) -> Result<Box<dyn Storage>, StoreError> {
         match self {
-            StoreType::Json => Ok(Box::<JsonStore>::default()),
-            StoreType::Sqlite => Ok(Box::new(SqliteStore::new(DbUri::new()).await?)),
-            StoreType::SqliteInmem => Ok(Box::new(SqliteStore::new(DbUri::inmem()).await?)),
+            Self::Json => Ok(Box::<JsonStore>::default()),
+            Self::Sqlite => Ok(Box::new(SqliteStore::new(DbUri::new()).await?)),
+            Self::SqliteInmem => Ok(Box::new(SqliteStore::new(DbUri::inmem()).await?)),
         }
     }
 }
 
-impl FromStr for StoreType {
+impl FromStr for Store {
     type Err = StoreError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -98,8 +98,6 @@ impl FromStr for StoreType {
         }
     }
 }
-
-pub struct Store;
 
 #[derive(Debug)]
 pub enum StoreResponse {
@@ -152,8 +150,8 @@ impl StoreDispatch {
 }
 
 impl Store {
-    pub async fn init(store_type: StoreType) -> Result<StoreDispatch, StoreError> {
-        let mut store = store_type.create().await?;
+    pub async fn init(&self) -> Result<StoreDispatch, StoreError> {
+        let mut store = self.create().await?;
 
         let (tx, mut rx) = mpsc::channel::<(
             ApiCommand,

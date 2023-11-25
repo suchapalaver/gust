@@ -7,7 +7,7 @@ use common::{
     list::List,
     recipes::{Ingredients, Recipe},
 };
-use persistence::store::{Store, StoreDispatch, StoreError, StoreResponse, StoreType};
+use persistence::store::{Store, StoreDispatch, StoreError, StoreResponse};
 
 use futures::FutureExt;
 use thiserror::Error;
@@ -37,10 +37,10 @@ pub struct Api {
 }
 
 impl Api {
-    pub async fn init(store: StoreType) -> Result<ApiDispatch, ApiError> {
+    pub async fn init(store: Store) -> Result<ApiDispatch, ApiError> {
         info!("Initializing API with store type: {:?}", store);
 
-        let store = Store::init(store).await?;
+        let store = store.init().await?;
         let api = Api { store };
 
         let (tx, mut rx) = tokio::sync::mpsc::channel::<ApiSendWithReply>(10);
@@ -228,7 +228,7 @@ mod tests {
 
     #[tokio::test]
     async fn serve_api() {
-        let api = Api::init(StoreType::SqliteInmem).await.unwrap();
+        let api = Api::init(Store::SqliteInmem).await.unwrap();
 
         let response = api
             .dispatch(ApiCommand::Add(Add::Recipe { recipe: Recipe::new("fluffy american pancakes").unwrap(), ingredients: Ingredients::from_input_string("135g/4¾oz plain flour, 1 tsp baking powder, ½ tsp salt, 2 tbsp caster sugar, 130ml/4½fl oz milk, 1 large egg, lightly beaten, 2 tbsp melted butter (allowed to cool slightly), plus extra for cooking") }))
