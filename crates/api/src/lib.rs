@@ -11,7 +11,10 @@ use persistence::store::{Store, StoreDispatch, StoreError, StoreResponse, StoreT
 
 use futures::FutureExt;
 use thiserror::Error;
-use tokio::sync::{mpsc::error::SendError, oneshot};
+use tokio::sync::{
+    mpsc::{self, error::SendError},
+    oneshot,
+};
 use tracing::{error, info, instrument, trace, warn};
 
 #[derive(Error, Debug)]
@@ -29,7 +32,6 @@ pub enum ApiError {
     StoreError(#[from] StoreError),
 }
 
-#[derive(Clone)]
 pub struct Api {
     store: StoreDispatch,
 }
@@ -37,6 +39,7 @@ pub struct Api {
 impl Api {
     pub async fn init(store: StoreType) -> Result<ApiDispatch, ApiError> {
         info!("Initializing API with store type: {:?}", store);
+
         let store = Store::init(store).await?;
         let api = Api { store };
 
@@ -80,21 +83,18 @@ impl Api {
     }
 }
 
-type ApiSendWithReply = (
-    ApiCommand,
-    tokio::sync::mpsc::Sender<Result<ApiResponse, ApiError>>,
-);
+type ApiSendWithReply = (ApiCommand, mpsc::Sender<Result<ApiResponse, ApiError>>);
 
 #[derive(Debug, Clone)]
 /// A clonable API handle
 pub struct ApiDispatch {
-    tx: tokio::sync::mpsc::Sender<ApiSendWithReply>,
+    tx: mpsc::Sender<ApiSendWithReply>,
 }
 
 impl ApiDispatch {
     #[instrument]
     pub async fn dispatch(&self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
-        let (reply_tx, mut reply_rx) = tokio::sync::mpsc::channel(1);
+        let (reply_tx, mut reply_rx) = mpsc::channel(1);
         trace!(?command, "Dispatch command to API");
 
         self.tx.clone().send((command, reply_tx)).await?;
