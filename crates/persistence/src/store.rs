@@ -101,6 +101,7 @@ impl FromStr for Store {
 
 #[derive(Debug)]
 pub enum StoreResponse {
+    AddedChecklistItem(Name),
     AddedItem(Name),
     AddedListItem(Name),
     AddedListRecipe(Recipe),
@@ -109,12 +110,13 @@ pub enum StoreResponse {
     DeletedRecipe(Recipe),
     DeletedChecklistItem(Name),
     FetchedRecipe((Recipe, Ingredients)),
+    ItemAlreadyAdded(Name),
     Items(Items),
     JsonToSqlite,
     List(List),
     NothingReturned(ApiCommand),
     Recipes(Vec<Recipe>),
-    RecipeIngredients(Ingredients),
+    RecipeIngredients(Option<Ingredients>),
     RefreshList,
     Sections(Vec<Section>),
 }
@@ -202,88 +204,46 @@ pub trait Storage: Send + Sync + 'static {
 
     async fn add(&mut self, cmd: Add) -> Result<StoreResponse, StoreError> {
         match cmd {
-            Add::ChecklistItem(name) => {
-                self.add_checklist_item(&name).await?;
-                Ok(StoreResponse::AddedItem(name))
-            }
-            Add::Item { name, .. } => {
-                self.add_item(&name).await?;
-                Ok(StoreResponse::AddedItem(name))
-            }
-            Add::ListItem(name) => {
-                self.add_list_item(&name).await?;
-                Ok(StoreResponse::AddedListItem(name))
-            }
-            Add::ListRecipe(name) => {
-                self.add_list_recipe(&name).await?;
-                Ok(StoreResponse::AddedListRecipe(name))
-            }
+            Add::ChecklistItem(name) => self.add_checklist_item(&name).await,
+            Add::Item { name, .. } => self.add_item(&name).await,
+            Add::ListItem(name) => self.add_list_item(&name).await,
+            Add::ListRecipe(name) => self.add_list_recipe(&name).await,
             Add::Recipe {
                 recipe,
                 ingredients,
-            } => {
-                self.add_recipe(&recipe, &ingredients).await?;
-                Ok(StoreResponse::AddedRecipe(recipe))
-            }
+            } => self.add_recipe(&recipe, &ingredients).await,
         }
     }
 
     async fn read(&mut self, cmd: Read) -> Result<StoreResponse, StoreError> {
         match cmd {
-            Read::All => {
-                let results = self.items().await?;
-                Ok(StoreResponse::Items(results))
-            }
-            Read::Checklist => {
-                let items = self.checklist().await?;
-                Ok(StoreResponse::Checklist(items))
-            }
+            Read::All => self.items().await,
+            Read::Checklist => self.checklist().await,
             Read::Item(_name) => todo!(),
-            Read::List => {
-                let list = self.list().await?;
-                Ok(StoreResponse::List(list))
-            }
+            Read::List => self.list().await,
             Read::ListRecipes => todo!(),
-            Read::Recipe(recipe) => match self.recipe_ingredients(&recipe).await {
-                Ok(Some(ingredients)) => Ok(StoreResponse::RecipeIngredients(ingredients)),
-                Ok(None) => Ok(StoreResponse::NothingReturned(ApiCommand::Read(
-                    Read::Recipe(recipe),
-                ))),
-                Err(e) => Err(e),
-            },
-            Read::Recipes => Ok(StoreResponse::Recipes(self.recipes().await?)),
-            Read::Sections => {
-                let results = self.sections().await?;
-                Ok(StoreResponse::Sections(results))
-            }
+            Read::Recipe(recipe) => self.recipe_ingredients(&recipe).await,
+            Read::Recipes => self.recipes().await,
+            Read::Sections => self.sections().await,
         }
     }
 
     async fn update(&mut self, cmd: Update) -> Result<StoreResponse, StoreError> {
         match cmd {
             Update::Item(_name) => todo!(),
-            Update::RefreshList => {
-                self.refresh_list().await?;
-                Ok(StoreResponse::RefreshList)
-            }
+            Update::RefreshList => self.refresh_list().await,
             Update::Recipe(_name) => todo!(),
         }
     }
 
     async fn delete(&mut self, cmd: Delete) -> Result<StoreResponse, StoreError> {
         match cmd {
-            Delete::ChecklistItem(name) => {
-                self.delete_checklist_item(&name).await?;
-                Ok(StoreResponse::DeletedChecklistItem(name))
-            }
+            Delete::ChecklistItem(name) => self.delete_checklist_item(&name).await,
             Delete::ClearChecklist => todo!(),
             Delete::ClearList => todo!(),
             Delete::Item(_name) => todo!(),
             Delete::ListItem(_name) => todo!(),
-            Delete::Recipe(recipe) => {
-                let recipe = self.delete_recipe(&recipe).await?;
-                Ok(StoreResponse::DeletedRecipe(recipe))
-            }
+            Delete::Recipe(recipe) => self.delete_recipe(&recipe).await,
         }
     }
 
@@ -298,8 +258,12 @@ pub trait Storage: Send + Sync + 'static {
     async fn migrate_json_store_to_sqlite(&mut self) -> Result<StoreResponse, StoreError> {
         let mut sqlite_store = SqliteStore::new(DbUri::new()).await?;
         let mut connection = sqlite_store.connection()?;
-        let grocery_items = self.items().await?;
-        let recipes = self.recipes().await?;
+        let StoreResponse::Items(grocery_items) = self.items().await? else {
+            todo!()
+        };
+        let StoreResponse::Recipes(recipes) = self.recipes().await? else {
+            todo!()
+        };
         tokio::task::spawn_blocking(move || {
             connection.immediate_transaction(|connection| {
                 migrate_sections(connection)?;
@@ -312,41 +276,38 @@ pub trait Storage: Send + Sync + 'static {
     }
 
     // Create
-    async fn add_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn add_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError>;
 
-    async fn add_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn add_checklist_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError>;
 
-    async fn add_list_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn add_list_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError>;
 
-    async fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<(), StoreError>;
+    async fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError>;
 
     async fn add_recipe(
         &mut self,
         recipe: &Recipe,
         ingredients: &Ingredients,
-    ) -> Result<(), StoreError>;
+    ) -> Result<StoreResponse, StoreError>;
 
     // Read
-    async fn checklist(&mut self) -> Result<Vec<Item>, StoreError>;
+    async fn checklist(&mut self) -> Result<StoreResponse, StoreError>;
 
-    async fn list(&mut self) -> Result<List, StoreError>;
+    async fn list(&mut self) -> Result<StoreResponse, StoreError>;
 
-    async fn items(&mut self) -> Result<Items, StoreError>;
+    async fn items(&mut self) -> Result<StoreResponse, StoreError>;
 
-    async fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError>;
+    async fn recipes(&mut self) -> Result<StoreResponse, StoreError>;
 
-    async fn recipe_ingredients(
-        &mut self,
-        recipe: &Recipe,
-    ) -> Result<Option<Ingredients>, StoreError>;
+    async fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError>;
 
-    async fn sections(&mut self) -> Result<Vec<Section>, StoreError>;
+    async fn sections(&mut self) -> Result<StoreResponse, StoreError>;
 
     // Update
-    async fn refresh_list(&mut self) -> Result<(), StoreError>;
+    async fn refresh_list(&mut self) -> Result<StoreResponse, StoreError>;
 
     // Delete
-    async fn delete_checklist_item(&mut self, item: &Name) -> Result<(), StoreError>;
+    async fn delete_checklist_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError>;
 
-    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<Recipe, StoreError>;
+    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError>;
 }

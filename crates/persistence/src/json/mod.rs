@@ -8,14 +8,15 @@ use std::{
 
 use common::{
     input::item_matches,
-    item::{Item, Section},
+    item::{Item, Name},
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
     Load,
 };
+use question::Answer;
 
-use crate::store::{Storage, StoreError};
+use crate::store::{Storage, StoreError, StoreResponse};
 
 pub const ITEMS_JSON_PATH: &str = "groceries.json";
 
@@ -66,98 +67,85 @@ impl JsonStore {
 
 #[async_trait::async_trait]
 impl Storage for JsonStore {
-    async fn add_item(&mut self, item: &common::item::Name) -> Result<(), StoreError> {
-        let mut groceries = self.items().await?;
+    async fn add_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
+        let mut groceries = Items::from_json(&self.items)?;
 
-        let mut present = false;
-
-        for item in groceries.get_item_matches(item.as_str()) {
-            if item_matches(item) {
-                present = true;
-                break;
-            }
-        }
-
-        if present {
+        if groceries
+            .get_item_matches(item.as_str())
+            .any(|item| matches!(item_matches(item), Answer::YES))
+        {
             eprintln!("Item already in library");
+            Ok(StoreResponse::ItemAlreadyAdded(item.clone()))
         } else {
             let new_item = Item::new(item.as_str());
             groceries.add_item(new_item);
-            todo!();
+            Ok(StoreResponse::AddedItem(item.clone()))
         }
-        Ok(())
     }
 
-    async fn add_checklist_item(&mut self, _item: &common::item::Name) -> Result<(), StoreError> {
+    async fn add_checklist_item(&mut self, _item: &Name) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn add_list_item(&mut self, _item: &common::item::Name) -> Result<(), StoreError> {
+    async fn add_list_item(&mut self, _item: &Name) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn add_list_recipe(&mut self, _recipe: &Recipe) -> Result<(), StoreError> {
+    async fn add_list_recipe(&mut self, _recipe: &Recipe) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
     async fn add_recipe(
         &mut self,
         _recipe: &Recipe,
-        _ingredients: &common::recipes::Ingredients,
-    ) -> Result<(), StoreError> {
+        _ingredients: &Ingredients,
+    ) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn checklist(&mut self) -> Result<Vec<Item>, StoreError> {
+    async fn checklist(&mut self) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn delete_checklist_item(
-        &mut self,
-        _item: &common::item::Name,
-    ) -> Result<(), StoreError> {
+    async fn delete_checklist_item(&mut self, _item: &Name) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn delete_recipe(&mut self, _recipe: &Recipe) -> Result<Recipe, StoreError> {
+    async fn delete_recipe(&mut self, _recipe: &Recipe) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn items(&mut self) -> Result<Items, StoreError> {
-        Ok(Items::from_json(&self.items)?)
+    async fn items(&mut self) -> Result<StoreResponse, StoreError> {
+        Ok(StoreResponse::Items(Items::from_json(&self.items)?))
     }
 
-    async fn list(&mut self) -> Result<List, StoreError> {
-        let list = List::from_json(&self.list)?;
-        Ok(list)
+    async fn list(&mut self) -> Result<StoreResponse, StoreError> {
+        Ok(StoreResponse::List(List::from_json(&self.list)?))
     }
 
-    async fn refresh_list(&mut self) -> Result<(), StoreError> {
+    async fn refresh_list(&mut self) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn recipe_ingredients(
-        &mut self,
-        recipe: &Recipe,
-    ) -> Result<Option<Ingredients>, StoreError> {
-        Ok(Some(
-            self.items()
-                .await?
-                .recipe_ingredients(&recipe.to_string())?
-                .map(|item| item.name.clone())
-                .collect(),
-        ))
+    async fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
+        let items = Items::from_json(&self.items)?;
+        let ingredients: Ingredients = items
+            .recipe_ingredients(&recipe.to_string())?
+            .map(|item| item.name.clone())
+            .collect();
+
+        Ok(StoreResponse::RecipeIngredients(Some(ingredients)))
     }
 
-    async fn sections(&mut self) -> Result<Vec<Section>, StoreError> {
+    async fn sections(&mut self) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
+    async fn recipes(&mut self) -> Result<StoreResponse, StoreError> {
         let mut recipes: HashSet<Recipe> = HashSet::new();
 
         {
-            let groceries = self.items().await?;
+            let groceries = Items::from_json(&self.items)?;
 
             for item in groceries.collection {
                 if let Some(item_recipes) = item.recipes {
@@ -173,13 +161,13 @@ impl Storage for JsonStore {
         }
 
         {
-            let list = self.list().await?;
+            let list = List::from_json(&self.list)?;
 
             for recipe in list.recipes {
                 recipes.insert(recipe);
             }
         }
-        Ok(recipes.into_iter().collect())
+        Ok(StoreResponse::Recipes(recipes.into_iter().collect()))
     }
 }
 
@@ -326,7 +314,10 @@ pub mod test {
     async fn items() -> Items {
         let file = test_json_file().unwrap();
         let mut store = JsonStore::new().with_items_path(file.path());
-        store.items().await.unwrap()
+        let StoreResponse::Items(items) = store.items().await.unwrap() else {
+            todo!()
+        };
+        items
     }
 
     #[test]
@@ -354,7 +345,9 @@ pub mod test {
     }
     "#);
         store.save_items(items)?;
-        let items = store.items().await.unwrap();
+        let StoreResponse::Items(items) = store.items().await.unwrap() else {
+            todo!()
+        };
         insta::assert_json_snapshot!(items, @r#"
     {
       "sections": [],
@@ -898,7 +891,9 @@ pub mod test {
         let file = create_test_checklist_json_file().unwrap();
         let mut store = JsonStore::new().with_list_path(file.path());
 
-        let mut shopping_list = store.list().await.unwrap();
+        let StoreResponse::List(mut shopping_list) = store.list().await.unwrap() else {
+            todo!()
+        };
         let item = Item {
             name: Name::from("kumquats"),
             section: Some(Section::from("fresh")),
@@ -1126,7 +1121,10 @@ pub mod test {
     async fn checklist() -> List {
         let file = create_test_checklist_json_file().unwrap();
         let mut store = JsonStore::new().with_list_path(file.path());
-        store.list().await.unwrap()
+        let StoreResponse::List(list) = store.list().await.unwrap() else {
+            todo!()
+        };
+        list
     }
 
     #[tokio::test]

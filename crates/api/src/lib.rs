@@ -43,7 +43,7 @@ impl Api {
         let store = store.init().await?;
         let api = Api { store };
 
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<ApiSendWithReply>(10);
+        let (tx, mut rx) = mpsc::channel::<ApiSendWithReply>(10);
         let dispatch = ApiDispatch { tx };
 
         tokio::task::spawn(async move {
@@ -110,6 +110,7 @@ impl ApiDispatch {
 
 #[derive(Debug)]
 pub enum ApiResponse {
+    AddedChecklistItem(Name),
     AddedItem(Name),
     AddedListItem(Name),
     AddedListRecipe(Recipe),
@@ -118,12 +119,13 @@ pub enum ApiResponse {
     DeletedRecipe(Recipe),
     DeletedChecklistItem(Name),
     FetchedRecipe((Recipe, Ingredients)),
+    ItemAlreadyAdded(Name),
     Items(Items),
     JsonToSqlite,
     List(List),
     NothingReturned(ApiCommand),
     Recipes(Vec<Recipe>),
-    RecipeIngredients(Ingredients),
+    RecipeIngredients(Option<Ingredients>),
     RefreshList,
     Sections(Vec<Section>),
 }
@@ -131,6 +133,7 @@ pub enum ApiResponse {
 impl Display for ApiResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::AddedChecklistItem(name) => writeln!(f, "\nchecklist item added: {name}"),
             Self::AddedItem(name) => writeln!(f, "\nitem added: {name}"),
             Self::AddedListItem(name) => writeln!(f, "\nitem added to list: {name}"),
             Self::AddedListRecipe(recipe) => {
@@ -154,6 +157,7 @@ impl Display for ApiResponse {
                 }
                 Ok(())
             }
+            Self::ItemAlreadyAdded(item) => writeln!(f, "\nitem already added: {item}"),
             Self::Items(items) => {
                 writeln!(f)?;
                 for item in &items.collection {
@@ -178,9 +182,11 @@ impl Display for ApiResponse {
                 Ok(())
             }
             Self::RecipeIngredients(ingredients) => {
-                writeln!(f)?;
-                for ingredient in ingredients.iter() {
-                    writeln!(f, "{ingredient}")?;
+                if let Some(ingredients) = ingredients {
+                    writeln!(f)?;
+                    for ingredient in ingredients.iter() {
+                        writeln!(f, "{ingredient}")?;
+                    }
                 }
                 Ok(())
             }
@@ -200,6 +206,7 @@ impl Display for ApiResponse {
 impl From<StoreResponse> for ApiResponse {
     fn from(res: StoreResponse) -> Self {
         match res {
+            StoreResponse::AddedChecklistItem(item) => Self::AddedChecklistItem(item),
             StoreResponse::AddedItem(item) => Self::AddedItem(item),
             StoreResponse::AddedListItem(item) => Self::AddedListItem(item),
             StoreResponse::AddedListRecipe(item) => Self::AddedListRecipe(item),
@@ -208,6 +215,7 @@ impl From<StoreResponse> for ApiResponse {
             StoreResponse::DeletedRecipe(item) => Self::DeletedRecipe(item),
             StoreResponse::DeletedChecklistItem(item) => Self::DeletedChecklistItem(item),
             StoreResponse::FetchedRecipe(item) => Self::FetchedRecipe(item),
+            StoreResponse::ItemAlreadyAdded(item) => Self::ItemAlreadyAdded(item),
             StoreResponse::Items(item) => Self::Items(item),
             StoreResponse::JsonToSqlite => Self::JsonToSqlite,
             StoreResponse::List(item) => Self::List(item),

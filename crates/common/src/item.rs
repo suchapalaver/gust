@@ -6,6 +6,7 @@ use crate::recipes::Recipe;
 /// An item used in recipes or bought separately
 ///
 /// # Arguments
+///
 /// * `name` - name of the item
 /// * `section` - section in which item is found ("fresh", "frozen", etc.)
 /// * `recipes` - list of recipes of which the item is an ingredient

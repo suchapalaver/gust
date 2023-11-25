@@ -4,36 +4,32 @@ use crate::{
 };
 use question::{Answer, Question};
 
-pub fn user_wants_to_add_item() -> bool {
+pub fn user_wants_to_add_item() -> Answer {
     Question::new("Add an item to our library?")
         .default(question::Answer::NO)
         .show_defaults()
         .confirm()
-        == Answer::YES
 }
 
-pub fn user_wants_to_print_list() -> bool {
+pub fn user_wants_to_print_list() -> Answer {
     Question::new("Print shopping list?")
         .default(question::Answer::NO)
         .show_defaults()
         .confirm()
-        == Answer::YES
 }
 
-pub fn user_wants_to_add_more_recipe_ingredients_to_list() -> bool {
+pub fn user_wants_to_add_more_recipe_ingredients_to_list() -> Answer {
     Question::new("Add more recipe ingredients to our list?")
         .default(question::Answer::NO)
         .show_defaults()
         .confirm()
-        == Answer::YES
 }
 
-pub fn user_wants_to_add_items_to_list() -> bool {
+pub fn user_wants_to_add_items_to_list() -> Answer {
     Question::new("Add items to list?")
         .default(question::Answer::NO)
         .show_defaults()
         .confirm()
-        == Answer::YES
 }
 
 // Returns `None` in case user wishes to skip being asked further.
@@ -54,12 +50,11 @@ pub fn user_wants_to_add_item_to_list(item: &Item) -> Option<bool> {
     }
 }
 
-pub fn user_wants_to_save_list() -> bool {
+pub fn user_wants_to_save_list() -> Answer {
     Question::new("Save current list?")
         .default(question::Answer::NO)
         .show_defaults()
         .confirm()
-        == Answer::YES
 }
 
 // Returns `None` in case user wishes to skip being asked further.
@@ -108,10 +103,9 @@ pub fn section_from_user() -> String {
     }
 }
 
-pub fn item_matches(item: &Item) -> bool {
+pub fn item_matches(item: &Item) -> Answer {
     Question::new(&format!("is *{item}* a match?"))
         .default(question::Answer::NO)
         .show_defaults()
         .confirm()
-        == Answer::YES
 }
