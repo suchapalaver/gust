@@ -1,3 +1,5 @@
+use std::{env, ops::Deref};
+
 use common::{
     item::Name,
     items::Items,
@@ -6,7 +8,7 @@ use common::{
 };
 use diesel::{prelude::*, r2d2::ConnectionManager, sqlite::Sqlite, SqliteConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use r2d2::PooledConnection;
+use r2d2::{Pool, PooledConnection};
 
 use crate::{
     models::{
@@ -14,8 +16,74 @@ use crate::{
         NewRecipe, RecipeModel, Section,
     },
     schema,
-    store::{ConnectionPool, Storage, StoreError},
+    store::{Storage, StoreError},
 };
+
+pub struct DbUri(String);
+
+impl Default for DbUri {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<&str> for DbUri {
+    fn from(value: &str) -> Self {
+        Self(value.to_string())
+    }
+}
+
+impl Deref for DbUri {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DbUri {
+    pub fn new() -> Self {
+        dotenvy::dotenv().ok();
+        env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set")
+            .as_str()
+            .into()
+    }
+
+    pub fn inmem() -> Self {
+        Self::from(":memory:")
+    }
+}
+
+pub type ConnectionPool = Pool<ConnectionManager<SqliteConnection>>;
+
+#[async_trait::async_trait]
+pub trait Connection {
+    async fn try_connect(&self) -> Result<ConnectionPool, StoreError>;
+}
+
+pub(crate) struct DatabaseConnector {
+    db_uri: DbUri,
+}
+
+impl DatabaseConnector {
+    pub(crate) fn new(db_uri: DbUri) -> Self {
+        Self { db_uri }
+    }
+}
+
+#[async_trait::async_trait]
+impl Connection for DatabaseConnector {
+    async fn try_connect(&self) -> Result<ConnectionPool, StoreError> {
+        use diesel::Connection;
+        SqliteConnection::establish(&self.db_uri)?;
+        Ok(
+            Pool::builder().build(ConnectionManager::<SqliteConnection>::new(
+                self.db_uri.deref(),
+            ))?,
+        )
+    }
+}
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
@@ -35,8 +103,11 @@ pub struct SqliteStore {
 }
 
 impl SqliteStore {
-    pub fn new(pool: ConnectionPool) -> Self {
-        Self { pool }
+    pub async fn new(db_uri: DbUri) -> Result<Self, StoreError> {
+        let pool = DatabaseConnector::new(db_uri).try_connect().await?;
+        let mut store = Self { pool };
+        store.run_migrations()?;
+        Ok(store)
     }
 
     pub(crate) fn run_migrations(&mut self) -> Result<(), StoreError> {
@@ -459,18 +530,12 @@ impl Storage for SqliteStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::store::{Connection, DatabaseConnector, DbUri};
-
     use super::*;
     use common::{item::Name, recipes::Ingredients};
 
     async fn inmem_sqlite_store() -> SqliteStore {
         // Set up a connection to an in-memory SQLite database for testing
-        let pool = DatabaseConnector::new(DbUri::from(":memory:"))
-            .try_connect()
-            .await
-            .unwrap();
-        let store = SqliteStore::new(pool);
+        let store = SqliteStore::new(DbUri::inmem()).await.unwrap();
         let mut migrations_store = store.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = migrations_store.connection().unwrap();

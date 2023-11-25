@@ -3,6 +3,7 @@
 //       with the same name as the module. Read more at
 //       https://doc.rust-lang.org/book/ch07-05-separating-modules-into-different-files.html
 mod cli;
+mod command;
 pub mod startup;
 
 // Note: Re-exports the content of the square_content module to keep paths short.
