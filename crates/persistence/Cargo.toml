@@ -15,6 +15,7 @@ diesel = { workspace = true }
 diesel_migrations = { workspace = true }
 dotenvy = { workspace = true }
 futures = { workspace = true }
+question = { workspace = true }
 r2d2 = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }

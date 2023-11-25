@@ -90,6 +90,7 @@ dependencies = [
 name = "api"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "common",
  "futures",
  "insta",
@@ -1161,6 +1162,7 @@ dependencies = [
  "dotenvy",
  "futures",
  "insta",
+ "question",
  "r2d2",
  "serde",
  "serde_derive",

@@ -12,6 +12,7 @@ repository = "https://github.com/suchapalaver/gust"
 common = { path = "../common" }
 persistence = { path = "../persistence" }
 
+async-trait = { workspace = true }
 futures = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
