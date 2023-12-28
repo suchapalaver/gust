@@ -3,12 +3,12 @@
 use `gust` to add recipes and grocery items to a local database,
 making putting together shopping lists super quick.
 
-## Summary
+## summary
 
 - [documentation](#docs)
 - [getting started](#getting-started)
 
-## Prerequisites
+## prerequisites
 
 The main prerequisite to get started using this application is [Docker](https://docs.docker.com/).
 Docker allows you to [build](./docs/docker.md#build) an image of an application and [run](./docs/docker.md#run) application
