@@ -213,7 +213,7 @@ pub fn cli() -> Command {
             Arg::new("store")
                 .long("database")
                 .num_args(1)
-                .value_parser(["json", "sqlite"])
+                .value_parser(["json", "sqlite", "sqlite-inmem"])
                 .default_value("sqlite")
                 .help("which database to use"),
         )

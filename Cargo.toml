@@ -5,7 +5,6 @@ members = ["crates/api", "crates/common", "crates/gust", "crates/persistence"]
 
 [workspace.dependencies]
 assert_fs = "1.0"
-async-trait = "0.1.73"
 clap = "4.1.14"
 colored = "2.0.0"
 diesel = { version = "2.0.2", features = ["r2d2", "sqlite"] }
@@ -16,7 +15,7 @@ insta = { version = "1.14.1", features = ["json"] }
 question = "0.2.2"
 reqwest = "0.11"
 r2d2 = "0.8.9"
-scraper = "0.17.1"
+scraper = "0.18.1"
 serde = { version = "*", features = ["derive"] }
 serde_derive = "*"
 serde_json = "*"
