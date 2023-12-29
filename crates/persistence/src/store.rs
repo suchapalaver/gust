@@ -16,7 +16,7 @@ use tokio::sync::{
 use tracing::warn;
 use url::Url;
 
-use std::{error::Error, str::FromStr};
+use std::{error::Error, fmt::Debug, str::FromStr};
 
 use crate::{
     json::{
@@ -69,56 +69,86 @@ pub enum StoreError {
 }
 
 #[derive(Debug)]
-pub enum Store {
+pub enum StoreType {
     Json,
     Sqlite,
-    SqliteInmem,
+    SqliteInMem,
 }
 
-impl Store {
-    async fn create(&self) -> Result<Box<dyn Storage>, StoreError> {
-        match self {
-            Self::Json => Ok(Box::<JsonStore>::default()),
-            Self::Sqlite => Ok(Box::new(SqliteStore::new(DbUri::new()).await?)),
-            Self::SqliteInmem => Ok(Box::new(SqliteStore::new(DbUri::inmem()).await?)),
-        }
-    }
-}
-
-impl FromStr for Store {
+impl FromStr for StoreType {
     type Err = StoreError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "json" => Ok(Self::Json),
             "sqlite" => Ok(Self::Sqlite),
+            "sqlite-inmem" => Ok(Self::SqliteInMem),
             _ => Err(StoreError::ParseStoreType(
-                "Store types are currently limited to 'sqlite' and 'json'.".to_string(),
+                "Store types are currently limited to 'sqlite', 'sqlite-inmem', and 'json'."
+                    .to_string(),
             )),
         }
     }
 }
 
-#[derive(Debug)]
-pub enum StoreResponse {
-    AddedChecklistItem(Name),
-    AddedItem(Name),
-    AddedListItem(Name),
-    AddedListRecipe(Recipe),
-    AddedRecipe(Recipe),
-    Checklist(Vec<Item>),
-    DeletedRecipe(Recipe),
-    DeletedChecklistItem(Name),
-    FetchedRecipe((Recipe, Ingredients)),
-    ItemAlreadyAdded(Name),
-    Items(Items),
-    JsonToSqlite,
-    List(List),
-    NothingReturned(ApiCommand),
-    Recipes(Vec<Recipe>),
-    RecipeIngredients(Option<Ingredients>),
-    RefreshList,
-    Sections(Vec<Section>),
+#[derive(Clone)]
+pub enum Store {
+    Json(JsonStore),
+    Sqlite(SqliteStore),
+}
+
+impl Store {
+    pub async fn from_store_type(store_type: StoreType) -> Result<Self, StoreError> {
+        use StoreType::*;
+        match store_type {
+            Json => Ok(Self::Json(JsonStore::default())),
+            Sqlite => Ok(Self::Sqlite(SqliteStore::new(DbUri::new()).await?)),
+            SqliteInMem => Ok(Self::Sqlite(SqliteStore::new(DbUri::inmem()).await?)),
+        }
+    }
+
+    pub async fn init(&mut self) -> Result<StoreDispatch, StoreError> {
+        let (tx, mut rx) = mpsc::channel::<(
+            ApiCommand,
+            oneshot::Sender<Result<StoreResponse, StoreError>>,
+        )>(10);
+
+        let mut store = self.clone();
+
+        tokio::task::spawn(async move {
+            loop {
+                tokio::select! {
+                    cmd = rx.recv().fuse() => {
+                        if let Some((command, reply)) = cmd {
+                            let result = store
+                                .execute_transaction(command)
+                                .await;
+
+                            reply
+                                .send(result)
+                                .map_err(|e| {
+                                    warn!(?e, "Send reply to API command executor failed");
+                                })
+                                .ok();
+                        }
+                    }
+                    else => break
+                }
+            }
+        });
+
+        Ok(StoreDispatch { tx })
+    }
+
+    async fn execute_transaction(
+        &mut self,
+        command: ApiCommand,
+    ) -> Result<StoreResponse, StoreError> {
+        match self {
+            Self::Json(store) => store.execute_transaction(command).await,
+            Self::Sqlite(store) => store.execute_transaction(command).await,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -151,39 +181,26 @@ impl StoreDispatch {
     }
 }
 
-impl Store {
-    pub async fn init(&self) -> Result<StoreDispatch, StoreError> {
-        let mut store = self.create().await?;
-
-        let (tx, mut rx) = mpsc::channel::<(
-            ApiCommand,
-            oneshot::Sender<Result<StoreResponse, StoreError>>,
-        )>(10);
-
-        tokio::task::spawn(async move {
-            loop {
-                tokio::select! {
-                    cmd = rx.recv().fuse() => {
-                        if let Some((command, reply)) = cmd {
-                            let result = store
-                                .execute_transaction(command)
-                                .await;
-
-                            reply
-                                .send(result)
-                                .map_err(|e| {
-                                    warn!(?e, "Send reply to API command executor failed");
-                                })
-                                .ok();
-                        }
-                    }
-                    else => break
-                }
-            }
-        });
-
-        Ok(StoreDispatch { tx })
-    }
+#[derive(Debug)]
+pub enum StoreResponse {
+    AddedChecklistItem(Name),
+    AddedItem(Name),
+    AddedListItem(Name),
+    AddedListRecipe(Recipe),
+    AddedRecipe(Recipe),
+    Checklist(Vec<Item>),
+    DeletedRecipe(Recipe),
+    DeletedChecklistItem(Name),
+    FetchedRecipe((Recipe, Ingredients)),
+    ItemAlreadyAdded(Name),
+    Items(Items),
+    JsonToSqlite,
+    List(List),
+    NothingReturned(ApiCommand),
+    Recipes(Vec<Recipe>),
+    RecipeIngredients(Option<Ingredients>),
+    RefreshList,
+    Sections(Vec<Section>),
 }
 
 #[async_trait::async_trait]
