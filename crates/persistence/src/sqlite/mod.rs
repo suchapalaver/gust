@@ -56,8 +56,7 @@ impl DbUri {
 
 pub type ConnectionPool = Pool<ConnectionManager<SqliteConnection>>;
 
-#[async_trait::async_trait]
-pub trait Connection {
+pub(crate) trait Connection {
     async fn try_connect(&self) -> Result<ConnectionPool, StoreError>;
 }
 
@@ -71,7 +70,6 @@ impl DatabaseConnector {
     }
 }
 
-#[async_trait::async_trait]
 impl Connection for DatabaseConnector {
     async fn try_connect(&self) -> Result<ConnectionPool, StoreError> {
         use diesel::Connection;
