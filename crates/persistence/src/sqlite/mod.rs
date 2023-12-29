@@ -160,6 +160,7 @@ impl SqliteStore {
     ) -> Result<(), StoreError> {
         diesel::insert_into(schema::items_recipes::table)
             .values(NewItemRecipe { item_id, recipe_id })
+            .on_conflict_do_nothing()
             .execute(connection)?;
         Ok(())
     }
