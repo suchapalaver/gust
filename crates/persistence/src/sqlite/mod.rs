@@ -227,7 +227,6 @@ impl SqliteStore {
     }
 }
 
-#[async_trait::async_trait]
 impl Storage for SqliteStore {
     async fn add_checklist_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
         let mut store = self.clone();

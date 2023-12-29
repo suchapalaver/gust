@@ -203,8 +203,7 @@ pub enum StoreResponse {
     Sections(Vec<Section>),
 }
 
-#[async_trait::async_trait]
-pub trait Storage: Send + Sync + 'static {
+pub(crate) trait Storage: Send + Sync + 'static {
     async fn execute_transaction(
         &mut self,
         command: ApiCommand,

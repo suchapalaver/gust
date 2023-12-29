@@ -9,7 +9,6 @@ readme = "README.md"
 repository = "https://github.com/suchapalaver/gust"
 
 [dependencies]
-async-trait = { workspace = true }
 common = { path = "../common" }
 diesel = { workspace = true }
 diesel_migrations = { workspace = true }

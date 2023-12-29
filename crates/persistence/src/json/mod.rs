@@ -65,7 +65,6 @@ impl JsonStore {
     }
 }
 
-#[async_trait::async_trait]
 impl Storage for JsonStore {
     async fn add_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
         let mut groceries = Items::from_json(&self.items)?;
