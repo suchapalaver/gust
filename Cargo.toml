@@ -5,6 +5,7 @@ members = ["crates/api", "crates/common", "crates/gust", "crates/persistence"]
 
 [workspace.dependencies]
 assert_fs = "1.0"
+async-graphql = "6.0.6"
 clap = "4.1.14"
 colored = "2.0.0"
 diesel = { version = "2.0.2", features = ["r2d2", "sqlite"] }
