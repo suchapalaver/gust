@@ -140,10 +140,7 @@ impl Store {
         Ok(StoreDispatch { tx })
     }
 
-    async fn execute_transaction(
-        &self,
-        command: ApiCommand,
-    ) -> Result<StoreResponse, StoreError> {
+    async fn execute_transaction(&self, command: ApiCommand) -> Result<StoreResponse, StoreError> {
         match self {
             Self::Json(store) => store.execute_transaction(command).await,
             Self::Sqlite(store) => store.execute_transaction(command).await,
@@ -204,10 +201,7 @@ pub enum StoreResponse {
 }
 
 pub(crate) trait Storage: Send + Sync + 'static {
-    async fn execute_transaction(
-        &self,
-        command: ApiCommand,
-    ) -> Result<StoreResponse, StoreError> {
+    async fn execute_transaction(&self, command: ApiCommand) -> Result<StoreResponse, StoreError> {
         match command {
             ApiCommand::Add(cmd) => self.add(cmd).await,
             ApiCommand::Delete(cmd) => self.delete(cmd).await,

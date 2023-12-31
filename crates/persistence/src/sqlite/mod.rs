@@ -372,11 +372,11 @@ impl Storage for SqliteStore {
         let StoreResponse::List(mut list) = self.list_items().await? else {
             todo!()
         };
-        list.recipes = self.list_recipes().await?;
+        list = list.with_recipes(self.list_recipes().await?);
         let StoreResponse::Checklist(checklist) = self.checklist().await? else {
             todo!()
         };
-        list.checklist = checklist;
+        list = list.with_checklist(checklist);
         Ok(StoreResponse::List(list))
     }
 
@@ -594,10 +594,7 @@ mod tests {
             todo!()
         };
 
-        assert!(items
-            .collection
-            .iter()
-            .any(|item| item.name() == &item_name));
+        assert!(items.collection().any(|item| item.name() == &item_name));
     }
 
     #[tokio::test]
@@ -611,7 +608,7 @@ mod tests {
             todo!()
         };
 
-        let item_in_list = list.items.iter().any(|item| item.name() == &item_name);
+        let item_in_list = list.items().iter().any(|item| item.name() == &item_name);
 
         assert!(item_in_list);
     }
@@ -756,7 +753,7 @@ mod tests {
         let StoreResponse::List(list) = store.list().await.unwrap() else {
             todo!()
         };
-        assert_eq!(list.items.len(), 0);
+        assert_eq!(list.items().len(), 0);
 
         let item1 = Name::from("item 1");
         let item2 = Name::from("item 2");
@@ -766,15 +763,15 @@ mod tests {
         let StoreResponse::List(list) = store.list().await.unwrap() else {
             todo!()
         };
-        assert_eq!(list.items.len(), 2);
-        assert!(list.items.iter().any(|item| item.name() == &item1));
-        assert!(list.items.iter().any(|item| item.name() == &item2));
+        assert_eq!(list.items().len(), 2);
+        assert!(list.items().iter().any(|item| item.name() == &item1));
+        assert!(list.items().iter().any(|item| item.name() == &item2));
 
         store.refresh_list().await.unwrap();
 
         let StoreResponse::List(list) = store.list().await.unwrap() else {
             todo!()
         };
-        assert_eq!(list.items.len(), 0);
+        assert_eq!(list.items().len(), 0);
     }
 }

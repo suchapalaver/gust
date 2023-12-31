@@ -159,7 +159,7 @@ impl Display for ApiResponse {
             Self::ItemAlreadyAdded(item) => writeln!(f, "\nitem already added: {item}"),
             Self::Items(items) => {
                 writeln!(f)?;
-                for item in &items.collection {
+                for item in items.collection() {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())
@@ -167,7 +167,7 @@ impl Display for ApiResponse {
             Self::JsonToSqlite => writeln!(f, "\nJSON to SQLite data store migration successful"),
             Self::List(list) => {
                 writeln!(f)?;
-                for item in &list.items {
+                for item in list.items() {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())

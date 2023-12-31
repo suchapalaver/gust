@@ -36,7 +36,7 @@ pub fn user_wants_to_add_items_to_list() -> Answer {
 pub fn user_wants_to_add_item_to_list(item: &Item) -> Option<bool> {
     let res = Question::new(&format!(
         "Do we need {}? (*y*, *n* for next item, *s* to skip to next section)",
-        item.name.as_str().to_lowercase()
+        item.name()
     ))
     .acceptable(vec!["y", "n", "s"])
     .until_acceptable()
