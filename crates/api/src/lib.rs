@@ -238,7 +238,7 @@ mod tests {
         let api = Api::init(StoreType::SqliteInMem).await.unwrap();
 
         let response = api
-            .dispatch(ApiCommand::Add(Add::Recipe { recipe: Recipe::new("fluffy american pancakes").unwrap(), ingredients: Ingredients::from_input_string("135g/4¾oz plain flour, 1 tsp baking powder, ½ tsp salt, 2 tbsp caster sugar, 130ml/4½fl oz milk, 1 large egg, lightly beaten, 2 tbsp melted butter (allowed to cool slightly), plus extra for cooking") }))
+            .dispatch(ApiCommand::Add(Add::Recipe { recipe: Recipe::new("fluffy american pancakes"), ingredients: Ingredients::from_input_string("135g/4¾oz plain flour, 1 tsp baking powder, ½ tsp salt, 2 tbsp caster sugar, 130ml/4½fl oz milk, 1 large egg, lightly beaten, 2 tbsp melted butter (allowed to cool slightly), plus extra for cooking") }))
             .await
             .unwrap();
 
@@ -252,9 +252,9 @@ mod tests {
         insta::assert_display_snapshot!(response.to_string().trim(), @"fluffy american pancakes");
 
         let response = api
-            .dispatch(ApiCommand::Read(Read::Recipe(
-                Recipe::new("fluffy american pancakes").unwrap(),
-            )))
+            .dispatch(ApiCommand::Read(Read::Recipe(Recipe::new(
+                "fluffy american pancakes",
+            ))))
             .await
             .unwrap();
 
@@ -286,9 +286,9 @@ mod tests {
         "###);
 
         let response = api
-            .dispatch(ApiCommand::Delete(Delete::Recipe(
-                Recipe::new("fluffy american pancakes").unwrap(),
-            )))
+            .dispatch(ApiCommand::Delete(Delete::Recipe(Recipe::new(
+                "fluffy american pancakes",
+            ))))
             .await
             .unwrap();
 

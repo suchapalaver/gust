@@ -1,9 +1,7 @@
-use std::str::FromStr;
-
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
     item::{Name, Section},
-    recipes::{Ingredients, Recipe},
+    recipes::Ingredients,
 };
 
 use clap::ArgMatches;
@@ -31,7 +29,7 @@ impl TryFrom<ArgMatches> for GustCommand {
                     matches.get_one::<String>("ingredients"),
                 ) {
                     let (recipe, ingredients) = (
-                        Recipe::from_str(recipe.trim())?,
+                        recipe.as_str().into(),
                         Ingredients::from_input_string(ingredients.trim()),
                     );
 
@@ -55,7 +53,7 @@ impl TryFrom<ArgMatches> for GustCommand {
                         )),
                         Some(("list", matches)) => {
                             if let Some(name) = matches.get_one::<String>("recipe") {
-                                Add::list_recipe_from_name(Recipe::from_str(name.trim())?)
+                                Add::list_recipe_from_name(name.as_str().into())
                             } else if let Some(name) = matches.get_one::<String>("item") {
                                 Add::list_item_from_name(Name::from(name.trim()))
                             } else {
@@ -68,7 +66,7 @@ impl TryFrom<ArgMatches> for GustCommand {
             )),
             Some(("delete", matches)) => Ok(GustCommand::Delete(
                 if let Some(name) = matches.get_one::<String>("recipe") {
-                    Delete::recipe_from_name(Recipe::from_str(name.trim())?)
+                    Delete::recipe_from_name(name.as_str().into())
                 } else if let Some(name) = matches.get_one::<String>("item") {
                     Delete::item_from_name(Name::from(name.trim()))
                 } else {
@@ -92,7 +90,7 @@ impl TryFrom<ArgMatches> for GustCommand {
             }
             Some(("read", matches)) => Ok(GustCommand::Read(
                 if let Some(name) = matches.get_one::<String>("recipe") {
-                    Read::recipe_from_name(Recipe::from_str(name.trim())?)
+                    Read::recipe_from_name(name.as_str().into())
                 } else if let Some(name) = matches.get_one::<String>("item") {
                     Read::item_from_name(Name::from(name.trim()))
                 } else {
@@ -111,7 +109,7 @@ impl TryFrom<ArgMatches> for GustCommand {
                     let Some(name) = matches.get_one::<String>("recipe") else {
                         todo!()
                     };
-                    Update::recipe_from_name(Recipe::from_str(name.trim())?)
+                    Update::recipe_from_name(name.as_str().into())
                 }
                 Some(("list", matches)) => {
                     let Some(("clear", _)) = matches.subcommand() else {

@@ -1,11 +1,9 @@
-use std::str::FromStr;
-
 use crate::{
     input::user_wants_to_add_item_to_list,
-    item::{Item, Name, SECTIONS},
+    item::{Item, SECTIONS},
     items::Items,
     recipes::Recipe,
-    Load, ReadError,
+    Load,
 };
 use serde::{Deserialize, Serialize};
 
@@ -87,7 +85,7 @@ impl List {
         }
     }
 
-    pub fn add_groceries(&mut self, groceries: &Items) -> Result<(), ReadError> {
+    pub fn add_groceries(&mut self, groceries: &Items) {
         // move everything off list to temp list
         let list_items: Vec<Item> = self.items.drain(..).collect();
         let sections = SECTIONS;
@@ -99,11 +97,8 @@ impl List {
                         .iter()
                         .filter(|item| item.section().is_some())
                         .filter(|item| {
-                            if let Some(item_sec) = item.section() {
-                                item_sec.as_str() == section
-                            } else {
-                                false
-                            }
+                            item.section()
+                                .map_or(false, |item_sec| item_sec.as_str() == section)
                         })
                         .cloned()
                         .collect();
@@ -111,11 +106,9 @@ impl List {
                     let b: Vec<Item> = groceries
                         .collection()
                         .filter(|item| {
-                            if let Some(item_sec) = item.section() {
+                            item.section().map_or(false, |item_sec| {
                                 item_sec.as_str() == section && !a.contains(item)
-                            } else {
-                                false
-                            }
+                            })
                         })
                         .cloned()
                         .collect();
@@ -152,55 +145,41 @@ impl List {
                 }
             }
         }
-        Ok(())
     }
 
     pub fn add_item(&mut self, item: Item) {
         self.items.push(item);
     }
 
-    pub fn delete_groceries_item(&mut self, name: &str) -> Result<(), ReadError> {
-        if let Ok(i) = self
+    pub fn delete_groceries_item(&mut self, name: &str) {
+        self.items = self
             .items
-            .iter()
-            .position(|x| x.name() == &Name::from(name))
-            .ok_or(ReadError::ItemNotFound)
-        {
-            self.items.remove(i);
-        }
-        Ok(())
+            .drain(..)
+            .filter(|item| item.name().as_str() != name)
+            .collect();
     }
 
     pub fn add_checklist_item(&mut self, item: Item) {
         self.checklist.push(item);
     }
 
-    pub fn delete_checklist_item(&mut self, name: &str) -> Result<(), ReadError> {
-        if let Ok(i) = self
+    pub fn delete_checklist_item(&mut self, name: &str) {
+        self.checklist = self
             .checklist
-            .iter()
-            .position(|x| x.name() == &Name::from(name))
-            .ok_or(ReadError::ItemNotFound)
-        {
-            self.checklist.remove(i);
-        }
-        Ok(())
+            .drain(..)
+            .filter(|item| item.name().as_str() != name)
+            .collect();
     }
 
     pub fn add_recipe(&mut self, recipe: Recipe) {
         self.recipes.push(recipe);
     }
 
-    pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
-        let recipe = Recipe::from_str(name)?;
-        if let Ok(index) = self
+    pub fn delete_recipe(&mut self, name: &str) {
+        self.recipes = self
             .recipes
-            .iter()
-            .position(|x| x == &recipe)
-            .ok_or(ReadError::ItemNotFound)
-        {
-            self.recipes.remove(index);
-        }
-        Ok(())
+            .drain(..)
+            .filter(|recipe| recipe.as_str() != name)
+            .collect();
     }
 }

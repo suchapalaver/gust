@@ -13,20 +13,7 @@ use std::{
 };
 
 use serde::Deserialize;
-use serde_json::Value;
 use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum ReadError {
-    #[error("Invalid JSON: {0}")]
-    Json(Value),
-
-    #[error("Item not found")]
-    ItemNotFound,
-
-    #[error("No groceries library found")]
-    LibraryNotFound,
-}
 
 #[derive(Error, Debug)]
 pub enum LoadError {

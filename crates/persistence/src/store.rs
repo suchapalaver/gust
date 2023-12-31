@@ -5,7 +5,7 @@ use common::{
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
-    LoadError, ReadError,
+    LoadError,
 };
 use futures::FutureExt;
 use thiserror::Error;
@@ -54,9 +54,6 @@ pub enum StoreError {
 
     #[error("Parse store type error: {0}")]
     ParseStoreType(String),
-
-    #[error("read error: {0}")]
-    ReadError(#[from] ReadError),
 
     #[error("error reading/writing file: {0}")]
     ReadWriteError(#[from] std::io::Error),

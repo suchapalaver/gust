@@ -620,7 +620,7 @@ mod tests {
         let ingredients =
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
-        let recipe = Recipe::new("test recipe").unwrap();
+        let recipe = Recipe::new("test recipe");
         store.add_recipe(&recipe, &ingredients).await.unwrap();
 
         store.add_list_recipe(&recipe).await.unwrap();
@@ -663,7 +663,7 @@ mod tests {
         let ingredients =
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
-        let recipe = Recipe::new("test recipe").unwrap();
+        let recipe = Recipe::new("test recipe");
         store.add_recipe(&recipe, &ingredients).await.unwrap();
 
         let StoreResponse::Recipes(recipes) = store.recipes().await.unwrap() else {
@@ -711,7 +711,7 @@ mod tests {
         let ingredients =
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
 
-        let recipe = Recipe::new("test recipe").unwrap();
+        let recipe = Recipe::new("test recipe");
         store.add_recipe(&recipe, &ingredients).await.unwrap();
 
         let StoreResponse::Recipes(recipes) = store.recipes().await.unwrap() else {

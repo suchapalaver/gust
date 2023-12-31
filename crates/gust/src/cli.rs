@@ -1,6 +1,5 @@
 use api::ApiError;
 use clap::{builder::NonEmptyStringValueParser, Arg, Command, ValueHint};
-use common::ReadError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -10,9 +9,6 @@ pub enum CliError {
 
     #[error("invalid input: {0}")]
     ParseInputError(String),
-
-    #[error("read error: {0}")]
-    ReadError(#[from] ReadError),
 
     #[error("URL parse error: {0}")]
     UrlParseError(#[from] url::ParseError),
