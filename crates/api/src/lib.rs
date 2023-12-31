@@ -48,8 +48,6 @@ impl Api {
         let dispatch = ApiDispatch { tx };
 
         tokio::task::spawn(async move {
-            let mut api = api;
-
             loop {
                 tokio::select! {
                     cmd = rx.recv().fuse() => {
@@ -76,7 +74,7 @@ impl Api {
     }
 
     #[instrument(level = "debug", skip(self), ret(Debug))]
-    async fn execute(&mut self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
+    async fn execute(&self, command: ApiCommand) -> Result<ApiResponse, ApiError> {
         let (tx, rx) = oneshot::channel();
         self.store.send((command, tx)).await?;
         let res = rx.await??;

@@ -66,7 +66,7 @@ impl JsonStore {
 }
 
 impl Storage for JsonStore {
-    async fn add_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
+    async fn add_item(&self, item: &Name) -> Result<StoreResponse, StoreError> {
         let mut groceries = Items::from_json(&self.items)?;
 
         if groceries
@@ -82,51 +82,51 @@ impl Storage for JsonStore {
         }
     }
 
-    async fn add_checklist_item(&mut self, _item: &Name) -> Result<StoreResponse, StoreError> {
+    async fn add_checklist_item(&self, _item: &Name) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn add_list_item(&mut self, _item: &Name) -> Result<StoreResponse, StoreError> {
+    async fn add_list_item(&self, _item: &Name) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn add_list_recipe(&mut self, _recipe: &Recipe) -> Result<StoreResponse, StoreError> {
+    async fn add_list_recipe(&self, _recipe: &Recipe) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
     async fn add_recipe(
-        &mut self,
+        &self,
         _recipe: &Recipe,
         _ingredients: &Ingredients,
     ) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn checklist(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn checklist(&self) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn delete_checklist_item(&mut self, _item: &Name) -> Result<StoreResponse, StoreError> {
+    async fn delete_checklist_item(&self, _item: &Name) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn delete_recipe(&mut self, _recipe: &Recipe) -> Result<StoreResponse, StoreError> {
+    async fn delete_recipe(&self, _recipe: &Recipe) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn items(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn items(&self) -> Result<StoreResponse, StoreError> {
         Ok(StoreResponse::Items(Items::from_json(&self.items)?))
     }
 
-    async fn list(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn list(&self) -> Result<StoreResponse, StoreError> {
         Ok(StoreResponse::List(List::from_json(&self.list)?))
     }
 
-    async fn refresh_list(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn refresh_list(&self) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
+    async fn recipe_ingredients(&self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
         let items = Items::from_json(&self.items)?;
         let ingredients: Ingredients = items
             .recipe_ingredients(&recipe.to_string())?
@@ -136,11 +136,11 @@ impl Storage for JsonStore {
         Ok(StoreResponse::RecipeIngredients(Some(ingredients)))
     }
 
-    async fn sections(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn sections(&self) -> Result<StoreResponse, StoreError> {
         todo!()
     }
 
-    async fn recipes(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn recipes(&self) -> Result<StoreResponse, StoreError> {
         let mut recipes: HashSet<Recipe> = HashSet::new();
 
         {
@@ -312,7 +312,7 @@ pub mod test {
 
     async fn items() -> Items {
         let file = test_json_file().unwrap();
-        let mut store = JsonStore::new().with_items_path(file.path());
+        let store = JsonStore::new().with_items_path(file.path());
         let StoreResponse::Items(items) = store.items().await.unwrap() else {
             todo!()
         };
@@ -334,7 +334,7 @@ pub mod test {
 
     #[tokio::test]
     async fn test_save_items() -> Result<(), Box<dyn std::error::Error>> {
-        let mut store = JsonStore::new().with_items_path(&PathBuf::from("test_groceries.json"));
+        let store = JsonStore::new().with_items_path(&PathBuf::from("test_groceries.json"));
         let items = Items::default();
         insta::assert_json_snapshot!(items, @r#"
     {
@@ -888,7 +888,7 @@ pub mod test {
     #[tokio::test]
     async fn test_delete_item_from_list() -> Result<(), Box<dyn std::error::Error>> {
         let file = create_test_checklist_json_file().unwrap();
-        let mut store = JsonStore::new().with_list_path(file.path());
+        let store = JsonStore::new().with_list_path(file.path());
 
         let StoreResponse::List(mut shopping_list) = store.list().await.unwrap() else {
             todo!()
@@ -1119,7 +1119,7 @@ pub mod test {
 
     async fn checklist() -> List {
         let file = create_test_checklist_json_file().unwrap();
-        let mut store = JsonStore::new().with_list_path(file.path());
+        let store = JsonStore::new().with_list_path(file.path());
         let StoreResponse::List(list) = store.list().await.unwrap() else {
             todo!()
         };
