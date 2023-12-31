@@ -1,11 +1,9 @@
-use std::str::FromStr;
-
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    item::{Item, Name, Section},
+    item::{Item, Section},
     recipes::{Ingredients, Recipe},
-    Load, ReadError,
+    Load,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
@@ -51,16 +49,12 @@ impl Items {
         self.collection.push(item);
     }
 
-    pub fn delete_item(&mut self, name: &str) -> Result<(), ReadError> {
-        if let Ok(i) = self
+    pub fn delete_item(&mut self, name: &str) {
+        self.collection = self
             .collection
-            .iter()
-            .position(|x| x.name() == &Name::from(name))
-            .ok_or(ReadError::ItemNotFound)
-        {
-            self.collection.remove(i);
-        }
-        Ok(())
+            .drain(..)
+            .filter(|item| item.name().as_str() != name)
+            .collect();
     }
 
     pub fn items(&self) -> impl Iterator<Item = &Item> {
@@ -68,10 +62,8 @@ impl Items {
             .iter()
             .flat_map(|section| {
                 self.collection.iter().filter(|item| {
-                    let Some(item_section) = item.section() else {
-                        return false;
-                    };
-                    item_section.as_str().contains(section.as_str())
+                    item.section()
+                        .map_or(false, |item_section| item_section.contains(section))
                 })
             })
             .collect::<Vec<_>>()
@@ -82,59 +74,35 @@ impl Items {
         self.recipes.iter()
     }
 
-    pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
-        let recipe = Recipe::from_str(name)?;
-
-        let ingredients = Ingredients::from_input_string(ingredients);
-
+    pub fn add_recipe(&mut self, name: &str, ingredients: &str) {
         self.collection
             .iter_mut()
-            .filter(|x| ingredients.contains(x.name()))
-            .for_each(|x| match x.recipes_mut() {
-                Some(recipes) => recipes.to_vec().push(recipe.clone()),
-                None => {
-                    x.recipes_mut().replace(&mut [recipe.clone()]);
-                }
-            });
+            .filter(|item| Ingredients::from_input_string(ingredients).contains(item.name()))
+            .for_each(|item| item.add_recipe(name));
 
-        self.recipes.push(recipe);
-        Ok(())
+        self.recipes.push(name.into());
     }
 
-    pub fn delete_recipe(&mut self, name: &str) -> Result<(), ReadError> {
-        if let Ok(i) = self
+    pub fn delete_recipe(&mut self, name: &str) {
+        self.recipes = self
             .recipes
-            .iter()
-            .position(|recipe| recipe.as_str() == name)
-            .ok_or(ReadError::ItemNotFound)
-        {
-            self.recipes.remove(i);
-        }
+            .drain(..)
+            .filter(|recipe| recipe.as_str() != name)
+            .collect();
+
         for item in &mut self.collection {
-            if let Some(recipes) = item.recipes_mut() {
-                if let Some(i) = recipes.iter().position(|recipe| recipe.as_str() == name) {
-                    recipes.to_vec().remove(i);
-                }
-            }
+            item.delete_recipe(name);
         }
-        Ok(())
     }
 
-    pub fn recipe_ingredients(
-        &self,
-        recipe: &str,
-    ) -> Result<impl Iterator<Item = &Item>, ReadError> {
-        let recipe = Recipe::from_str(recipe)?;
-        Ok(self
-            .collection
+    pub fn recipe_ingredients(&self, recipe: &Recipe) -> impl Iterator<Item = &Item> {
+        self.collection
             .iter()
             .filter(|item| {
-                let Some(recipes) = &item.recipes() else {
-                    return false;
-                };
-                recipes.contains(&recipe)
+                item.recipes()
+                    .map_or(false, |recipes| recipes.contains(recipe))
             })
             .collect::<Vec<_>>()
-            .into_iter())
+            .into_iter()
     }
 }

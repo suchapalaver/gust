@@ -37,8 +37,16 @@ impl Item {
         self.recipes.as_ref()
     }
 
-    pub fn recipes_mut(&mut self) -> Option<&mut [Recipe]> {
-        self.recipes.as_deref_mut()
+    pub fn add_recipe(&mut self, recipe: &str) {
+        self.recipes
+            .get_or_insert_with(Vec::new)
+            .push(recipe.into());
+    }
+
+    pub fn delete_recipe(&mut self, name: &str) {
+        if let Some(vec) = self.recipes.as_mut() {
+            vec.retain(|x| x.as_str() != name)
+        }
     }
 
     pub fn with_section(mut self, section: impl Into<String>) -> Self {
@@ -107,5 +115,9 @@ impl Section {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    pub fn contains(&self, s: &Section) -> bool {
+        self.0.contains(s.as_str())
     }
 }

@@ -129,7 +129,7 @@ impl Storage for JsonStore {
     async fn recipe_ingredients(&self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
         let items = Items::from_json(&self.items)?;
         let ingredients: Ingredients = items
-            .recipe_ingredients(&recipe.to_string())?
+            .recipe_ingredients(recipe)
             .map(|item| item.name())
             .cloned()
             .collect();
@@ -367,7 +367,7 @@ pub mod test {
           "fried eggs for breakfast"
         ]
         "###);
-        items.delete_recipe("oatmeal chocolate chip cookies")?;
+        items.delete_recipe("oatmeal chocolate chip cookies");
         insta::assert_json_snapshot!(items.recipes().collect::<Vec<&Recipe>>(), @r###"
         [
           "fried eggs for breakfast"
@@ -493,7 +493,7 @@ pub mod test {
           }
         ]
         "###);
-        items.delete_item("eggs")?;
+        items.delete_item("eggs");
         insta::assert_json_snapshot!(items.collection().collect::<Vec<&Item>>(), @r###"
         [
           {
@@ -743,7 +743,7 @@ pub mod test {
         let ingredients = "kumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
 
         items.add_item(item);
-        items.add_recipe(recipe, ingredients)?;
+        items.add_recipe(recipe, ingredients);
 
         insta::assert_json_snapshot!(items, @r###"
         {
@@ -1000,7 +1000,7 @@ pub mod test {
           }
         ]
         "###);
-        shopping_list.delete_groceries_item("kumquats")?;
+        shopping_list.delete_groceries_item("kumquats");
         insta::assert_json_snapshot!(shopping_list.items(), @r###"
         [
           {
@@ -1124,7 +1124,7 @@ pub mod test {
     }
 
     #[tokio::test]
-    async fn test_delete_checklist_item() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_delete_checklist_item() {
         let mut shopping_list = checklist().await;
         let item = Item::new("kumquats").with_section("fresh");
         shopping_list.add_checklist_item(item);
@@ -1137,22 +1137,20 @@ pub mod test {
           }
         ]
         "###);
-        shopping_list.delete_checklist_item("kumquats")?;
+        shopping_list.delete_checklist_item("kumquats");
         insta::assert_json_snapshot!(shopping_list.checklist(), @"[]");
-        Ok(())
     }
 
     #[tokio::test]
-    async fn test_delete_recipe_from_list() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_delete_recipe_from_list() {
         let mut shopping_list = checklist().await;
         insta::assert_json_snapshot!(shopping_list.recipes().collect::<Vec<&Recipe>>(), @r#"
         [
           "tomato pasta"
         ]
         "#);
-        shopping_list.delete_recipe("tomato pasta")?;
+        shopping_list.delete_recipe("tomato pasta");
         insta::assert_json_snapshot!(shopping_list.recipes().collect::<Vec<&Recipe>>(), @"[]");
-        Ok(())
     }
 
     #[tokio::test]

@@ -1,8 +1,8 @@
-use std::{fmt, ops::Deref, str::FromStr};
+use std::{fmt, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{item::Name, ReadError};
+use crate::item::Name;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Hash, Eq, PartialEq)]
 pub struct Recipe(String);
@@ -14,8 +14,8 @@ impl fmt::Display for Recipe {
 }
 
 impl Recipe {
-    pub fn new(s: &str) -> Result<Self, ReadError> {
-        Self::from_str(s)
+    pub fn new(s: &str) -> Self {
+        s.into()
     }
 
     pub fn new_unchecked(s: impl Into<String>) -> Self {
@@ -29,15 +29,7 @@ impl Recipe {
 
 impl From<&str> for Recipe {
     fn from(s: &str) -> Self {
-        Self(s.to_string())
-    }
-}
-
-impl FromStr for Recipe {
-    type Err = ReadError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(s.trim().to_lowercase()))
+        Self(s.trim().to_lowercase())
     }
 }
 
