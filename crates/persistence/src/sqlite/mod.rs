@@ -102,24 +102,24 @@ pub struct SqliteStore {
 impl SqliteStore {
     pub async fn new(db_uri: DbUri) -> Result<Self, StoreError> {
         let pool = DatabaseConnector::new(db_uri).try_connect().await?;
-        let mut store = Self { pool };
+        let store = Self { pool };
         store.run_migrations()?;
         Ok(store)
     }
 
-    pub(crate) fn run_migrations(&mut self) -> Result<(), StoreError> {
+    pub(crate) fn run_migrations(&self) -> Result<(), StoreError> {
         let mut connection = self.connection()?;
         connection.immediate_transaction(run_migrations)
     }
 
     pub(crate) fn connection(
-        &mut self,
+        &self,
     ) -> Result<PooledConnection<ConnectionManager<SqliteConnection>>, r2d2::Error> {
         self.pool.get()
     }
 
     fn get_or_insert_item(
-        &mut self,
+        &self,
         connection: &mut SqliteConnection,
         name: &str,
     ) -> Result<i32, StoreError> {
@@ -136,7 +136,7 @@ impl SqliteStore {
     }
 
     fn get_or_insert_recipe(
-        &mut self,
+        &self,
         connection: &mut SqliteConnection,
         name: &str,
     ) -> Result<i32, StoreError> {
@@ -153,7 +153,7 @@ impl SqliteStore {
     }
 
     fn insert_item_recipe(
-        &mut self,
+        &self,
         connection: &mut SqliteConnection,
         item_id: i32,
         recipe_id: i32,
@@ -165,8 +165,8 @@ impl SqliteStore {
         Ok(())
     }
 
-    async fn list_items(&mut self) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn list_items(&self) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -186,8 +186,8 @@ impl SqliteStore {
         .await?
     }
 
-    async fn list_recipes(&mut self) -> Result<Vec<Recipe>, StoreError> {
-        let mut store = self.clone();
+    async fn list_recipes(&self) -> Result<Vec<Recipe>, StoreError> {
+        let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -207,7 +207,7 @@ impl SqliteStore {
     }
 
     fn load_item(
-        &mut self,
+        &self,
         connection: &mut SqliteConnection,
         item_id: i32,
     ) -> Result<Vec<Item>, StoreError> {
@@ -217,7 +217,7 @@ impl SqliteStore {
     }
 
     fn get_recipe(
-        &mut self,
+        &self,
         connection: &mut SqliteConnection,
         recipe: &str,
     ) -> Result<Option<Vec<RecipeModel>>, StoreError> {
@@ -229,8 +229,8 @@ impl SqliteStore {
 }
 
 impl Storage for SqliteStore {
-    async fn add_checklist_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn add_checklist_item(&self, item: &Name) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         let item = item.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
@@ -248,8 +248,8 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn add_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn add_item(&self, item: &Name) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         let item = item.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
@@ -262,8 +262,8 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn add_list_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn add_list_item(&self, item: &Name) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         let item = item.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
@@ -279,7 +279,7 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn add_list_recipe(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
+    async fn add_list_recipe(&self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
         let StoreResponse::RecipeIngredients(Some(ingredients)) =
             self.recipe_ingredients(recipe).await?
         else {
@@ -287,7 +287,7 @@ impl Storage for SqliteStore {
             return Err(StoreError::RecipeIngredients(recipe.to_string()));
         };
 
-        let mut store = self.clone();
+        let store = self.clone();
         let recipe = recipe.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
@@ -320,11 +320,11 @@ impl Storage for SqliteStore {
     }
 
     async fn add_recipe(
-        &mut self,
+        &self,
         recipe: &Recipe,
         ingredients: &Ingredients,
     ) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+        let store = self.clone();
         let recipe = recipe.clone();
         let ingredients = ingredients.clone();
         tokio::task::spawn_blocking(move || {
@@ -346,8 +346,8 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn checklist(&mut self) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn checklist(&self) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -368,7 +368,7 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn list(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn list(&self) -> Result<StoreResponse, StoreError> {
         let StoreResponse::List(mut list) = self.list_items().await? else {
             todo!()
         };
@@ -380,8 +380,8 @@ impl Storage for SqliteStore {
         Ok(StoreResponse::List(list))
     }
 
-    async fn delete_checklist_item(&mut self, item: &Name) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn delete_checklist_item(&self, item: &Name) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         let item = item.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
@@ -402,8 +402,8 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn delete_recipe(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn delete_recipe(&self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         let recipe = recipe.clone();
         let StoreResponse::RecipeIngredients(ingredients) =
             self.recipe_ingredients(&recipe).await?
@@ -440,10 +440,10 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn items(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn items(&self) -> Result<StoreResponse, StoreError> {
         use schema::items::dsl::items;
 
-        let mut store = self.clone();
+        let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -459,8 +459,8 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn refresh_list(&mut self) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn refresh_list(&self) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -471,8 +471,8 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn recipe_ingredients(&mut self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
-        let mut store = self.clone();
+    async fn recipe_ingredients(&self, recipe: &Recipe) -> Result<StoreResponse, StoreError> {
+        let store = self.clone();
         let recipe = recipe.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
@@ -510,9 +510,9 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn sections(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn sections(&self) -> Result<StoreResponse, StoreError> {
         use schema::sections::dsl::sections;
-        let mut store = self.clone();
+        let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -528,9 +528,9 @@ impl Storage for SqliteStore {
         .await?
     }
 
-    async fn recipes(&mut self) -> Result<StoreResponse, StoreError> {
+    async fn recipes(&self) -> Result<StoreResponse, StoreError> {
         use schema::recipes::dsl::recipes;
-        let mut store = self.clone();
+        let store = self.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
@@ -555,7 +555,7 @@ mod tests {
     async fn inmem_sqlite_store() -> SqliteStore {
         // Set up a connection to an in-memory SQLite database for testing
         let store = SqliteStore::new(DbUri::inmem()).await.unwrap();
-        let mut migrations_store = store.clone();
+        let migrations_store = store.clone();
         tokio::task::spawn_blocking(move || {
             let mut connection = migrations_store.connection().unwrap();
             connection.immediate_transaction(run_migrations).unwrap();
@@ -571,7 +571,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_checklist_item() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         let item_name = test_item();
         store.add_checklist_item(&item_name).await.unwrap();
@@ -585,7 +585,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_item() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         let item_name = test_item();
         store.add_item(&item_name).await.unwrap();
@@ -602,7 +602,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_list_item() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         let item_name = test_item();
         store.add_list_item(&item_name).await.unwrap();
@@ -618,7 +618,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_list_recipe() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         let ingredients =
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
@@ -661,7 +661,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_recipe() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         let ingredients =
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
@@ -687,7 +687,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_checklist_item() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         let item_name = test_item();
         store.add_checklist_item(&item_name).await.unwrap();
@@ -709,7 +709,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_recipe() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         let ingredients =
             Ingredients::from_iter(vec![Name::from("ingredient 1"), Name::from("ingredient 2")]);
@@ -749,7 +749,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_refresh_list() {
-        let mut store = inmem_sqlite_store().await;
+        let store = inmem_sqlite_store().await;
 
         store.refresh_list().await.unwrap();
 
