@@ -12,15 +12,15 @@ use crate::recipes::Recipe;
 /// * `recipes` - list of recipes of which the item is an ingredient
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Item {
-    pub name: Name,
-    pub section: Option<Section>,
-    pub recipes: Option<Vec<Recipe>>,
+    name: Name,
+    section: Option<Section>,
+    recipes: Option<Vec<Recipe>>,
 }
 
 impl Item {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
-            name: Name(name.into()),
+            name: Name(name.into().to_lowercase()),
             ..Default::default()
         }
     }
@@ -29,8 +29,25 @@ impl Item {
         &self.name
     }
 
+    pub fn section(&self) -> Option<&Section> {
+        self.section.as_ref()
+    }
+
+    pub fn recipes(&self) -> Option<&Vec<Recipe>> {
+        self.recipes.as_ref()
+    }
+
+    pub fn recipes_mut(&mut self) -> Option<&mut [Recipe]> {
+        self.recipes.as_deref_mut()
+    }
+
     pub fn with_section(mut self, section: impl Into<String>) -> Self {
         self.section = Some(Section(section.into()));
+        self
+    }
+
+    pub fn with_recipes(mut self, recipes: &[Recipe]) -> Self {
+        self.recipes = Some(recipes.to_vec());
         self
     }
 

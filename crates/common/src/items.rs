@@ -10,9 +10,9 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Items {
-    pub sections: Vec<Section>,
-    pub collection: Vec<Item>,
-    pub recipes: Vec<Recipe>,
+    sections: Vec<Section>,
+    collection: Vec<Item>,
+    recipes: Vec<Recipe>,
 }
 
 impl Load for Items {
@@ -35,6 +35,10 @@ impl Items {
         Self::default()
     }
 
+    pub fn collection(&self) -> impl Iterator<Item = &Item> {
+        self.collection.iter()
+    }
+
     pub fn get_item_matches(&self, name: &str) -> impl Iterator<Item = &Item> {
         self.collection
             .iter()
@@ -51,7 +55,7 @@ impl Items {
         if let Ok(i) = self
             .collection
             .iter()
-            .position(|x| x.name == Name::from(name))
+            .position(|x| x.name() == &Name::from(name))
             .ok_or(ReadError::ItemNotFound)
         {
             self.collection.remove(i);
@@ -64,7 +68,7 @@ impl Items {
             .iter()
             .flat_map(|section| {
                 self.collection.iter().filter(|item| {
-                    let Some(item_section) = &item.section else {
+                    let Some(item_section) = item.section() else {
                         return false;
                     };
                     item_section.as_str().contains(section.as_str())
@@ -85,10 +89,12 @@ impl Items {
 
         self.collection
             .iter_mut()
-            .filter(|x| ingredients.contains(&x.name))
-            .for_each(|x| match x.recipes.as_mut() {
-                Some(recipes) => recipes.push(recipe.clone()),
-                None => x.recipes = Some(vec![recipe.clone()]),
+            .filter(|x| ingredients.contains(x.name()))
+            .for_each(|x| match x.recipes_mut() {
+                Some(recipes) => recipes.to_vec().push(recipe.clone()),
+                None => {
+                    x.recipes_mut().replace(&mut [recipe.clone()]);
+                }
             });
 
         self.recipes.push(recipe);
@@ -105,9 +111,9 @@ impl Items {
             self.recipes.remove(i);
         }
         for item in &mut self.collection {
-            if let Some(recipes) = item.recipes.as_mut() {
+            if let Some(recipes) = item.recipes_mut() {
                 if let Some(i) = recipes.iter().position(|recipe| recipe.as_str() == name) {
-                    recipes.remove(i);
+                    recipes.to_vec().remove(i);
                 }
             }
         }
@@ -123,7 +129,7 @@ impl Items {
             .collection
             .iter()
             .filter(|item| {
-                let Some(recipes) = &item.recipes else {
+                let Some(recipes) = &item.recipes() else {
                     return false;
                 };
                 recipes.contains(&recipe)

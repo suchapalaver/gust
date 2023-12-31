@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct List {
-    pub checklist: Vec<Item>,
-    pub recipes: Vec<Recipe>,
-    pub items: Vec<Item>,
+    checklist: Vec<Item>,
+    recipes: Vec<Recipe>,
+    items: Vec<Item>,
 }
 
 impl Load for List {
@@ -36,12 +36,39 @@ impl List {
         Self::default()
     }
 
+    pub fn with_checklist(mut self, checklist: Vec<Item>) -> Self {
+        self.checklist.extend(checklist);
+        self
+    }
+
+    pub fn with_recipes(mut self, recipes: Vec<Recipe>) -> Self {
+        self.recipes.extend(recipes);
+        self
+    }
+
+    pub fn with_items(mut self, items: Vec<Item>) -> Self {
+        self.items.extend(items);
+        self
+    }
+
+    pub fn checklist(&self) -> &Vec<Item> {
+        &self.checklist
+    }
+
+    pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
+        self.recipes.iter()
+    }
+
+    pub fn items(&self) -> &Vec<Item> {
+        &self.items
+    }
+
     pub fn print(&self) {
         if !self.checklist.is_empty() {
             println!("Check if we need:");
 
             self.checklist.iter().for_each(|item| {
-                println!("\t{}", item.name.as_str().to_lowercase());
+                println!("\t{}", item.name());
             });
         }
         if !self.recipes.is_empty() {
@@ -55,7 +82,7 @@ impl List {
             println!("groceries:");
 
             self.items.iter().for_each(|item| {
-                println!("\t{}", item.name.as_str().to_lowercase());
+                println!("\t{}", item.name());
             });
         }
     }
@@ -70,9 +97,9 @@ impl List {
                 .map(|section| {
                     let mut a: Vec<Item> = list_items
                         .iter()
-                        .filter(|item| item.section.is_some())
+                        .filter(|item| item.section().is_some())
                         .filter(|item| {
-                            if let Some(item_sec) = &item.section {
+                            if let Some(item_sec) = item.section() {
                                 item_sec.as_str() == section
                             } else {
                                 false
@@ -82,10 +109,9 @@ impl List {
                         .collect();
 
                     let b: Vec<Item> = groceries
-                        .collection
-                        .iter()
+                        .collection()
                         .filter(|item| {
-                            if let Some(item_sec) = &item.section {
+                            if let Some(item_sec) = item.section() {
                                 item_sec.as_str() == section && !a.contains(item)
                             } else {
                                 false
@@ -102,7 +128,7 @@ impl List {
             if !section.is_empty() {
                 for item in &section {
                     if !self.items.contains(item) {
-                        if let Some(recipes) = &item.recipes {
+                        if let Some(recipes) = &item.recipes() {
                             if recipes.iter().any(|recipe| self.recipes.contains(recipe)) {
                                 self.add_item(item.clone());
                             }
@@ -137,7 +163,7 @@ impl List {
         if let Ok(i) = self
             .items
             .iter()
-            .position(|x| x.name == Name::from(name))
+            .position(|x| x.name() == &Name::from(name))
             .ok_or(ReadError::ItemNotFound)
         {
             self.items.remove(i);
@@ -153,7 +179,7 @@ impl List {
         if let Ok(i) = self
             .checklist
             .iter()
-            .position(|x| x.name == Name::from(name))
+            .position(|x| x.name() == &Name::from(name))
             .ok_or(ReadError::ItemNotFound)
         {
             self.checklist.remove(i);

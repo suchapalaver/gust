@@ -49,10 +49,10 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
     let recipes_table = schema::recipes::table;
     let sections_table = schema::sections::table;
 
-    for item in groceries.collection {
+    for item in groceries.collection() {
         // add the item to the item table
         let new_item = NewItem {
-            name: &item.name.to_string(),
+            name: item.name().as_str(),
         };
 
         diesel::insert_into(items_table)
@@ -62,14 +62,14 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
 
         // get the item's item_id
         let results = items_table
-            .filter(schema::items::dsl::name.eq(item.name.to_string()))
+            .filter(schema::items::dsl::name.eq(item.name().to_string()))
             .load::<models::Item>(connection)?;
 
         assert_eq!(results.len(), 1);
 
         let item_id = results[0].id;
 
-        if let Some(item_recipes) = item.recipes {
+        if let Some(item_recipes) = item.recipes() {
             // log the item_id in items_recipes
             for recipe in item_recipes {
                 let new_recipe = NewRecipe {
@@ -96,11 +96,13 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
                     .values(&new_item_recipe)
                     .on_conflict_do_nothing()
                     .execute(connection)
-                    .unwrap_or_else(|_| panic!("Error transferring item_recipe for {}", item.name));
+                    .unwrap_or_else(|_| {
+                        panic!("Error transferring item_recipe for {}", item.name())
+                    });
             }
         }
 
-        if let Some(item_section) = item.section {
+        if let Some(item_section) = &item.section() {
             // log the item_id in items_sections
             let results = sections_table
                 .filter(schema::sections::dsl::name.eq(item_section.to_string()))
@@ -121,7 +123,7 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
                     .on_conflict_do_nothing()
                     .execute(connection)
                     .unwrap_or_else(|_| {
-                        panic!("Error transferring item_section for {}", item.name)
+                        panic!("Error transferring item_section for {}", item.name())
                     });
             }
         }
