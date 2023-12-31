@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use question::{Answer, Question};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -77,42 +76,6 @@ impl Items {
 
     pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
         self.recipes.iter()
-    }
-
-    // check if ingredients already in lib or add them if not
-    pub fn check_recipe_ingredients(&mut self, ingredients: &str) {
-        let ingredients = Ingredients::from_input_string(ingredients);
-        // add new items to groceries
-        for ingredient in ingredients.iter() {
-            if self.collection.iter().all(|item| &item.name != ingredient) {
-                let res = Question::new(&format!(
-                    "Which section is {ingredient} in?\n\
-                    *1* fresh
-                    *2* pantry 
-                    *3* protein 
-                    *4* dairy 
-                    *5* freezer"
-                ))
-                .acceptable(vec!["1", "2", "3", "4", "5"])
-                .until_acceptable()
-                .ask();
-
-                let section_input = match res {
-                    Some(Answer::RESPONSE(res)) if &res == "1" => "fresh".to_string(),
-                    Some(Answer::RESPONSE(res)) if &res == "2" => "pantry".to_string(),
-                    Some(Answer::RESPONSE(res)) if &res == "3" => "protein".to_string(),
-                    Some(Answer::RESPONSE(res)) if &res == "4" => "dairy".to_string(),
-                    Some(Answer::RESPONSE(res)) if &res == "5" => "freezer".to_string(),
-                    _ => unreachable!(),
-                };
-
-                let section = Section::from(section_input.as_str());
-
-                let item = Item::new(ingredient.as_str()).with_section(section.as_str());
-
-                self.add_item(item);
-            }
-        }
     }
 
     pub fn add_recipe(&mut self, name: &str, ingredients: &str) -> Result<(), ReadError> {
