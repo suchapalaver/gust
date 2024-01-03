@@ -1,4 +1,4 @@
-use crate::{item::Item, recipes::Recipe, Load};
+use crate::{item::Item, load::Load, recipes::Recipe};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]

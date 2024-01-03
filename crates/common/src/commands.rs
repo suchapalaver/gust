@@ -10,6 +10,7 @@ use crate::{
 pub enum ApiCommand {
     Add(Add),
     Delete(Delete),
+    Export,
     FetchRecipe(Url),
     ImportFromJson,
     Read(Read),

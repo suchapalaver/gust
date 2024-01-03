@@ -118,6 +118,7 @@ pub enum ApiResponse {
     Checklist(Vec<Item>),
     DeletedRecipe(Recipe),
     DeletedChecklistItem(Name),
+    Exported(Vec<Item>, List),
     FetchedRecipe((Recipe, Ingredients)),
     ItemAlreadyAdded(Name),
     Items(Items),
@@ -150,6 +151,17 @@ impl Display for ApiResponse {
             }
             Self::DeletedChecklistItem(name) => writeln!(f, "\ndeleted from checklist: \n{name}"),
             Self::DeletedRecipe(recipe) => writeln!(f, "\ndeleted recipe: \n{recipe}"),
+            Self::Exported(items, list) => {
+                writeln!(f, "\nexported items:")?;
+                for item in items {
+                    writeln!(f, "  {item}")?;
+                }
+                writeln!(f, "\nexported list:")?;
+                for item in list.items() {
+                    writeln!(f, "  {item}")?;
+                }
+                Ok(())
+            }
             Self::FetchedRecipe((recipe, ingredients)) => {
                 writeln!(f, "\n{recipe}:")?;
                 for ingredient in ingredients.iter() {
@@ -165,7 +177,7 @@ impl Display for ApiResponse {
                 }
                 Ok(())
             }
-            Self::ImportToSqlite => writeln!(f, "\nJSON to SQLite data store migration successful"),
+            Self::ImportToSqlite => writeln!(f, "\nImport successful"),
             Self::List(list) => {
                 writeln!(f)?;
                 for item in list.items() {
@@ -214,6 +226,7 @@ impl From<StoreResponse> for ApiResponse {
             StoreResponse::Checklist(item) => Self::Checklist(item),
             StoreResponse::DeletedRecipe(item) => Self::DeletedRecipe(item),
             StoreResponse::DeletedChecklistItem(item) => Self::DeletedChecklistItem(item),
+            StoreResponse::Exported(items, list) => Self::Exported(items, list),
             StoreResponse::FetchedRecipe(item) => Self::FetchedRecipe(item),
             StoreResponse::ItemAlreadyAdded(item) => Self::ItemAlreadyAdded(item),
             StoreResponse::Items(item) => Self::Items(item),

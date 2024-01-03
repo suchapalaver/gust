@@ -29,17 +29,19 @@ All you need is to [install Docker](https://docs.docker.com/install/).
 
 - [help](./docs/cli.md#help)
 - [fetching recipes](./docs/cli.md#fetching-recipes)
+- [importing/exporting data](./docs/cli.md#importing-and-exporting-data)
 
 ### [database](./docs/database.md)
 
 - [storage options](./docs/database.md#storage-options)
-  - [json](./docs/database.md#json)
   - [sqlite](./docs/database.md#sqlite)
+  - [postgres](./docs/database.md#postgresql)
 
 ### [docker](./docs/docker.md)
 
-- [data volumes](./docker.md#creating-a-gust_data-volume)
-- [migrating from JSON to SQLite](./docker.md#migrate-a-json-gust-store-to-sqlite)
+- [data volumes](./docs/docker.md#creating-a-gust_data-volume)
+- [migrating from JSON to SQLite](./docs/docker.md#migrate-a-json-gust-store-to-sqlite)
+- [exporting data to YAML](./docs/docker.md#export-data-to-yaml)
 
 ---
 ## getting started

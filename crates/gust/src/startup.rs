@@ -1,4 +1,4 @@
-use crate::{cli, command::GustCommand, CliError};
+use crate::{cli, command::UserCommand, CliError};
 use api::{Api, ApiError};
 use tracing::instrument;
 
@@ -8,14 +8,14 @@ pub async fn run() -> Result<(), CliError> {
 
     let api = Api::init(
         matches
-            .get_one::<String>("store")
-            .expect("'store' has a default setting")
+            .get_one::<String>("database")
+            .expect("'database' has a default setting")
             .parse()
             .map_err(ApiError::from)?,
     )
     .await?;
 
-    let command: GustCommand = matches.try_into()?;
+    let command: UserCommand = matches.try_into()?;
 
     let response = api.dispatch(command.into()).await?;
 

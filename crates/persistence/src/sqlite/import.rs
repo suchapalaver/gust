@@ -7,7 +7,7 @@ use crate::{
     store::StoreError,
 };
 
-pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
+pub fn import_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
     use crate::schema::sections;
 
     let sections = SECTIONS;
@@ -24,7 +24,7 @@ pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreEr
     Ok(())
 }
 
-pub fn migrate_items(connection: &mut SqliteConnection, items: Items) -> Result<(), StoreError> {
+pub fn import_items(connection: &mut SqliteConnection, items: Items) -> Result<(), StoreError> {
     let items_table = schema::items::table;
     let recipes_table = schema::recipes::table;
     let sections_table = schema::sections::table;

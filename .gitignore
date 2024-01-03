@@ -13,4 +13,6 @@ target/
 # Local JSON 'items.json' and 'list.json' files
 *.json
 
+*.yaml
+
 /sqlite.db

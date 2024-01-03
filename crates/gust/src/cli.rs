@@ -194,6 +194,21 @@ fn import() -> Command {
         .about("import from 'items.json' and 'list.json' files")
 }
 
+fn export() -> Command {
+    Command::new("export")
+        .subcommand_required(false)
+        .about("export items to 'items.yaml' and list to 'list.yaml' files")
+}
+
+fn store() -> Arg {
+    Arg::new("database")
+        .long("database")
+        .num_args(1)
+        .value_parser(["sqlite", "sqlite-inmem"])
+        .default_value("sqlite")
+        .help("which database to use")
+}
+
 pub fn cli() -> Command {
     Command::new("gust")
         .about("gust: rust-powered grocery list creator")
@@ -205,12 +220,6 @@ pub fn cli() -> Command {
         .subcommand(read())
         .subcommand(update())
         .subcommand(import())
-        .arg(
-            Arg::new("store")
-                .long("database")
-                .num_args(1)
-                .value_parser(["sqlite", "sqlite-inmem"])
-                .default_value("sqlite")
-                .help("which database to use"),
-        )
+        .subcommand(export())
+        .arg(store())
 }

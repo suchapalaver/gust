@@ -16,6 +16,10 @@ Here are the supported storage options:
 
 SQLite is the default storage option.
 
+### PostgreSQL
+
+Coming!
+
 ---
 ## Importing from files
 

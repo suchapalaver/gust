@@ -19,6 +19,7 @@ scraper = "0.18.1"
 serde = { version = "*", features = ["derive"] }
 serde_derive = "*"
 serde_json = "*"
+serde_yaml = "0.9.30"
 thiserror = "1.0.48"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1.37"

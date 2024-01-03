@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{item::Item, recipes::Recipe, section::Section, Load};
+use crate::{item::Item, load::Load, recipes::Recipe, section::Section};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Items {
@@ -27,6 +27,10 @@ impl FromIterator<Item> for Items {
 impl Items {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn collection(&self) -> &[Item] {
+        &self.collection
     }
 
     pub fn collection_iter(&self) -> impl Iterator<Item = &Item> {

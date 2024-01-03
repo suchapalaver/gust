@@ -3,7 +3,7 @@ use std::{
     path::PathBuf,
 };
 
-use common::{items::Items, list::List, Load};
+use common::{items::Items, list::List, load::Load};
 
 use crate::store::StoreError;
 

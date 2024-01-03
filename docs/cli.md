@@ -26,6 +26,7 @@ Commands:
   read             read stuff
   update           update stuff
   import           import from 'items.json' and 'list.json' files
+  export           export items to 'items.yaml' and list to 'list.yaml' files
   help             Print this message or the help of the given subcommand(s)
 
 Options:
@@ -54,3 +55,8 @@ Scrambled egg and toast with smoked salmon:
 2 slices smoked salmon:
 salt and freshly ground black pepper:
 ```
+
+## Importing and Exporting Data
+
+See the Gust [Docker documentation](docker.md#) for instructions on how to [import](docker.md#import-from-json-files-to-sqlite)
+and [export](docker.md#export-data-to-yaml) your grocery items and shopping list data.
