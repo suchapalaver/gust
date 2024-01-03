@@ -197,108 +197,6 @@ pub mod test {
                           "oatmeal chocolate chip cookies",
                           "fried eggs for breakfast"
                       ]
-                  },
-                  {
-                      "name": "milk",
-                      "section": "dairy",
-                      "recipes": []
-                  },
-                  {
-                      "name": "spinach",
-                      "section": "fresh",
-                      "recipes": [
-                          "fried eggs for breakfast"
-                      ]
-                  },
-                  {
-                      "name": "beer",
-                      "section": "dairy",
-                      "recipes": []
-                  },
-                  {
-                      "name": "unsalted butter",
-                      "section": "dairy",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies",
-                          "fried eggs for breakfast"
-                      ]
-                  },
-                  {
-                      "name": "bread",
-                      "section": "pantry",
-                      "recipes": [
-                          "fried eggs for breakfast"
-                      ]
-                  },
-                  {
-                      "name": "old fashioned rolled oats",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "chocolate chips",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "baking powder",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "baking soda",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "salt",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "white sugar",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "vanilla extract",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "whole-wheat flour",
-                      "section": "pantry",
-                      "recipes": [
-                          "oatmeal chocolate chip cookies"
-                      ]
-                  },
-                  {
-                      "name": "1/2 & 1/2",
-                      "section": "dairy",
-                      "recipes": [
-                          "fried eggs for breakfast"
-                      ]
-                  },
-                  {
-                      "name": "feta",
-                      "section": "dairy",
-                      "recipes": [
-                          "fried eggs for breakfast"
-                      ]
                   }
               ],
               "recipes": [
@@ -344,16 +242,18 @@ pub mod test {
     }
     "#);
         store.save_items(items)?;
-        let StoreResponse::Items(items) = store.items().await.unwrap() else {
-            todo!()
-        };
-        insta::assert_json_snapshot!(items, @r#"
-    {
-      "sections": [],
-      "collection": [],
-      "recipes": []
-    }
-    "#);
+        match store.items().await.unwrap() {
+            StoreResponse::Items(items) => {
+                insta::assert_json_snapshot!(items, @r#"
+        {
+          "sections": [],
+          "collection": [],
+          "recipes": []
+        }
+        "#);
+            }
+            _ => panic!(),
+        }
         std::fs::remove_file(store.items)?;
         Ok(())
     }
@@ -388,218 +288,11 @@ pub mod test {
               "oatmeal chocolate chip cookies",
               "fried eggs for breakfast"
             ]
-          },
-          {
-            "name": "milk",
-            "section": "dairy",
-            "recipes": []
-          },
-          {
-            "name": "spinach",
-            "section": "fresh",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "beer",
-            "section": "dairy",
-            "recipes": []
-          },
-          {
-            "name": "unsalted butter",
-            "section": "dairy",
-            "recipes": [
-              "oatmeal chocolate chip cookies",
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "bread",
-            "section": "pantry",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "old fashioned rolled oats",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "chocolate chips",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "baking powder",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "baking soda",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "salt",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "white sugar",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "vanilla extract",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "whole-wheat flour",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "1/2 & 1/2",
-            "section": "dairy",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "feta",
-            "section": "dairy",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
           }
         ]
         "###);
         items.delete_item("eggs");
-        insta::assert_json_snapshot!(items.collection().collect::<Vec<&Item>>(), @r###"
-        [
-          {
-            "name": "milk",
-            "section": "dairy",
-            "recipes": []
-          },
-          {
-            "name": "spinach",
-            "section": "fresh",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "beer",
-            "section": "dairy",
-            "recipes": []
-          },
-          {
-            "name": "unsalted butter",
-            "section": "dairy",
-            "recipes": [
-              "oatmeal chocolate chip cookies",
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "bread",
-            "section": "pantry",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "old fashioned rolled oats",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "chocolate chips",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "baking powder",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "baking soda",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "salt",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "white sugar",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "vanilla extract",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "whole-wheat flour",
-            "section": "pantry",
-            "recipes": [
-              "oatmeal chocolate chip cookies"
-            ]
-          },
-          {
-            "name": "1/2 & 1/2",
-            "section": "dairy",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
-          },
-          {
-            "name": "feta",
-            "section": "dairy",
-            "recipes": [
-              "fried eggs for breakfast"
-            ]
-          }
-        ]
-        "###);
+        insta::assert_json_snapshot!(items.collection().collect::<Vec<&Item>>(), @"[]");
         Ok(())
     }
 
@@ -623,108 +316,6 @@ pub mod test {
                 "oatmeal chocolate chip cookies",
                 "fried eggs for breakfast"
               ]
-            },
-            {
-              "name": "milk",
-              "section": "dairy",
-              "recipes": []
-            },
-            {
-              "name": "spinach",
-              "section": "fresh",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "beer",
-              "section": "dairy",
-              "recipes": []
-            },
-            {
-              "name": "unsalted butter",
-              "section": "dairy",
-              "recipes": [
-                "oatmeal chocolate chip cookies",
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "bread",
-              "section": "pantry",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "old fashioned rolled oats",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "chocolate chips",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "baking powder",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "baking soda",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "salt",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "white sugar",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "vanilla extract",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "whole-wheat flour",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "1/2 & 1/2",
-              "section": "dairy",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "feta",
-              "section": "dairy",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
             }
           ],
           "recipes": [
@@ -740,7 +331,7 @@ pub mod test {
             .with_section("fresh")
             .with_recipes(&[Recipe::from(recipe)]);
 
-        let ingredients = "kumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
+        let ingredients = "cumquats, carrots, dried apricots, dried cranberries, chili, onion, garlic, cider vinegar, granulated sugar, honey, kosher salt, cardamom, cloves, coriander, ginger, black peppercorns";
 
         items.add_item(item);
         items.add_recipe(recipe, ingredients);
@@ -764,110 +355,113 @@ pub mod test {
               ]
             },
             {
-              "name": "milk",
-              "section": "dairy",
-              "recipes": []
-            },
-            {
-              "name": "spinach",
-              "section": "fresh",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "beer",
-              "section": "dairy",
-              "recipes": []
-            },
-            {
-              "name": "unsalted butter",
-              "section": "dairy",
-              "recipes": [
-                "oatmeal chocolate chip cookies",
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "bread",
-              "section": "pantry",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "old fashioned rolled oats",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "chocolate chips",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "baking powder",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "baking soda",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "salt",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "white sugar",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "vanilla extract",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "whole-wheat flour",
-              "section": "pantry",
-              "recipes": [
-                "oatmeal chocolate chip cookies"
-              ]
-            },
-            {
-              "name": "1/2 & 1/2",
-              "section": "dairy",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
-            },
-            {
-              "name": "feta",
-              "section": "dairy",
-              "recipes": [
-                "fried eggs for breakfast"
-              ]
-            },
-            {
               "name": "cumquats",
               "section": "fresh",
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "carrots",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "dried apricots",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "dried cranberries",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "chili",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "onion",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "garlic",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "cider vinegar",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "granulated sugar",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "honey",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "kosher salt",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "cardamom",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "cloves",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "coriander",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "ginger",
+              "section": null,
+              "recipes": [
+                "cumquat chutney"
+              ]
+            },
+            {
+              "name": "black peppercorns",
+              "section": null,
               "recipes": [
                 "cumquat chutney"
               ]
@@ -902,15 +496,7 @@ pub mod test {
             "name": "garlic",
             "section": "fresh",
             "recipes": [
-              "sheet pan salmon with broccoli",
-              "crispy tofu with cashews and blistered snap peas",
-              "chicken breasts with lemon",
-              "hummus",
-              "tomato pasta",
-              "crispy sheet-pan noodles",
-              "flue flighter chicken stew",
-              "sheet-pan chicken with jammy tomatoes",
-              "swordfish pasta"
+              "tomato pasta"
             ]
           },
           {
@@ -928,70 +514,25 @@ pub mod test {
             ]
           },
           {
-            "name": "lemons",
-            "section": "fresh",
-            "recipes": [
-              "chicken breasts with lemon",
-              "hummus",
-              "sheet-pan chicken with jammy tomatoes",
-              "flue flighter chicken stew"
-            ]
-          },
-          {
             "name": "pasta",
             "section": "pantry",
             "recipes": [
-              "tomato pasta",
-              "swordfish pasta"
+              "tomato pasta"
             ]
           },
           {
             "name": "olive oil",
             "section": "pantry",
             "recipes": [
-              "sheet pan salmon with broccoli",
-              "chicken breasts with lemon",
-              "hummus",
-              "tomato pasta",
-              "sheet-pan chicken with jammy tomatoes",
-              "turkey meatballs",
-              "swordfish pasta"
-            ]
-          },
-          {
-            "name": "short grain brown rice",
-            "section": "pantry",
-            "recipes": [
-              "sheet pan salmon with broccoli",
-              "flue flighter chicken stew"
+              "tomato pasta"
             ]
           },
           {
             "name": "parmigiana",
             "section": "dairy",
             "recipes": [
-              "tomato pasta",
-              "turkey meatballs"
+              "tomato pasta"
             ]
-          },
-          {
-            "name": "eggs",
-            "section": "dairy",
-            "recipes": [
-              "oatmeal chocolate chip cookies",
-              "fried eggs for breakfast",
-              "turkey meatballs"
-            ]
-          },
-          {
-            "name": "sausages",
-            "section": "protein",
-            "recipes": []
-          },
-          {
-            "name": "dumplings",
-            "section": "freezer",
-            "recipes": []
           },
           {
             "name": "kumquats",
@@ -1007,15 +548,7 @@ pub mod test {
             "name": "garlic",
             "section": "fresh",
             "recipes": [
-              "sheet pan salmon with broccoli",
-              "crispy tofu with cashews and blistered snap peas",
-              "chicken breasts with lemon",
-              "hummus",
-              "tomato pasta",
-              "crispy sheet-pan noodles",
-              "flue flighter chicken stew",
-              "sheet-pan chicken with jammy tomatoes",
-              "swordfish pasta"
+              "tomato pasta"
             ]
           },
           {
@@ -1033,70 +566,25 @@ pub mod test {
             ]
           },
           {
-            "name": "lemons",
-            "section": "fresh",
-            "recipes": [
-              "chicken breasts with lemon",
-              "hummus",
-              "sheet-pan chicken with jammy tomatoes",
-              "flue flighter chicken stew"
-            ]
-          },
-          {
             "name": "pasta",
             "section": "pantry",
             "recipes": [
-              "tomato pasta",
-              "swordfish pasta"
+              "tomato pasta"
             ]
           },
           {
             "name": "olive oil",
             "section": "pantry",
             "recipes": [
-              "sheet pan salmon with broccoli",
-              "chicken breasts with lemon",
-              "hummus",
-              "tomato pasta",
-              "sheet-pan chicken with jammy tomatoes",
-              "turkey meatballs",
-              "swordfish pasta"
-            ]
-          },
-          {
-            "name": "short grain brown rice",
-            "section": "pantry",
-            "recipes": [
-              "sheet pan salmon with broccoli",
-              "flue flighter chicken stew"
+              "tomato pasta"
             ]
           },
           {
             "name": "parmigiana",
             "section": "dairy",
             "recipes": [
-              "tomato pasta",
-              "turkey meatballs"
+              "tomato pasta"
             ]
-          },
-          {
-            "name": "eggs",
-            "section": "dairy",
-            "recipes": [
-              "oatmeal chocolate chip cookies",
-              "fried eggs for breakfast",
-              "turkey meatballs"
-            ]
-          },
-          {
-            "name": "sausages",
-            "section": "protein",
-            "recipes": []
-          },
-          {
-            "name": "dumplings",
-            "section": "freezer",
-            "recipes": []
           }
         ]
         "###);
@@ -1108,7 +596,7 @@ pub mod test {
         let file = assert_fs::NamedTempFile::new("test3.json")?;
         file.write_str(
             r#"
-            {"checklist":[],"recipes":["tomato pasta"],"items":[{"name":"garlic","section":"fresh","is_ingredient":true,"recipes":["sheet pan salmon with broccoli","crispy tofu with cashews and blistered snap peas","chicken breasts with lemon","hummus","tomato pasta","crispy sheet-pan noodles","flue flighter chicken stew","sheet-pan chicken with jammy tomatoes","swordfish pasta"]},{"name":"tomatoes","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"basil","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"lemons","section":"fresh","is_ingredient":true,"recipes":["chicken breasts with lemon","hummus","sheet-pan chicken with jammy tomatoes","flue flighter chicken stew"]},{"name":"pasta","section":"pantry","is_ingredient":true,"recipes":["tomato pasta","swordfish pasta"]},{"name":"olive oil","section":"pantry","is_ingredient":true,"recipes":["sheet pan salmon with broccoli","chicken breasts with lemon","hummus","tomato pasta","sheet-pan chicken with jammy tomatoes","turkey meatballs","swordfish pasta"]},{"name":"short grain brown rice","section":"pantry","is_ingredient":true,"recipes":["sheet pan salmon with broccoli","flue flighter chicken stew"]},{"name":"parmigiana","section":"dairy","is_ingredient":true,"recipes":["tomato pasta","turkey meatballs"]},{"name":"eggs","section":"dairy","is_ingredient":true,"recipes":["oatmeal chocolate chip cookies","fried eggs for breakfast","turkey meatballs"]},{"name":"sausages","section":"protein","is_ingredient":true,"recipes":[]},{"name":"dumplings","section":"freezer","is_ingredient":false,"recipes":[]}]}
+            {"checklist":[],"recipes":["tomato pasta"],"items":[{"name":"garlic","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"tomatoes","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"basil","section":"fresh","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"pasta","section":"pantry","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"olive oil","section":"pantry","is_ingredient":true,"recipes":["tomato pasta"]},{"name":"parmigiana","section":"dairy","is_ingredient":true,"recipes":["tomato pasta"]}]}
             "#
         )?;
         Ok(file)
@@ -1168,15 +656,7 @@ pub mod test {
               "name": "garlic",
               "section": "fresh",
               "recipes": [
-                "sheet pan salmon with broccoli",
-                "crispy tofu with cashews and blistered snap peas",
-                "chicken breasts with lemon",
-                "hummus",
-                "tomato pasta",
-                "crispy sheet-pan noodles",
-                "flue flighter chicken stew",
-                "sheet-pan chicken with jammy tomatoes",
-                "swordfish pasta"
+                "tomato pasta"
               ]
             },
             {
@@ -1194,70 +674,25 @@ pub mod test {
               ]
             },
             {
-              "name": "lemons",
-              "section": "fresh",
-              "recipes": [
-                "chicken breasts with lemon",
-                "hummus",
-                "sheet-pan chicken with jammy tomatoes",
-                "flue flighter chicken stew"
-              ]
-            },
-            {
               "name": "pasta",
               "section": "pantry",
               "recipes": [
-                "tomato pasta",
-                "swordfish pasta"
+                "tomato pasta"
               ]
             },
             {
               "name": "olive oil",
               "section": "pantry",
               "recipes": [
-                "sheet pan salmon with broccoli",
-                "chicken breasts with lemon",
-                "hummus",
-                "tomato pasta",
-                "sheet-pan chicken with jammy tomatoes",
-                "turkey meatballs",
-                "swordfish pasta"
-              ]
-            },
-            {
-              "name": "short grain brown rice",
-              "section": "pantry",
-              "recipes": [
-                "sheet pan salmon with broccoli",
-                "flue flighter chicken stew"
+                "tomato pasta"
               ]
             },
             {
               "name": "parmigiana",
               "section": "dairy",
               "recipes": [
-                "tomato pasta",
-                "turkey meatballs"
+                "tomato pasta"
               ]
-            },
-            {
-              "name": "eggs",
-              "section": "dairy",
-              "recipes": [
-                "oatmeal chocolate chip cookies",
-                "fried eggs for breakfast",
-                "turkey meatballs"
-              ]
-            },
-            {
-              "name": "sausages",
-              "section": "protein",
-              "recipes": []
-            },
-            {
-              "name": "dumplings",
-              "section": "freezer",
-              "recipes": []
             }
           ]
         }
@@ -1279,15 +714,7 @@ pub mod test {
               "name": "garlic",
               "section": "fresh",
               "recipes": [
-                "sheet pan salmon with broccoli",
-                "crispy tofu with cashews and blistered snap peas",
-                "chicken breasts with lemon",
-                "hummus",
-                "tomato pasta",
-                "crispy sheet-pan noodles",
-                "flue flighter chicken stew",
-                "sheet-pan chicken with jammy tomatoes",
-                "swordfish pasta"
+                "tomato pasta"
               ]
             },
             {
@@ -1305,70 +732,25 @@ pub mod test {
               ]
             },
             {
-              "name": "lemons",
-              "section": "fresh",
-              "recipes": [
-                "chicken breasts with lemon",
-                "hummus",
-                "sheet-pan chicken with jammy tomatoes",
-                "flue flighter chicken stew"
-              ]
-            },
-            {
               "name": "pasta",
               "section": "pantry",
               "recipes": [
-                "tomato pasta",
-                "swordfish pasta"
+                "tomato pasta"
               ]
             },
             {
               "name": "olive oil",
               "section": "pantry",
               "recipes": [
-                "sheet pan salmon with broccoli",
-                "chicken breasts with lemon",
-                "hummus",
-                "tomato pasta",
-                "sheet-pan chicken with jammy tomatoes",
-                "turkey meatballs",
-                "swordfish pasta"
-              ]
-            },
-            {
-              "name": "short grain brown rice",
-              "section": "pantry",
-              "recipes": [
-                "sheet pan salmon with broccoli",
-                "flue flighter chicken stew"
+                "tomato pasta"
               ]
             },
             {
               "name": "parmigiana",
               "section": "dairy",
               "recipes": [
-                "tomato pasta",
-                "turkey meatballs"
+                "tomato pasta"
               ]
-            },
-            {
-              "name": "eggs",
-              "section": "dairy",
-              "recipes": [
-                "oatmeal chocolate chip cookies",
-                "fried eggs for breakfast",
-                "turkey meatballs"
-              ]
-            },
-            {
-              "name": "sausages",
-              "section": "protein",
-              "recipes": []
-            },
-            {
-              "name": "dumplings",
-              "section": "freezer",
-              "recipes": []
             }
           ]
         }
@@ -1394,15 +776,7 @@ pub mod test {
               "name": "garlic",
               "section": "fresh",
               "recipes": [
-                "sheet pan salmon with broccoli",
-                "crispy tofu with cashews and blistered snap peas",
-                "chicken breasts with lemon",
-                "hummus",
-                "tomato pasta",
-                "crispy sheet-pan noodles",
-                "flue flighter chicken stew",
-                "sheet-pan chicken with jammy tomatoes",
-                "swordfish pasta"
+                "tomato pasta"
               ]
             },
             {
@@ -1420,70 +794,25 @@ pub mod test {
               ]
             },
             {
-              "name": "lemons",
-              "section": "fresh",
-              "recipes": [
-                "chicken breasts with lemon",
-                "hummus",
-                "sheet-pan chicken with jammy tomatoes",
-                "flue flighter chicken stew"
-              ]
-            },
-            {
               "name": "pasta",
               "section": "pantry",
               "recipes": [
-                "tomato pasta",
-                "swordfish pasta"
+                "tomato pasta"
               ]
             },
             {
               "name": "olive oil",
               "section": "pantry",
               "recipes": [
-                "sheet pan salmon with broccoli",
-                "chicken breasts with lemon",
-                "hummus",
-                "tomato pasta",
-                "sheet-pan chicken with jammy tomatoes",
-                "turkey meatballs",
-                "swordfish pasta"
-              ]
-            },
-            {
-              "name": "short grain brown rice",
-              "section": "pantry",
-              "recipes": [
-                "sheet pan salmon with broccoli",
-                "flue flighter chicken stew"
+                "tomato pasta"
               ]
             },
             {
               "name": "parmigiana",
               "section": "dairy",
               "recipes": [
-                "tomato pasta",
-                "turkey meatballs"
+                "tomato pasta"
               ]
-            },
-            {
-              "name": "eggs",
-              "section": "dairy",
-              "recipes": [
-                "oatmeal chocolate chip cookies",
-                "fried eggs for breakfast",
-                "turkey meatballs"
-              ]
-            },
-            {
-              "name": "sausages",
-              "section": "protein",
-              "recipes": []
-            },
-            {
-              "name": "dumplings",
-              "section": "freezer",
-              "recipes": []
             },
             {
               "name": "cumquats",

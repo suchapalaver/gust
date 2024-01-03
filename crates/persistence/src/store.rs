@@ -16,7 +16,7 @@ use tokio::sync::{
 use tracing::warn;
 use url::Url;
 
-use std::{error::Error, fmt::Debug, str::FromStr};
+use std::{error::Error, fmt::Debug, fmt::Display, str::FromStr};
 
 use crate::{
     json::{
@@ -70,6 +70,16 @@ pub enum StoreType {
     Json,
     Sqlite,
     SqliteInMem,
+}
+
+impl Display for StoreType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StoreType::Json => write!(f, "json"),
+            StoreType::Sqlite => write!(f, "sqlite"),
+            StoreType::SqliteInMem => write!(f, "sqlite-inmem"),
+        }
+    }
 }
 
 impl FromStr for StoreType {

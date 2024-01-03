@@ -1,7 +1,7 @@
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
     item::{Name, Section},
-    recipes::Ingredients,
+    recipes::{Ingredients, Recipe},
 };
 
 use clap::ArgMatches;
@@ -28,34 +28,32 @@ impl TryFrom<ArgMatches> for GustCommand {
                     matches.get_one::<String>("recipe"),
                     matches.get_one::<String>("ingredients"),
                 ) {
-                    let (recipe, ingredients) = (
-                        recipe.as_str().into(),
-                        Ingredients::from_input_string(ingredients.trim()),
-                    );
-
-                    Add::recipe_from_name_and_ingredients(recipe, ingredients)
+                    Add::recipe_from_name_and_ingredients(
+                        Recipe::from_input_string(recipe),
+                        Ingredients::from_input_string(ingredients),
+                    )
                 } else if let Some(name) = matches.get_one::<String>("item") {
                     Add::item_from_name_and_section(
-                        Name::from(name.trim()),
+                        Name::from(name.as_str()),
                         matches
                             .get_one::<String>("section")
                             .map(|section| Section::from(section.trim())),
                     )
                 } else if let Some(item) = matches.get_one::<String>("checklist-item") {
-                    Add::checklist_item_from_name(Name::from(item.trim()))
+                    Add::checklist_item_from_name(Name::from(item.as_str()))
                 } else {
                     match matches.subcommand() {
                         Some(("checklist", matches)) => Add::checklist_item_from_name(Name::from(
                             matches
                                 .get_one::<String>("item")
                                 .expect("item required")
-                                .trim(),
+                                .as_str(),
                         )),
                         Some(("list", matches)) => {
                             if let Some(name) = matches.get_one::<String>("recipe") {
                                 Add::list_recipe_from_name(name.as_str().into())
                             } else if let Some(name) = matches.get_one::<String>("item") {
-                                Add::list_item_from_name(Name::from(name.trim()))
+                                Add::list_item_from_name(Name::from(name.as_str()))
                             } else {
                                 unimplemented!()
                             }
@@ -68,14 +66,14 @@ impl TryFrom<ArgMatches> for GustCommand {
                 if let Some(name) = matches.get_one::<String>("recipe") {
                     Delete::recipe_from_name(name.as_str().into())
                 } else if let Some(name) = matches.get_one::<String>("item") {
-                    Delete::item_from_name(Name::from(name.trim()))
+                    Delete::item_from_name(Name::from(name.as_str()))
                 } else {
                     match matches.subcommand() {
                         Some(("checklist", matches)) => {
                             let Some(name) = matches.get_one::<String>("checklist-item") else {
                                 unimplemented!()
                             };
-                            Delete::ChecklistItem(Name::from(name.trim()))
+                            Delete::ChecklistItem(Name::from(name.as_str()))
                         }
                         _ => unimplemented!(),
                     }
@@ -85,14 +83,14 @@ impl TryFrom<ArgMatches> for GustCommand {
                 let Some(url) = matches.get_one::<String>("url") else {
                     unreachable!("Providing a URL is required")
                 };
-                let url: Url = Url::parse(url.trim())?;
+                let url: Url = Url::parse(url)?;
                 Ok(GustCommand::FetchRecipe(url))
             }
             Some(("read", matches)) => Ok(GustCommand::Read(
                 if let Some(name) = matches.get_one::<String>("recipe") {
                     Read::recipe_from_name(name.as_str().into())
                 } else if let Some(name) = matches.get_one::<String>("item") {
-                    Read::item_from_name(Name::from(name.trim()))
+                    Read::item_from_name(Name::from(name.as_str()))
                 } else {
                     match matches.subcommand() {
                         Some(("checklist", _matches)) => Read::Checklist,

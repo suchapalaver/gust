@@ -38,11 +38,11 @@ pub struct Api {
 
 impl Api {
     pub async fn init(store: StoreType) -> Result<ApiDispatch, ApiError> {
-        info!("Initializing API with store type: {:?}", store);
+        info!("Initializing API with store type: {store}");
 
-        let store = Store::from_store_type(store).await?.init().await?;
-
-        let api = Api { store };
+        let api = Api {
+            store: Store::from_store_type(store).await?.init().await?,
+        };
 
         let (tx, mut rx) = mpsc::channel::<ApiSendWithReply>(10);
         let dispatch = ApiDispatch { tx };

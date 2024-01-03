@@ -25,6 +25,10 @@ impl Recipe {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    pub fn from_input_string(s: &str) -> Self {
+        Self::from(s)
+    }
 }
 
 impl From<&str> for Recipe {
