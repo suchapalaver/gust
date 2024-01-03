@@ -188,10 +188,10 @@ fn update() -> Command {
         .subcommand(list().subcommand(refresh_list()))
 }
 
-fn migrate() -> Command {
-    Command::new("migrate-json-store")
+fn import() -> Command {
+    Command::new("import")
         .subcommand_required(false)
-        .about("migrate JSON store to Sqlite database")
+        .about("import from 'items.json' and 'list.json' files")
 }
 
 pub fn cli() -> Command {
@@ -204,12 +204,12 @@ pub fn cli() -> Command {
         .subcommand(fetch())
         .subcommand(read())
         .subcommand(update())
-        .subcommand(migrate())
+        .subcommand(import())
         .arg(
             Arg::new("store")
                 .long("database")
                 .num_args(1)
-                .value_parser(["json", "sqlite", "sqlite-inmem"])
+                .value_parser(["sqlite", "sqlite-inmem"])
                 .default_value("sqlite")
                 .help("which database to use"),
         )

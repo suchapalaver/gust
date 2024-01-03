@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use crate::recipes::Recipe;
+use crate::{recipes::Recipe, section::Section};
 
 /// An item used in recipes or bought separately
 ///
@@ -37,35 +37,20 @@ impl Item {
         self.recipes.as_ref()
     }
 
-    pub fn add_recipe(&mut self, recipe: &str) {
-        let recipe = recipe.into();
-        if let Some(recipes) = &mut self.recipes {
-            if !recipes.contains(&recipe) {
-                recipes.push(recipe);
-            }
-        } else {
-            self.recipes = Some(vec![recipe]);
-        }
-    }
-
     pub fn delete_recipe(&mut self, name: &str) {
         if let Some(vec) = self.recipes.as_mut() {
             vec.retain(|x| x.as_str() != name)
         }
     }
 
-    pub fn with_section(mut self, section: impl Into<String>) -> Self {
-        self.section = Some(Section(section.into()));
+    pub fn with_section(mut self, section: &str) -> Self {
+        self.section = Some(section.into());
         self
     }
 
     pub fn with_recipes(mut self, recipes: &[Recipe]) -> Self {
         self.recipes = Some(recipes.to_vec());
         self
-    }
-
-    pub(crate) fn matches(&self, s: impl Into<String>) -> bool {
-        s.into().split(' ').all(|word| !self.name.0.contains(word))
     }
 }
 
@@ -99,36 +84,5 @@ impl From<&str> for Name {
 impl Name {
     pub fn as_str(&self) -> &str {
         &self.0
-    }
-}
-
-pub const SECTIONS: [&str; 5] = ["fresh", "pantry", "protein", "dairy", "freezer"];
-
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
-pub struct Section(String);
-
-impl From<&str> for Section {
-    fn from(value: &str) -> Self {
-        Self(value.trim().to_lowercase())
-    }
-}
-
-impl fmt::Display for Section {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Section {
-    pub fn new(sec: impl Into<String>) -> Self {
-        Self(sec.into())
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    pub fn contains(&self, s: &Section) -> bool {
-        self.0.contains(s.as_str())
     }
 }

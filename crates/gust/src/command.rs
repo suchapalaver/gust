@@ -1,7 +1,8 @@
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
-    item::{Name, Section},
+    item::Name,
     recipes::{Ingredients, Recipe},
+    section::Section,
 };
 
 use clap::ArgMatches;
@@ -13,7 +14,7 @@ pub enum GustCommand {
     Add(Add),
     Delete(Delete),
     FetchRecipe(Url),
-    MigrateJsonDbToSqlite,
+    ImportFromJson,
     Read(Read),
     Update(Update),
 }
@@ -117,7 +118,7 @@ impl TryFrom<ArgMatches> for GustCommand {
                 }
                 _ => unimplemented!(),
             })),
-            Some(("migrate-json-store", _)) => Ok(GustCommand::MigrateJsonDbToSqlite),
+            Some(("import", _)) => Ok(GustCommand::ImportFromJson),
             _ => unreachable!(),
         }
     }
@@ -129,7 +130,7 @@ impl From<GustCommand> for ApiCommand {
             GustCommand::Add(cmd) => Self::Add(cmd),
             GustCommand::Delete(cmd) => Self::Delete(cmd),
             GustCommand::FetchRecipe(cmd) => Self::FetchRecipe(cmd),
-            GustCommand::MigrateJsonDbToSqlite => Self::MigrateJsonDbToSqlite,
+            GustCommand::ImportFromJson => Self::ImportFromJson,
             GustCommand::Read(cmd) => Self::Read(cmd),
             GustCommand::Update(cmd) => Self::Update(cmd),
         }

@@ -25,11 +25,11 @@ Commands:
   delete           delete stuff
   read             read stuff
   update           update stuff
-  migrate-json-store  migrate JSON store to Sqlite database
+  import           import from 'items.json' and 'list.json' files
   help             Print this message or the help of the given subcommand(s)
 
 Options:
-      --database <store>  which database to use [default: json] [possible values: json, sqlite]
+      --database <store>  which database to use [default: sqlite] [possible values: sqlite, sqlite-inmem]
   -h, --help           Print help
 ```
 

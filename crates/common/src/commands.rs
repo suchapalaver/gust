@@ -1,8 +1,9 @@
 use url::Url;
 
 use crate::{
-    item::{Name, Section},
+    item::Name,
     recipes::{Ingredients, Recipe},
+    section::Section,
 };
 
 #[derive(Debug)]
@@ -10,7 +11,7 @@ pub enum ApiCommand {
     Add(Add),
     Delete(Delete),
     FetchRecipe(Url),
-    MigrateJsonDbToSqlite,
+    ImportFromJson,
     Read(Read),
     Update(Update),
 }

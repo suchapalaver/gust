@@ -2,10 +2,11 @@ use std::fmt::{self, Display};
 
 use common::{
     commands::ApiCommand,
-    item::{Item, Name, Section},
+    item::{Item, Name},
     items::Items,
     list::List,
     recipes::{Ingredients, Recipe},
+    section::Section,
 };
 use persistence::store::{Store, StoreDispatch, StoreError, StoreResponse, StoreType};
 
@@ -120,7 +121,7 @@ pub enum ApiResponse {
     FetchedRecipe((Recipe, Ingredients)),
     ItemAlreadyAdded(Name),
     Items(Items),
-    JsonToSqlite,
+    ImportToSqlite,
     List(List),
     NothingReturned(ApiCommand),
     Recipes(Vec<Recipe>),
@@ -159,12 +160,12 @@ impl Display for ApiResponse {
             Self::ItemAlreadyAdded(item) => writeln!(f, "\nitem already added: {item}"),
             Self::Items(items) => {
                 writeln!(f)?;
-                for item in items.collection() {
+                for item in items.collection_iter() {
                     writeln!(f, "{item}")?;
                 }
                 Ok(())
             }
-            Self::JsonToSqlite => writeln!(f, "\nJSON to SQLite data store migration successful"),
+            Self::ImportToSqlite => writeln!(f, "\nJSON to SQLite data store migration successful"),
             Self::List(list) => {
                 writeln!(f)?;
                 for item in list.items() {
@@ -216,7 +217,7 @@ impl From<StoreResponse> for ApiResponse {
             StoreResponse::FetchedRecipe(item) => Self::FetchedRecipe(item),
             StoreResponse::ItemAlreadyAdded(item) => Self::ItemAlreadyAdded(item),
             StoreResponse::Items(item) => Self::Items(item),
-            StoreResponse::JsonToSqlite => Self::JsonToSqlite,
+            StoreResponse::ImportToSqlite => Self::ImportToSqlite,
             StoreResponse::List(item) => Self::List(item),
             StoreResponse::NothingReturned(item) => Self::NothingReturned(item),
             StoreResponse::Recipes(item) => Self::Recipes(item),

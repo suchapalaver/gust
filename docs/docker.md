@@ -16,10 +16,10 @@ docker build --tag gust --file Dockerfile .
 ### Creating a `gust_data` Volume
 
 To run the application, creating a volume called `gust_data`,
-and migrating data from an existing `groceries.json` JSON store, use:
+and migrating data from an existing `items.json` file store, use:
 
 ```bash
-docker run --rm -v gust_data:/app gust --database sqlite migrate-json-store
+docker run --rm -v gust_data:/app gust --database sqlite import
 ```
 
 ### Reading from a `gust_data` Volume
@@ -30,18 +30,18 @@ To read from the persisted migrated data:
 docker run --rm -v gust_data:/app gust --database sqlite read recipes
 ```
 
-### Migrate a JSON `gust` Store to SQLite
+### Import From JSON files to SQLite
 
-To use an existing JSON store and migrate it to SQLite:
+To use existing items and list saved to JSON and import to SQLite:
 
 ```bash
 docker run --rm \
 -v gust_data:/app \
--v /host/machine/absolute/path/to/groceries.json:/app/groceries.json \
--v /host/machine/absolute/path/to/list.json:/app/list.json \
+-v $(pwd)/items.json:/app/items.json \
+-v $(pwd)/list.json:/app/list.json \
 gust \
 --database sqlite \
-migrate-json-store
+import
 ```
 
-Note that for now it has to be `groceries.json` and `list.json`.
+Note that for now it has to be `items.json` and `list.json`.

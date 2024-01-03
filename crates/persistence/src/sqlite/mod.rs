@@ -1,3 +1,6 @@
+mod import;
+mod migrations;
+
 use std::{env, ops::Deref};
 
 use common::{
@@ -5,17 +8,22 @@ use common::{
     list::List,
     recipes::{Ingredients, Recipe},
 };
-use diesel::{prelude::*, r2d2::ConnectionManager, sqlite::Sqlite, SqliteConnection};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use diesel::{prelude::*, r2d2::ConnectionManager, SqliteConnection};
 use r2d2::{Pool, PooledConnection};
 
 use crate::{
+    import_store::ImportStore,
     models::{
         self, Item, ItemInfo, NewChecklistItem, NewItem, NewItemRecipe, NewListItem, NewListRecipe,
         NewRecipe, RecipeModel, Section,
     },
     schema,
     store::{Storage, StoreError, StoreResponse},
+};
+
+use self::{
+    import::{migrate_items, migrate_sections},
+    migrations::run_migrations,
 };
 
 pub struct DbUri(String);
@@ -80,18 +88,6 @@ impl Connection for DatabaseConnector {
             ))?,
         )
     }
-}
-
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
-
-fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<(), StoreError> {
-    // This will run the necessary migrations.
-    //
-    // See the documentation for `MigrationHarness` for
-    // all available methods.
-    connection.run_pending_migrations(MIGRATIONS)?;
-
-    Ok(())
 }
 
 #[derive(Clone)]
@@ -440,6 +436,20 @@ impl Storage for SqliteStore {
         .await?
     }
 
+    async fn import_from_json(&self) -> Result<StoreResponse, StoreError> {
+        let import_store = ImportStore::default();
+        let mut connection = self.connection()?;
+        let items = import_store.items()?;
+        tokio::task::spawn_blocking(move || {
+            connection.immediate_transaction(|connection| {
+                migrate_sections(connection)?;
+                migrate_items(connection, items)?;
+                Ok(StoreResponse::ImportToSqlite)
+            })
+        })
+        .await?
+    }
+
     async fn items(&self) -> Result<StoreResponse, StoreError> {
         use schema::items::dsl::items;
 
@@ -521,7 +531,7 @@ impl Storage for SqliteStore {
                         .load::<Section>(connection)?
                         .into_iter()
                         .map(|sec| sec.name().into())
-                        .collect(),
+                        .collect::<Vec<common::section::Section>>(),
                 ))
             })
         })
@@ -594,7 +604,9 @@ mod tests {
             todo!()
         };
 
-        assert!(items.collection().any(|item| item.name() == &item_name));
+        assert!(items
+            .collection_iter()
+            .any(|item| item.name() == &item_name));
     }
 
     #[tokio::test]
