@@ -38,9 +38,14 @@ impl Item {
     }
 
     pub fn add_recipe(&mut self, recipe: &str) {
-        self.recipes
-            .get_or_insert_with(Vec::new)
-            .push(recipe.into());
+        let recipe = recipe.into();
+        if let Some(recipes) = &mut self.recipes {
+            if !recipes.contains(&recipe) {
+                recipes.push(recipe);
+            }
+        } else {
+            self.recipes = Some(vec![recipe]);
+        }
     }
 
     pub fn delete_recipe(&mut self, name: &str) {
@@ -67,6 +72,12 @@ impl Item {
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)
+    }
+}
+
+impl From<&Name> for Item {
+    fn from(name: &Name) -> Self {
+        Self::new(name.as_str())
     }
 }
 

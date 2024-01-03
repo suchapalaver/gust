@@ -46,7 +46,9 @@ impl Items {
     }
 
     pub fn add_item(&mut self, item: Item) {
-        self.collection.push(item);
+        if !self.collection.iter().any(|i| i.name() == item.name()) {
+            self.collection.push(item);
+        }
     }
 
     pub fn delete_item(&mut self, name: &str) {
@@ -75,9 +77,15 @@ impl Items {
     }
 
     pub fn add_recipe(&mut self, name: &str, ingredients: &str) {
+        let ingredients = Ingredients::from_input_string(ingredients);
+
+        ingredients
+            .iter()
+            .for_each(|ingredient| self.add_item(ingredient.into()));
+
         self.collection
             .iter_mut()
-            .filter(|item| Ingredients::from_input_string(ingredients).contains(item.name()))
+            .filter(|item| ingredients.contains(item.name()))
             .for_each(|item| item.add_recipe(name));
 
         self.recipes.push(name.into());
