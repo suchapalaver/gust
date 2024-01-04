@@ -2,3 +2,5 @@
 !Cargo.*
 !crates
 !.env
+!items.json
+!list.json

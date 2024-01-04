@@ -77,9 +77,9 @@ impl ItemInfo for Section {
     }
 }
 
-impl From<Section> for common::item::Section {
-    fn from(value: Section) -> common::item::Section {
-        common::item::Section::new(value.name)
+impl From<Section> for common::section::Section {
+    fn from(value: Section) -> common::section::Section {
+        value.name.into()
     }
 }
 

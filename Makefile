@@ -1,4 +1,4 @@
-.PHONY: build help fetch read add list clear
+.PHONY: build help fetch read add list export clear
 
 build:
 	docker build --tag gust --file Dockerfile .
@@ -31,6 +31,22 @@ add:
 
 list:
 	docker run --rm -v gust:/app gust read list
+
+export:
+	if [ ! -f "$(PWD)/items.yaml" ]; then \
+		echo "Error: items.yaml not found in $(PWD)."; \
+		exit 1; \
+	fi
+	if [ ! -f "$(PWD)/list.yaml" ]; then \
+		echo "Error: list.yaml not found in $(PWD)."; \
+		exit 1; \
+	fi
+	docker run --rm \
+		-v gust_data:/app \
+		-v $(PWD)/items.yaml:/app/items.yaml \
+		-v $(PWD)/list.yaml:/app/list.yaml \
+		gust \
+		export
 
 clear:
 	docker run --rm -v gust:/app gust update list clear

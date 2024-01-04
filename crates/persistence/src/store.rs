@@ -1,11 +1,13 @@
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
+    export::ExportError,
     fetcher::{FetchError, Fetcher},
-    item::{Item, Name, Section},
+    item::{Item, Name},
     items::Items,
     list::List,
+    load::LoadError,
     recipes::{Ingredients, Recipe},
-    LoadError,
+    section::Section,
 };
 use futures::FutureExt;
 use thiserror::Error;
@@ -18,13 +20,7 @@ use url::Url;
 
 use std::{error::Error, fmt::Debug, fmt::Display, str::FromStr};
 
-use crate::{
-    json::{
-        migrate::{groceries, migrate_recipes, migrate_sections},
-        JsonStore,
-    },
-    sqlite::{DbUri, SqliteStore},
-};
+use crate::sqlite::{connection::DbUri, SqliteStore};
 
 #[derive(Error, Debug)]
 pub enum StoreError {
@@ -39,6 +35,9 @@ pub enum StoreError {
 
     #[error("invalid JSON file: {0}")]
     DeserializingError(#[from] serde_json::Error),
+
+    #[error("Export error: {0}")]
+    ExportError(#[from] ExportError),
 
     #[error("fetch error: {0}")]
     FetchError(#[from] FetchError),
@@ -67,7 +66,6 @@ pub enum StoreError {
 
 #[derive(Debug)]
 pub enum StoreType {
-    Json,
     Sqlite,
     SqliteInMem,
 }
@@ -75,7 +73,6 @@ pub enum StoreType {
 impl Display for StoreType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            StoreType::Json => write!(f, "json"),
             StoreType::Sqlite => write!(f, "sqlite"),
             StoreType::SqliteInMem => write!(f, "sqlite-inmem"),
         }
@@ -87,12 +84,10 @@ impl FromStr for StoreType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "json" => Ok(Self::Json),
             "sqlite" => Ok(Self::Sqlite),
             "sqlite-inmem" => Ok(Self::SqliteInMem),
             _ => Err(StoreError::ParseStoreType(
-                "Store types are currently limited to 'sqlite', 'sqlite-inmem', and 'json'."
-                    .to_string(),
+                "Store types are currently limited to 'sqlite' and 'sqlite-inmem'.".to_string(),
             )),
         }
     }
@@ -100,7 +95,6 @@ impl FromStr for StoreType {
 
 #[derive(Clone)]
 pub enum Store {
-    Json(JsonStore),
     Sqlite(SqliteStore),
 }
 
@@ -108,7 +102,6 @@ impl Store {
     pub async fn from_store_type(store_type: StoreType) -> Result<Self, StoreError> {
         use StoreType::*;
         match store_type {
-            Json => Ok(Self::Json(JsonStore::default())),
             Sqlite => Ok(Self::Sqlite(SqliteStore::new(DbUri::new()).await?)),
             SqliteInMem => Ok(Self::Sqlite(SqliteStore::new(DbUri::inmem()).await?)),
         }
@@ -149,7 +142,6 @@ impl Store {
 
     async fn execute_transaction(&self, command: ApiCommand) -> Result<StoreResponse, StoreError> {
         match self {
-            Self::Json(store) => store.execute_transaction(command).await,
             Self::Sqlite(store) => store.execute_transaction(command).await,
         }
     }
@@ -195,10 +187,11 @@ pub enum StoreResponse {
     Checklist(Vec<Item>),
     DeletedRecipe(Recipe),
     DeletedChecklistItem(Name),
+    Exported(Vec<Item>, List),
     FetchedRecipe((Recipe, Ingredients)),
+    ImportToSqlite,
     ItemAlreadyAdded(Name),
     Items(Items),
-    JsonToSqlite,
     List(List),
     NothingReturned(ApiCommand),
     Recipes(Vec<Recipe>),
@@ -212,8 +205,9 @@ pub(crate) trait Storage: Send + Sync + 'static {
         match command {
             ApiCommand::Add(cmd) => self.add(cmd).await,
             ApiCommand::Delete(cmd) => self.delete(cmd).await,
+            ApiCommand::Export => self.export().await,
             ApiCommand::FetchRecipe(url) => self.fetch_recipe(url).await,
-            ApiCommand::MigrateJsonDbToSqlite => self.migrate_json_store_to_sqlite().await,
+            ApiCommand::ImportFromJson => self.import_from_json().await,
             ApiCommand::Read(cmd) => self.read(cmd).await,
             ApiCommand::Update(cmd) => self.update(cmd).await,
         }
@@ -222,7 +216,7 @@ pub(crate) trait Storage: Send + Sync + 'static {
     async fn add(&self, cmd: Add) -> Result<StoreResponse, StoreError> {
         match cmd {
             Add::ChecklistItem(name) => self.add_checklist_item(&name).await,
-            Add::Item { name, .. } => self.add_item(&name).await,
+            Add::Item { name, section } => self.add_item(&name, &section).await,
             Add::ListItem(name) => self.add_list_item(&name).await,
             Add::ListRecipe(name) => self.add_list_recipe(&name).await,
             Add::Recipe {
@@ -234,7 +228,7 @@ pub(crate) trait Storage: Send + Sync + 'static {
 
     async fn read(&self, cmd: Read) -> Result<StoreResponse, StoreError> {
         match cmd {
-            Read::All => self.items().await,
+            Read::All => Ok(StoreResponse::Items(self.items().await?)),
             Read::Checklist => self.checklist().await,
             Read::Item(_name) => todo!(),
             Read::List => self.list().await,
@@ -264,6 +258,8 @@ pub(crate) trait Storage: Send + Sync + 'static {
         }
     }
 
+    async fn export(&self) -> Result<StoreResponse, StoreError>;
+
     async fn fetch_recipe(&self, url: Url) -> Result<StoreResponse, StoreError> {
         let fetcher = Fetcher::from(url);
         let (recipe, ingredients) = fetcher.fetch_recipe().await?;
@@ -272,28 +268,14 @@ pub(crate) trait Storage: Send + Sync + 'static {
         Ok(StoreResponse::FetchedRecipe((recipe, ingredients)))
     }
 
-    async fn migrate_json_store_to_sqlite(&self) -> Result<StoreResponse, StoreError> {
-        let sqlite_store = SqliteStore::new(DbUri::new()).await?;
-        let mut connection = sqlite_store.connection()?;
-        let StoreResponse::Items(grocery_items) = self.items().await? else {
-            todo!()
-        };
-        let StoreResponse::Recipes(recipes) = self.recipes().await? else {
-            todo!()
-        };
-        tokio::task::spawn_blocking(move || {
-            connection.immediate_transaction(|connection| {
-                migrate_sections(connection)?;
-                migrate_recipes(connection, recipes)?;
-                groceries(connection, grocery_items)?;
-                Ok(StoreResponse::JsonToSqlite)
-            })
-        })
-        .await?
-    }
+    async fn import_from_json(&self) -> Result<StoreResponse, StoreError>;
 
     // Create
-    async fn add_item(&self, item: &Name) -> Result<StoreResponse, StoreError>;
+    async fn add_item(
+        &self,
+        item: &Name,
+        section: &Option<Section>,
+    ) -> Result<StoreResponse, StoreError>;
 
     async fn add_checklist_item(&self, item: &Name) -> Result<StoreResponse, StoreError>;
 
@@ -312,7 +294,7 @@ pub(crate) trait Storage: Send + Sync + 'static {
 
     async fn list(&self) -> Result<StoreResponse, StoreError>;
 
-    async fn items(&self) -> Result<StoreResponse, StoreError>;
+    async fn items(&self) -> Result<Items, StoreError>;
 
     async fn recipes(&self) -> Result<StoreResponse, StoreError>;
 

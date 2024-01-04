@@ -1,4 +1,4 @@
-use common::{item::SECTIONS, items::Items, recipes::Recipe};
+use common::{items::Items, section::SECTIONS};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
     store::StoreError,
 };
 
-pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
+pub fn import_sections(connection: &mut SqliteConnection) -> Result<(), StoreError> {
     use crate::schema::sections;
 
     let sections = SECTIONS;
@@ -24,32 +24,12 @@ pub fn migrate_sections(connection: &mut SqliteConnection) -> Result<(), StoreEr
     Ok(())
 }
 
-pub fn migrate_recipes(
-    connection: &mut SqliteConnection,
-    recipes: Vec<Recipe>,
-) -> Result<(), StoreError> {
-    use crate::schema::recipes;
-
-    for recipe in recipes {
-        let recipe = NewRecipe {
-            name: &recipe.to_string().to_lowercase(),
-        };
-
-        diesel::insert_into(recipes::table)
-            .values(&recipe)
-            .on_conflict_do_nothing()
-            .execute(connection)?;
-    }
-
-    Ok(())
-}
-
-pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<(), StoreError> {
+pub fn import_items(connection: &mut SqliteConnection, items: Items) -> Result<(), StoreError> {
     let items_table = schema::items::table;
     let recipes_table = schema::recipes::table;
     let sections_table = schema::sections::table;
 
-    for item in groceries.collection() {
+    for item in items.collection_iter() {
         // add the item to the item table
         let new_item = NewItem {
             name: item.name().as_str(),
@@ -102,7 +82,7 @@ pub fn groceries(connection: &mut SqliteConnection, groceries: Items) -> Result<
             }
         }
 
-        if let Some(item_section) = &item.section() {
+        if let Some(item_section) = item.section() {
             // log the item_id in items_sections
             let results = sections_table
                 .filter(schema::sections::dsl::name.eq(item_section.to_string()))

@@ -1,7 +1,8 @@
 use common::{
     commands::{Add, ApiCommand, Delete, Read, Update},
-    item::{Name, Section},
+    item::Name,
     recipes::{Ingredients, Recipe},
+    section::Section,
 };
 
 use clap::ArgMatches;
@@ -9,21 +10,22 @@ use url::Url;
 
 use crate::CliError;
 
-pub enum GustCommand {
+pub enum UserCommand {
     Add(Add),
     Delete(Delete),
+    Export,
     FetchRecipe(Url),
-    MigrateJsonDbToSqlite,
+    ImportFromJson,
     Read(Read),
     Update(Update),
 }
 
-impl TryFrom<ArgMatches> for GustCommand {
+impl TryFrom<ArgMatches> for UserCommand {
     type Error = CliError;
 
     fn try_from(matches: ArgMatches) -> Result<Self, Self::Error> {
         match matches.subcommand() {
-            Some(("add", matches)) => Ok(GustCommand::Add(
+            Some(("add", matches)) => Ok(UserCommand::Add(
                 if let (Some(recipe), Some(ingredients)) = (
                     matches.get_one::<String>("recipe"),
                     matches.get_one::<String>("ingredients"),
@@ -62,7 +64,7 @@ impl TryFrom<ArgMatches> for GustCommand {
                     }
                 },
             )),
-            Some(("delete", matches)) => Ok(GustCommand::Delete(
+            Some(("delete", matches)) => Ok(UserCommand::Delete(
                 if let Some(name) = matches.get_one::<String>("recipe") {
                     Delete::recipe_from_name(name.as_str().into())
                 } else if let Some(name) = matches.get_one::<String>("item") {
@@ -84,9 +86,9 @@ impl TryFrom<ArgMatches> for GustCommand {
                     unreachable!("Providing a URL is required")
                 };
                 let url: Url = Url::parse(url)?;
-                Ok(GustCommand::FetchRecipe(url))
+                Ok(UserCommand::FetchRecipe(url))
             }
-            Some(("read", matches)) => Ok(GustCommand::Read(
+            Some(("read", matches)) => Ok(UserCommand::Read(
                 if let Some(name) = matches.get_one::<String>("recipe") {
                     Read::recipe_from_name(name.as_str().into())
                 } else if let Some(name) = matches.get_one::<String>("item") {
@@ -102,7 +104,7 @@ impl TryFrom<ArgMatches> for GustCommand {
                     }
                 },
             )),
-            Some(("update", matches)) => Ok(GustCommand::Update(match matches.subcommand() {
+            Some(("update", matches)) => Ok(UserCommand::Update(match matches.subcommand() {
                 Some(("recipe", matches)) => {
                     let Some(name) = matches.get_one::<String>("recipe") else {
                         todo!()
@@ -117,21 +119,23 @@ impl TryFrom<ArgMatches> for GustCommand {
                 }
                 _ => unimplemented!(),
             })),
-            Some(("migrate-json-store", _)) => Ok(GustCommand::MigrateJsonDbToSqlite),
+            Some(("import", _)) => Ok(UserCommand::ImportFromJson),
+            Some(("export", _)) => Ok(UserCommand::Export),
             _ => unreachable!(),
         }
     }
 }
 
-impl From<GustCommand> for ApiCommand {
-    fn from(command: GustCommand) -> Self {
+impl From<UserCommand> for ApiCommand {
+    fn from(command: UserCommand) -> Self {
         match command {
-            GustCommand::Add(cmd) => Self::Add(cmd),
-            GustCommand::Delete(cmd) => Self::Delete(cmd),
-            GustCommand::FetchRecipe(cmd) => Self::FetchRecipe(cmd),
-            GustCommand::MigrateJsonDbToSqlite => Self::MigrateJsonDbToSqlite,
-            GustCommand::Read(cmd) => Self::Read(cmd),
-            GustCommand::Update(cmd) => Self::Update(cmd),
+            UserCommand::Add(cmd) => Self::Add(cmd),
+            UserCommand::Delete(cmd) => Self::Delete(cmd),
+            UserCommand::Export => Self::Export,
+            UserCommand::FetchRecipe(cmd) => Self::FetchRecipe(cmd),
+            UserCommand::ImportFromJson => Self::ImportFromJson,
+            UserCommand::Read(cmd) => Self::Read(cmd),
+            UserCommand::Update(cmd) => Self::Update(cmd),
         }
     }
 }

@@ -37,6 +37,12 @@ impl From<&str> for Recipe {
     }
 }
 
+impl From<String> for Recipe {
+    fn from(s: String) -> Self {
+        Self(s.trim().to_lowercase())
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Ingredients(Vec<Name>);
 

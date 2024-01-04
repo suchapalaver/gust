@@ -4,11 +4,11 @@
 skinparam classFontColor darkSlateGray
 
 package "gust" {
-  [API {\n  + Store\n}] *-down-* [Store (JSON | SQLite)]
+  [API {\n  + Store\n}] *-down-* [Store (SQLite)]
   [CLI] <---> [API {\n  + Store\n}] : API commands\n& responses
   [common types\n and methods] .right. [API {\n  + Store\n}]
   [common types\n and methods] .right. [CLI]
-  [common types\n and methods] .right. [Store (JSON | SQLite)]
+  [common types\n and methods] .right. [Store (SQLite)]
   [API {\n  + Store\n}] o-right-o [RecipeFetcher]
 }
 interface "\t\t\tcooking sites\n\t\t\t(e.g. NYT Cooking,\n\t\t\tBBC Food)" as ext
