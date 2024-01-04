@@ -64,7 +64,7 @@ pub struct NewSection<'a> {
     pub name: &'a str,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Selectable)]
 #[diesel(table_name = sections)]
 pub struct Section {
     pub id: i32,

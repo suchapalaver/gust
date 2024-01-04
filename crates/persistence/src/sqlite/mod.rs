@@ -202,7 +202,7 @@ impl SqliteStore {
             .load::<Item>(connection)?)
     }
 
-    fn get_recipe(
+    fn get_recipe_model_for_recipe(
         connection: &mut SqliteConnection,
         recipe: &str,
     ) -> Result<Option<Vec<RecipeModel>>, StoreError> {
@@ -212,19 +212,18 @@ impl SqliteStore {
             .optional()?)
     }
 
-    fn get_section_for_item(
+    fn get_section_model_for_item(
         connection: &mut SqliteConnection,
         item_id: i32,
-    ) -> Result<Option<String>, StoreError> {
+    ) -> Result<Option<Section>, StoreError> {
         use crate::schema::{items_sections, sections};
 
         Ok(items_sections::table
             .filter(items_sections::item_id.eq(item_id))
-            .left_join(sections::table.on(sections::id.eq(items_sections::section_id)))
-            .select(sections::name.nullable())
-            .first::<Option<String>>(connection)
-            .optional()?
-            .flatten())
+            .inner_join(sections::table.on(sections::id.eq(items_sections::section_id)))
+            .select(Section::as_select())
+            .first(connection)
+            .optional()?)
     }
 
     fn get_item_recipes(
@@ -505,13 +504,13 @@ impl Storage for SqliteStore {
                 all_items
                     .into_iter()
                     .map(|item| {
-                        let section = Self::get_section_for_item(connection, item.id)?;
+                        let section = Self::get_section_model_for_item(connection, item.id)?;
                         let item_recipes = Self::get_item_recipes(connection, item.id)?;
 
                         let mut item: common::item::Item = item.into();
 
                         if let Some(section) = section {
-                            item = item.with_section(&section);
+                            item = item.with_section(section.name());
                         }
 
                         if !item_recipes.is_empty() {
@@ -550,7 +549,8 @@ impl Storage for SqliteStore {
         tokio::task::spawn_blocking(move || {
             let mut connection = store.connection()?;
             connection.immediate_transaction(|connection| {
-                let Some(results) = Self::get_recipe(connection, recipe.as_str())? else {
+                let Some(results) = Self::get_recipe_model_for_recipe(connection, recipe.as_str())?
+                else {
                     return Ok(StoreResponse::RecipeIngredients(None));
                 };
 
