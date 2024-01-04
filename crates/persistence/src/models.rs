@@ -39,7 +39,7 @@ pub struct NewRecipe<'a> {
     pub name: &'a str,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Selectable)]
 #[diesel(table_name = recipes)]
 pub struct RecipeModel {
     pub id: i32,
@@ -64,7 +64,7 @@ pub struct NewSection<'a> {
     pub name: &'a str,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Selectable)]
 #[diesel(table_name = sections)]
 pub struct Section {
     pub id: i32,
