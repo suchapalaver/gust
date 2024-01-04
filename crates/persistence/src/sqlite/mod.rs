@@ -226,22 +226,18 @@ impl SqliteStore {
             .optional()?)
     }
 
-    fn get_item_recipes(
+    fn get_recipe_models_for_item(
         connection: &mut SqliteConnection,
         item_id: i32,
-    ) -> Result<Vec<String>, StoreError> {
+    ) -> Result<Option<Vec<RecipeModel>>, StoreError> {
         use crate::schema::{items_recipes, recipes};
 
         Ok(items_recipes::table
             .filter(items_recipes::item_id.eq(item_id))
-            .left_join(recipes::table.on(recipes::id.eq(items_recipes::recipe_id)))
-            .select(recipes::name.nullable())
-            .load::<Option<String>>(connection)
-            .optional()?
-            .into_iter()
-            .flatten()
-            .flatten()
-            .collect::<Vec<String>>())
+            .inner_join(recipes::table.on(recipes::id.eq(items_recipes::recipe_id)))
+            .select(RecipeModel::as_select())
+            .load(connection)
+            .optional()?)
     }
 }
 
@@ -505,7 +501,7 @@ impl Storage for SqliteStore {
                     .into_iter()
                     .map(|item| {
                         let section = Self::get_section_model_for_item(connection, item.id)?;
-                        let item_recipes = Self::get_item_recipes(connection, item.id)?;
+                        let item_recipes = Self::get_recipe_models_for_item(connection, item.id)?;
 
                         let mut item: common::item::Item = item.into();
 
@@ -513,7 +509,7 @@ impl Storage for SqliteStore {
                             item = item.with_section(section.name());
                         }
 
-                        if !item_recipes.is_empty() {
+                        if let Some(item_recipes) = item_recipes {
                             item = item.with_recipes(
                                 item_recipes
                                     .into_iter()
