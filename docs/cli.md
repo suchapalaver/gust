@@ -58,5 +58,100 @@ salt and freshly ground black pepper:
 
 ## Importing and Exporting Data
 
-See the Gust [Docker documentation](docker.md#) for instructions on how to [import](docker.md#import-from-json-files-to-sqlite)
+See the [Gust Docker documentation](docker.md#) for instructions on how to [import](docker.md#import-from-json-files-to-sqlite)
 and [export](docker.md#export-data-to-yaml) your grocery items and shopping list data.
+
+Below is an example of typical `gust` data in JSON format that you could import to your 
+`gust` library to start cooking - this example contains grocery items for a
+"crispy sheet-pan noodles" recipe we love!:
+
+```json
+{
+    "collection": [
+        {
+            "name": "garlic",
+            "section": "fresh",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "tofu",
+            "section": "protein",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "vegetable oil",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "salt",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "instant ramen noodles",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "sesame oil",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "soy sauce",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "baby bok choy",
+            "section": "fresh",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "cilantro",
+            "section": "fresh",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "hoisin",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "maple syrup",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        },
+        {
+            "name": "sesame seeds",
+            "section": "pantry",
+            "recipes": [
+                "crispy sheet-pan noodles"
+            ]
+        }
+    ]
+}
+```
