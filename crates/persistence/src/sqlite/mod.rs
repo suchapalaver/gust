@@ -867,9 +867,8 @@ mod tests {
         assert!(items.collection_iter().any(|item| item.name() == &item2));
 
         insta::assert_debug_snapshot!(items, @r###"
-        Items {
-            sections: [],
-            collection: [
+        Items(
+            [
                 Item {
                     name: Name(
                         "item 1",
@@ -905,8 +904,7 @@ mod tests {
                     ),
                 },
             ],
-            recipes: [],
-        }
+        )
         "###);
     }
 }

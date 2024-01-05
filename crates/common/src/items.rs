@@ -1,13 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{item::Item, load::Load, recipes::Recipe, section::Section};
+use crate::{item::Item, load::Load};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
-pub struct Items {
-    sections: Vec<Section>,
-    collection: Vec<Item>,
-    recipes: Vec<Recipe>,
-}
+pub struct Items(Vec<Item>);
 
 impl Load for Items {
     type T = Items;
@@ -30,16 +26,16 @@ impl Items {
     }
 
     pub fn collection(&self) -> &[Item] {
-        &self.collection
+        &self.0
     }
 
     pub fn collection_iter(&self) -> impl Iterator<Item = &Item> {
-        self.collection.iter()
+        self.0.iter()
     }
 
     pub fn add_item(&mut self, item: Item) {
-        if !self.collection.iter().any(|i| i.name() == item.name()) {
-            self.collection.push(item);
+        if !self.0.iter().any(|i| i.name() == item.name()) {
+            self.0.push(item);
         }
     }
 }
